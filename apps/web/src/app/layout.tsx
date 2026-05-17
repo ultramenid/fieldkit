@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Nunito } from 'next/font/google'
+import NextTopLoader from 'nextjs-toploader'
 import { Providers } from '@/components/providers'
 import './globals.css'
 
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={nunito.variable}>
       <body>
+        <NextTopLoader color="#8b4513" showSpinner={false} />
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -4,7 +4,7 @@ export function Nav() {
   return (
     <header className="border-b border-[var(--border)]">
       <div className="mx-auto flex w-full max-w-[960px] items-center justify-between px-6 py-[14px]">
-        <span className="font-sans text-[22px] font-medium tracking-tight text-[var(--foreground)]">FieldKit</span>
+        <Link href={"/"} className="font-sans text-[22px] font-medium tracking-tight text-[var(--foreground)]">FieldKit</Link>
         <nav className="flex gap-5">
           {[
             { label: 'Docs', href: '/docs' },
