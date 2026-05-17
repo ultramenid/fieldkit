@@ -11,9 +11,11 @@ apps/web/out/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
 # Prisma
-apps/web/prisma/migrations/
+*.tsbuildinfo
 
 # build outputs
 dist/
