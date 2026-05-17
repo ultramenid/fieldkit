@@ -33,8 +33,11 @@
     .field-group label { font-size: 14px; font-weight: 500; }
     .field-group .help { font-size: 12px; color: var(--muted); }
     .required { color: var(--danger); margin-left: 2px; }
-    .field-group input[type=text], .field-group input[type=email], .field-group input[type=number], .field-group input[type=date], .field-group select, .field-group textarea {
+    .field-group input[type=text], .field-group input[type=email], .field-group input[type=number], .field-group select, .field-group textarea {
       width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius); font: inherit; font-size: 15px; background: var(--bg); color: var(--fg); transition: border-color 0.15s;
+    }
+    .field-group input[type=date] {
+      width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-container); font: inherit; font-size: 15px; background: var(--bg); color: var(--fg); transition: border-color 0.15s; -webkit-appearance: none; appearance: none;
     }
     .field-group input:focus, .field-group select:focus, .field-group textarea:focus { outline: none; border-color: var(--fg); }
     .field-group textarea { border-radius: var(--radius-container); min-height: 100px; resize: vertical; }
@@ -59,14 +62,36 @@
     .success-state h2 { font-family: var(--font-display); font-size: 24px; font-weight: 500; margin: 0 0 8px; }
     .success-state p { color: var(--muted); font-size: 15px; margin: 0 0 20px; }
     .form-footer { text-align: center; padding: 24px; font-size: 12px; color: var(--muted); }
+    .qr-btn { background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 12px; font-family: var(--font-mono); color: var(--muted); transition: border-color 0.15s, color 0.15s; }
+    .qr-btn:hover { border-color: var(--fg); color: var(--fg); }
+    .qr-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .qr-modal { background: var(--bg); border-radius: var(--radius-container); padding: 32px; text-align: center; max-width: 320px; width: 90%; }
+    .qr-modal h3 { font-family: var(--font-display); font-size: 16px; font-weight: 500; margin: 0 0 4px; }
+    .qr-modal p { font-size: 12px; color: var(--muted); margin: 0 0 16px; word-break: break-all; font-family: var(--font-mono); }
+    .qr-modal canvas { border-radius: 8px; margin-bottom: 16px; }
+    .qr-modal .close-btn { background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 20px; cursor: pointer; font-size: 13px; color: var(--fg); transition: border-color 0.15s; }
+    .qr-modal .close-btn:hover { border-color: var(--fg); }
     @media (max-width: 640px) { .form-container { margin: 24px auto; } .form-card { padding: 28px 20px; } .form-title { font-size: 22px; } .form-submit { flex-direction: column; } .form-submit .btn { width: 100%; justify-content: center; } }
   </style>
 </head>
 <body>
   <header class="form-header">
     <span class="brand">FieldKit</span>
-    <span class="status">Local Server</span>
+    <button class="qr-btn" onclick="showQr()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="14" y1="21" x2="21" y2="21"/></svg>
+      QR Code
+    </button>
   </header>
+
+  <div class="qr-overlay" id="qrOverlay" style="display:none" onclick="hideQr()">
+    <div class="qr-modal" onclick="event.stopPropagation()">
+      <h3>Scan to open this form</h3>
+      <p id="qrUrl"></p>
+      <canvas id="qrCanvas"></canvas>
+      <br>
+      <button class="close-btn" onclick="hideQr()">Close</button>
+    </div>
+  </div>
 
   <main class="form-container">
     <div class="form-card" id="formCard">
@@ -99,9 +124,31 @@
     const formId = location.pathname.split('/').pop()
     let formData = null
     let ratings = {}
+    let fileUploads = {}
+    let qrGenerated = false
+
+    function showQr() {
+      document.getElementById('qrOverlay').style.display = 'flex'
+      if (!qrGenerated) {
+        const url = window.location.href
+        document.getElementById('qrUrl').textContent = url
+        QRCode.toCanvas(document.getElementById('qrCanvas'), url, { width: 200, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
+        qrGenerated = true
+      }
+    }
+
+    function hideQr() {
+      document.getElementById('qrOverlay').style.display = 'none'
+    }
+
+    function esc(str) {
+      const d = document.createElement('div')
+      d.textContent = str ?? ''
+      return d.innerHTML
+    }
 
     async function loadForm() {
-      const res = await fetch('/api/form/' + formId)
+      const res = await fetch('/api/form/' + encodeURIComponent(formId))
       if (!res.ok) { document.getElementById('loadingState').textContent = 'Form not found.'; return }
       formData = await res.json()
       const schema = formData.schema
@@ -120,6 +167,13 @@
       form.querySelectorAll('input,select,textarea').forEach(el => el.addEventListener('input', updateProgress))
       form.querySelectorAll('input[type=checkbox],input[type=radio]').forEach(el => el.addEventListener('change', updateProgress))
 
+      fields.forEach(f => {
+        if (f.type === 'file') {
+          const input = document.getElementById('file-' + f.id)
+          if (input) input.addEventListener('change', (e) => handleFileSelect(f.id, e))
+        }
+      })
+
       document.getElementById('loadingState').style.display = 'none'
       document.getElementById('formContent').style.display = 'block'
       updateProgress()
@@ -127,28 +181,69 @@
 
     function renderField(f) {
       const req = f.required ? '<span class="required">*</span>' : ''
-      const help = f.helpText ? `<span class="help">${f.helpText}</span>` : ''
+      const help = f.helpText ? `<span class="help">${esc(f.helpText)}</span>` : ''
       let input = ''
       const opts = f.options || []
 
       if (f.type === 'text' || f.type === 'email' || f.type === 'number' || f.type === 'date') {
-        input = `<input type="${f.type}" name="${f.id}" placeholder="${f.placeholder||''}" ${f.required?'required':''}>`
+        input = `<input type="${esc(f.type)}" name="${esc(f.id)}" placeholder="${esc(f.placeholder||'')}" ${f.required?'required':''}>`
       } else if (f.type === 'textarea') {
-        input = `<textarea name="${f.id}" placeholder="${f.placeholder||''}" ${f.required?'required':''}></textarea>`
+        input = `<textarea name="${esc(f.id)}" placeholder="${esc(f.placeholder||'')}" ${f.required?'required':''}></textarea>`
       } else if (f.type === 'select') {
-        input = `<select name="${f.id}" ${f.required?'required':''}><option value="">Select an option…</option>${opts.map(o=>`<option>${o}</option>`).join('')}</select>`
+        input = `<select name="${esc(f.id)}" ${f.required?'required':''}><option value="">Select an option…</option>${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`
       } else if (f.type === 'radio') {
-        input = `<div class="radio-group">${opts.map(o=>`<label><input type="radio" name="${f.id}" value="${o}" ${f.required?'required':''}> ${o}</label>`).join('')}</div>`
+        input = `<div class="radio-group">${opts.map(o=>`<label><input type="radio" name="${esc(f.id)}" value="${esc(o)}" ${f.required?'required':''}> ${esc(o)}</label>`).join('')}</div>`
       } else if (f.type === 'checkbox') {
-        input = `<div class="checkbox-group">${opts.map(o=>`<label><input type="checkbox" name="${f.id}" value="${o}"> ${o}</label>`).join('')}</div>`
+        input = `<div class="checkbox-group">${opts.map(o=>`<label><input type="checkbox" name="${esc(f.id)}" value="${esc(o)}"> ${esc(o)}</label>`).join('')}</div>`
       } else if (f.type === 'rating') {
         const max = (f.validation && f.validation.maxStars) || 5
-        const stars = Array.from({length:max},(_,i)=>`<button type="button" onclick="setRating('${f.id}',${i+1},${max})">★</button>`).join('')
-        input = `<div class="rating-group" id="rating-${f.id}">${stars}</div>`
+        const stars = Array.from({length:max},(_,i)=>`<button type="button" onclick="setRating('${esc(f.id)}',${i+1},${max})">★</button>`).join('')
+        input = `<div class="rating-group" id="rating-${esc(f.id)}">${stars}</div>`
       } else if (f.type === 'file') {
-        input = `<div class="file-upload" onclick="document.getElementById('file-${f.id}').click()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;color:var(--muted)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><p style="margin:0;font-size:14px;color:var(--muted)">Drop file or click to upload</p></div><input type="file" id="file-${f.id}" style="display:none">`
+        input = `<div class="file-upload" id="file-drop-${esc(f.id)}" onclick="document.getElementById('file-${esc(f.id)}').click()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;color:var(--muted)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><p style="margin:0;font-size:14px;color:var(--muted)">Drop image here or click to upload</p><span style="font-size:12px;color:var(--border)">JPG, PNG, WebP, GIF up to 10MB</span></div><input type="file" id="file-${esc(f.id)}" accept=".jpg,.jpeg,.png,.webp,.gif" style="display:none">`
       }
-      return `<div class="field-group"><label>${f.label}${req}</label>${help}${input}</div>`
+      return `<div class="field-group"><label>${esc(f.label)}${req}</label>${help}${input}</div>`
+    }
+
+    async function handleFileSelect(fieldId, e) {
+      const file = e.target.files[0]
+      if (!file) return
+      const dropZone = document.getElementById('file-drop-' + fieldId)
+      dropZone.innerHTML = '<p style="margin:0;font-size:14px;color:var(--muted)">Uploading…</p>'
+
+      const formDataObj = new FormData()
+      formDataObj.append('file', file)
+
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formDataObj })
+        const data = await res.json()
+        if (!res.ok) {
+          dropZone.innerHTML = `<p style="margin:0;font-size:13px;color:var(--danger)">${esc(data.error || 'Upload failed')}</p>`
+          return
+        }
+        fileUploads[fieldId] = data.fileUrl
+
+        let preview = ''
+        if (file.type.startsWith('image/')) {
+          const url = URL.createObjectURL(file)
+          preview = `<img src="${url}" style="max-height:120px;max-width:100%;border-radius:8px;object-fit:contain;margin-bottom:8px">`
+        } else {
+          preview = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);margin-bottom:8px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+        }
+        dropZone.innerHTML = `${preview}<p style="margin:0;font-size:14px">${esc(file.name)}</p><button type="button" onclick="removeFile('${esc(fieldId)}')" style="border:none;background:none;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;margin-top:4px">Remove</button>`
+      } catch {
+        dropZone.innerHTML = '<p style="margin:0;font-size:13px;color:var(--danger)">Upload failed</p>'
+      }
+      updateProgress()
+    }
+
+    function removeFile(fieldId) {
+      delete fileUploads[fieldId]
+      const input = document.getElementById('file-' + fieldId)
+      input.value = ''
+      const dropZone = document.getElementById('file-drop-' + fieldId)
+      dropZone.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;color:var(--muted)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><p style="margin:0;font-size:14px;color:var(--muted)">Drop image here or click to upload</p><span style="font-size:12px;color:var(--border)">JPG, PNG, WebP, GIF up to 10MB</span>'
+      updateProgress()
     }
 
     function setRating(fieldId, value, max) {
@@ -167,7 +262,7 @@
         if (f.type === 'radio') { if (form.querySelector(`input[name="${f.id}"]:checked`)) filled++ }
         else if (f.type === 'checkbox') { if (form.querySelector(`input[name="${f.id}"]:checked`)) filled++ }
         else if (f.type === 'rating') { if (ratings[f.id]) filled++ }
-        else if (f.type === 'file') { if (document.getElementById('file-' + f.id)?.files?.length) filled++ }
+        else if (f.type === 'file') { if (fileUploads[f.id]) filled++ }
         else { const el = form.querySelector(`[name="${f.id}"]`); if (el && el.value.trim()) filled++ }
       })
       const pct = fields.length ? Math.round(filled / fields.length * 100) : 0
@@ -188,6 +283,8 @@
           value = el ? el.value : null
         } else if (f.type === 'rating') {
           value = ratings[f.id] || null
+        } else if (f.type === 'file') {
+          value = fileUploads[f.id] || null
         } else {
           const el = form.querySelector(`[name="${f.id}"]`)
           value = el ? el.value : null
@@ -213,7 +310,11 @@
     function clearForm() {
       document.getElementById('formFields').reset()
       ratings = {}
+      fileUploads = {}
       document.querySelectorAll('.rating-group button').forEach(b => b.classList.remove('active'))
+      document.querySelectorAll('.file-upload').forEach(el => {
+        el.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;color:var(--muted)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><p style="margin:0;font-size:14px;color:var(--muted)">Drop image here or click to upload</p><span style="font-size:12px;color:var(--border)">JPG, PNG, WebP, GIF up to 10MB</span>'
+      })
       updateProgress()
     }
 
