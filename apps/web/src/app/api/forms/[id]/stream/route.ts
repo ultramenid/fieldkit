@@ -27,8 +27,21 @@ export async function GET(
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
 
-      // Send initial ping
-      send({ type: 'connected' })
+      // Send current responses immediately on connect
+      const initialResponses = await db.response.findMany({
+        where: { formId: params.id },
+        orderBy: { submittedAt: 'desc' },
+      })
+      send({
+        type: 'update',
+        responses: initialResponses.map((r) => ({
+          id: r.id,
+          submissionId: r.submissionId,
+          source: r.source,
+          submittedAt: r.submittedAt.toISOString(),
+          data: r.data,
+        })),
+      })
 
       const interval = setInterval(async () => {
         try {
