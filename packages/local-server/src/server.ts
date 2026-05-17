@@ -1,7 +1,18 @@
 import express from 'express'
 import path from 'path'
+import os from 'os'
 import { db, initDb } from './db'
 import type { FormConfig } from '@fieldkit/form-schema'
+
+function getLanIp(): string {
+  const interfaces = os.networkInterfaces()
+  for (const iface of Object.values(interfaces)) {
+    for (const addr of iface ?? []) {
+      if (addr.family === 'IPv4' && !addr.internal) return addr.address
+    }
+  }
+  return 'localhost'
+}
 
 export function createServer(dataDir: string, port: number) {
   initDb(dataDir)
@@ -14,7 +25,15 @@ export function createServer(dataDir: string, port: number) {
 
   app.get('/api/status', (_req, res) => {
     const stats = db.getStats()
-    res.json({ status: 'running', port, ...stats })
+    const lanIp = getLanIp()
+    res.json({
+      status: 'running',
+      port,
+      lanIp,
+      localUrl: `http://localhost:${port}`,
+      lanUrl: `http://${lanIp}:${port}`,
+      ...stats,
+    })
   })
 
   app.get('/api/forms', (_req, res) => {

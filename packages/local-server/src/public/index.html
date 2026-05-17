@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FieldKit · Local Server</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #ffffff; --surface: #fafafa; --fg: #000000;
@@ -131,7 +132,16 @@
       </div>
       <div class="network-row">
         <span class="label">LAN URL</span>
-        <span class="value" id="lanUrl">—</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="value" id="lanUrl">—</span>
+          <button class="copy-btn" onclick="copyText(document.getElementById('lanUrl').textContent, this)" style="font-size:11px;">Copy</button>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+        <div>
+          <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">Scan to open admin on another device</p>
+          <canvas id="qrAdmin" style="border-radius:8px;border:1px solid var(--border);"></canvas>
+        </div>
       </div>
     </div>
 
@@ -194,8 +204,14 @@
       document.getElementById('portValue').textContent = ':' + data.port
       document.getElementById('formCount').textContent = data.formCount
       document.getElementById('pendingSync').textContent = data.pendingSync
-      document.getElementById('localUrl').textContent = `http://localhost:${data.port}`
-      document.getElementById('lanUrl').textContent = `http://<your-ip>:${data.port}`
+      document.getElementById('localUrl').textContent = data.localUrl
+      document.getElementById('lanUrl').textContent = data.lanUrl
+
+      // Generate QR code for LAN admin URL
+      QRCode.toCanvas(document.getElementById('qrAdmin'), data.lanUrl, {
+        width: 140, margin: 2,
+        color: { dark: '#000000', light: '#ffffff' }
+      })
     }
 
     async function loadForms() {
@@ -216,18 +232,22 @@
             </div>
             <div class="form-info">
               <h4>${f.title}</h4>
-              <p>v${f.version} · ${(f.schema.fields || []).length} fields · Imported ${new Date(f.imported_at).toLocaleDateString()}</p>
+              <p>v${f.version} · ${(f.schema.fields || []).length} fields · Imported ${new Date(f.importedAt).toLocaleDateString()}</p>
             </div>
           </div>
           <div class="form-stats">
             <div class="stat">
-              <div class="stat-num">${f.response_count}</div>
+              <div class="stat-num">${f.responseCount}</div>
               <div class="stat-label">Responses</div>
             </div>
             <div class="stat">
-              <div class="stat-num">${f.pending_sync}</div>
+              <div class="stat-num">${f.pendingSync}</div>
               <div class="stat-label">Pending sync</div>
             </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <canvas id="qr-${f.id}" style="border-radius:6px;border:1px solid var(--border);"></canvas>
+            <span style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">Scan to open form</span>
           </div>
           <div class="form-actions">
             <a href="/form/${f.id}" target="_blank" class="btn btn-ghost">Open form</a>
@@ -236,6 +256,14 @@
           </div>
         </div>
       `).join('')
+
+      // Generate QR codes for each form after DOM update
+      forms.forEach(f => {
+        const lanBase = document.getElementById('lanUrl')?.textContent?.replace(/\/+$/, '') || window.location.origin
+        const formUrl = `${lanBase}/form/${f.id}`
+        const canvas = document.getElementById('qr-' + f.id)
+        if (canvas) QRCode.toCanvas(canvas, formUrl, { width: 80, margin: 1, color: { dark: '#000000', light: '#ffffff' } })
+      })
     }
 
     async function handleImport(input) {
