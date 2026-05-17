@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { DEV_USER_ID } from '@/lib/dev-auth'
+import { auth } from '@/lib/auth'
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: DEV_USER_ID },
+    where: { id: params.id, userId: session.user.id },
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(form)
@@ -17,11 +20,14 @@ export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json()
   const { title, description, fields, settings, published } = body
 
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: DEV_USER_ID },
+    where: { id: params.id, userId: session.user.id },
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 

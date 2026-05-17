@@ -1,8 +1,11 @@
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { DEV_USER_ID } from '@/lib/dev-auth'
+import { auth } from '@/lib/auth'
 
 export default async function NewFormPage() {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/auth/signin')
+
   const form = await db.form.create({
     data: {
       title: 'Untitled form',
@@ -15,7 +18,7 @@ export default async function NewFormPage() {
           allowMultipleSubmissions: false,
         },
       },
-      userId: DEV_USER_ID,
+      userId: session.user.id,
     },
   })
   redirect(`/forms/${form.id}`)

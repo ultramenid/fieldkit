@@ -1,5 +1,6 @@
+import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { DEV_USER_ID } from '@/lib/dev-auth'
+import { auth } from '@/lib/auth'
 import { DashboardNav } from '@/components/dashboard/dashboard-nav'
 import { FormsGrid } from '@/components/dashboard/forms-grid'
 
@@ -8,8 +9,19 @@ export const metadata = {
 }
 
 export default async function DashboardPage() {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/auth/signin')
+
+  const user = session.user
+  const initials = (user.name ?? user.email ?? 'U')
+    .split(' ')
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
   const forms = await db.form.findMany({
-    where: { userId: DEV_USER_ID },
+    where: { userId: user.id },
     orderBy: { updatedAt: 'desc' },
     include: { _count: { select: { responses: true } } },
   })
@@ -28,9 +40,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-dvh bg-[var(--background)]">
-      <DashboardNav userInitials="U" />
+      <DashboardNav userInitials={initials} />
       <main className="mx-auto max-w-[960px] px-6">
-        {/* Stats */}
         <div className="mb-8 grid grid-cols-3 gap-4 pt-10 max-sm:grid-cols-1">
           <div className="rounded-[12px] border border-[var(--border)] px-6 py-5">
             <div className="font-mono text-[28px] font-medium tabular-nums text-[var(--foreground)]">
@@ -51,7 +62,6 @@ export default async function DashboardPage() {
             <div className="mt-1 text-[13px] text-[var(--muted)]">Published forms</div>
           </div>
         </div>
-
         <FormsGrid forms={formData} />
       </main>
     </div>

@@ -1,17 +1,19 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { DEV_USER_ID } from '@/lib/dev-auth'
+import { auth } from '@/lib/auth'
 import { BuilderShell } from '@/components/builder/builder-shell'
-import type { BuilderState } from '@/lib/builder-types'
-import type { BuilderField } from '@/lib/builder-types'
+import type { BuilderState, BuilderField } from '@/lib/builder-types'
 
 export default async function FormBuilderPage({
   params,
 }: {
   params: { id: string }
 }) {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/auth/signin')
+
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: DEV_USER_ID },
+    where: { id: params.id, userId: session.user.id },
   })
 
   if (!form) notFound()
