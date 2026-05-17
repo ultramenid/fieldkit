@@ -166,20 +166,21 @@
       setTimeout(() => btn.textContent = 'Copy', 1500)
     }
 
+    let currentLanUrl = window.location.origin
+
     async function loadStatus() {
       const res = await fetch('/api/status')
       const data = await res.json()
       document.getElementById('portValue').textContent = ':' + data.port
       document.getElementById('formCount').textContent = data.formCount
       document.getElementById('pendingSync').textContent = data.pendingSync
-      document.getElementById('lanUrl').textContent = data.lanUrl
+      currentLanUrl = data.lanUrl
     }
 
     async function loadForms() {
       const res = await fetch('/api/forms')
       const forms = await res.json()
       const list = document.getElementById('formList')
-      const lanUrl = document.getElementById('lanUrl').textContent || window.location.origin
 
       if (!forms.length) {
         list.innerHTML = '<div class="empty-state">No forms imported yet. Use the import section below.</div>'
@@ -187,7 +188,7 @@
       }
 
       list.innerHTML = forms.map(f => {
-        const formUrl = `${lanUrl}/form/${f.id}`
+        const formUrl = `${currentLanUrl}/form/${f.id}`
         return `
         <div class="form-item" style="flex-direction:column;align-items:stretch;gap:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
@@ -213,7 +214,7 @@
           <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--surface);border-radius:var(--radius-container);flex-wrap:wrap;">
             <canvas id="qr-${f.id}" style="border-radius:6px;flex-shrink:0;"></canvas>
             <div style="flex:1;min-width:0;">
-              <p style="font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);margin:0 0 6px;">Form URL (share with respondents)</p>
+              <p style="font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);margin:0 0 6px;">Form URL — share with respondents on the same network</p>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <code style="font-family:var(--font-mono);font-size:13px;word-break:break-all;">${formUrl}</code>
                 <button class="copy-btn" onclick="copyText('${formUrl}', this)">Copy</button>
@@ -225,7 +226,7 @@
 
       // Generate QR codes after DOM update
       forms.forEach(f => {
-        const formUrl = `${lanUrl}/form/${f.id}`
+        const formUrl = `${currentLanUrl}/form/${f.id}`
         const canvas = document.getElementById('qr-' + f.id)
         if (canvas) QRCode.toCanvas(canvas, formUrl, { width: 100, margin: 1, color: { dark: '#000000', light: '#ffffff' } })
       })
@@ -281,9 +282,8 @@
       handleImport(input)
     })
 
-    loadStatus()
-    loadForms()
-    setInterval(() => { loadStatus(); loadForms() }, 10000)
+    loadStatus().then(() => loadForms())
+    setInterval(() => { loadStatus().then(() => loadForms()) }, 10000)
   </script>
 </body>
 </html>
