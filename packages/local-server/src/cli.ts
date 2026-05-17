@@ -5,7 +5,7 @@ import os from 'os'
 
 const args = process.argv.slice(2)
 const portArg = args.find((a) => a.startsWith('--port='))
-const port = portArg ? parseInt(portArg.split('=')[1]) : 3001
+const port = portArg ? parseInt(portArg.split('=')[1]) : 3002
 const dataDir = path.join(os.homedir(), '.fieldkit', 'data')
 
 const app = createServer(dataDir, port)
