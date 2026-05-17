@@ -123,7 +123,6 @@ function FormCard({ form }: { form: FormData }) {
             className="rounded-full border-none bg-transparent px-2.5 py-1.5 text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
           >
             Local
-            Export
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setShowDelete(true) }}
