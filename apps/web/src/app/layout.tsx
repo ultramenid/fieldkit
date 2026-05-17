@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={nunito.variable}>
       <body>
-        <NextTopLoader color="#8b4513" showSpinner={false} />
+        <NextTopLoader color="#000000" height={2} showSpinner={false} shadow={false} />
         <Providers>{children}</Providers>
       </body>
     </html>
