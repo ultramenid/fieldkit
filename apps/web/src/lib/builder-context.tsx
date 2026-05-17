@@ -55,6 +55,8 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
       return { ...state, isDirty: false, isSaving: false }
     case 'SET_PUBLISHED':
       return { ...state, isPublished: action.isPublished, isDirty: true }
+    case 'SET_CLOSED':
+      return { ...state, isClosed: action.isClosed, isDirty: true }
     default:
       return state
   }
@@ -96,6 +98,7 @@ export function BuilderProvider({
             allowMultipleSubmissions: false,
           },
           published: s.isPublished,
+          closed: s.isClosed,
         }),
       })
       dispatch({ type: 'MARK_CLEAN' })

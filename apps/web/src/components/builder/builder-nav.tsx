@@ -10,11 +10,15 @@ export function BuilderNav() {
     dispatch({ type: 'SET_PUBLISHED', isPublished: true })
   }
 
+  function handleToggleClosed() {
+    dispatch({ type: 'SET_CLOSED', isClosed: !state.isClosed })
+  }
+
   return (
     <header className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--background)] px-6 py-[14px]">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <Link
-          href="/"
+          href="/dashboard"
           className="flex-shrink-0 font-sans text-[22px] font-medium text-[var(--foreground)] no-underline"
         >
           FieldKit
@@ -32,6 +36,12 @@ export function BuilderNav() {
           <span className="text-[12px] text-[var(--muted)]">Saving…</span>
         )}
         <Link
+          href={`/forms/${state.formId}/responses`}
+          className="inline-flex items-center gap-1.5 rounded-full border-none bg-transparent px-2.5 py-1.5 text-[13px] font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+        >
+          Responses
+        </Link>
+        <Link
           href={`/forms/${state.formId}/preview`}
           target="_blank"
           className="inline-flex items-center gap-1.5 rounded-full border-none bg-transparent px-2.5 py-1.5 text-[13px] font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
@@ -42,9 +52,19 @@ export function BuilderNav() {
           </svg>
           Preview
         </Link>
-        <button className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-[13px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--foreground)]">
-          Save draft
-        </button>
+        {state.isPublished && (
+          <button
+            onClick={handleToggleClosed}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-medium transition-colors ${
+              state.isClosed
+                ? 'border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]'
+                : 'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--foreground)]'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${state.isClosed ? 'bg-[var(--muted)]' : 'bg-[#22c55e]'}`} />
+            {state.isClosed ? 'Reopen form' : 'Close form'}
+          </button>
+        )}
         <button
           onClick={handlePublish}
           className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-medium transition-colors ${
