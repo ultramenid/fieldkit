@@ -1,6 +1,14 @@
 import Link from 'next/link'
+import { UserMenu } from './user-menu'
 
-export function DashboardNav({ userInitials }: { userInitials: string }) {
+interface DashboardNavProps {
+  userInitials: string
+  userImage?: string | null
+  userName?: string | null
+  userEmail?: string | null
+}
+
+export function DashboardNav({ userInitials, userImage, userName, userEmail }: DashboardNavProps) {
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--background)]">
       <div className="mx-auto flex max-w-[960px] items-center justify-between px-6 py-[14px]">
@@ -14,9 +22,12 @@ export function DashboardNav({ userInitials }: { userInitials: string }) {
           <Link href="/docs" className="text-[14px] text-[var(--muted)] no-underline hover:text-[var(--foreground)]">
             Docs
           </Link>
-          <div className="grid h-8 w-8 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[13px] font-medium text-[var(--muted)]">
-            {userInitials}
-          </div>
+          <UserMenu
+            userInitials={userInitials}
+            userImage={userImage}
+            userName={userName}
+            userEmail={userEmail}
+          />
         </nav>
       </div>
     </header>

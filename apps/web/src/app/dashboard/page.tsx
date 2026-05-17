@@ -41,7 +41,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-dvh bg-[var(--background)]">
-      <DashboardNav userInitials={initials} />
+      <DashboardNav
+        userInitials={initials}
+        userImage={user.image}
+        userName={user.name}
+        userEmail={user.email}
+      />
       <main className="mx-auto max-w-[960px] px-6">
         <div className="mb-8 grid grid-cols-3 gap-4 pt-10 max-sm:grid-cols-1">
           <div className="rounded-[12px] border border-[var(--border)] px-6 py-5">

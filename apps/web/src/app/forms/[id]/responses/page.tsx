@@ -45,7 +45,12 @@ export default async function ResponsesPage({
 
   return (
     <div className="min-h-dvh bg-[var(--background)]">
-      <DashboardNav userInitials={initials} />
+      <DashboardNav
+        userInitials={initials}
+        userImage={session.user.image}
+        userName={session.user.name}
+        userEmail={session.user.email}
+      />
       <main className="mx-auto max-w-[960px] px-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 pt-6 text-[13px] text-[var(--muted)]">
