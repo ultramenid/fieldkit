@@ -76,7 +76,7 @@ model Response {
   id          String   @id @default(cuid())
   formId      String
   source      String   @default("online")
-  answers     Json
+  data        Json
   submittedAt DateTime @default(now())
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
