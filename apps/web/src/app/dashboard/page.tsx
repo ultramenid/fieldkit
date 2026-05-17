@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { DashboardNav } from '@/components/dashboard/dashboard-nav'
 import { FormsGrid } from '@/components/dashboard/forms-grid'
+import { DashboardStats } from '@/components/dashboard/dashboard-stats'
 
 export const metadata = {
   title: 'Dashboard · FieldKit',
@@ -48,26 +49,11 @@ export default async function DashboardPage() {
         userEmail={user.email}
       />
       <main className="mx-auto max-w-[960px] px-6">
-        <div className="mb-8 grid grid-cols-3 gap-4 pt-10 max-sm:grid-cols-1">
-          <div className="rounded-[12px] border border-[var(--border)] px-6 py-5">
-            <div className="font-mono text-[28px] font-medium tabular-nums text-[var(--foreground)]">
-              {forms.length}
-            </div>
-            <div className="mt-1 text-[13px] text-[var(--muted)]">Total forms</div>
-          </div>
-          <div className="rounded-[12px] border border-[var(--border)] px-6 py-5">
-            <div className="font-mono text-[28px] font-medium tabular-nums text-[var(--foreground)]">
-              {totalResponses}
-            </div>
-            <div className="mt-1 text-[13px] text-[var(--muted)]">Total responses</div>
-          </div>
-          <div className="rounded-[12px] border border-[var(--border)] px-6 py-5">
-            <div className="font-mono text-[28px] font-medium tabular-nums text-[var(--foreground)]">
-              {publishedCount}
-            </div>
-            <div className="mt-1 text-[13px] text-[var(--muted)]">Published forms</div>
-          </div>
-        </div>
+        <DashboardStats
+          initialTotalForms={forms.length}
+          initialTotalResponses={totalResponses}
+          initialPublishedCount={publishedCount}
+        />
         <FormsGrid forms={formData} />
       </main>
     </div>
