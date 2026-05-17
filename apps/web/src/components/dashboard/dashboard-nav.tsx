@@ -16,7 +16,7 @@ export function DashboardNav({ userInitials, userImage, userName, userEmail }: D
           FieldKit
         </Link>
         <nav className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-[14px] font-medium text-[var(--foreground)] no-underline">
+          <Link href="/dashboard" className="text-[14px] text-[var(--muted)] no-underline hover:text-[var(--foreground)]">
             Forms
           </Link>
           <Link href="/docs" className="text-[14px] text-[var(--muted)] no-underline hover:text-[var(--foreground)]">

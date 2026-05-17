@@ -64,7 +64,7 @@ function FormCard({ form }: { form: FormData }) {
       >
         <div className="flex items-start justify-between gap-3">
           <h3 className="m-0 text-[16px] font-medium text-[var(--foreground)]">{form.title}</h3>
-          <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 font-mono text-[12px] ${
+          <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-[10px] py-[3px] font-mono text-[12px] ${
             !form.published
               ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]'
               : form.closed
@@ -172,7 +172,7 @@ export function FormsGrid({ forms }: { forms: FormData[] }) {
             placeholder="Search forms…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-[220px] rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-[14px] text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none max-sm:w-full"
+            className="w-[220px] rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-[9px] text-[14px] text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none max-sm:w-full"
           />
           <button
             onClick={() => router.push('/forms/new')}

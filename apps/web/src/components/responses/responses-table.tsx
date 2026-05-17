@@ -189,13 +189,13 @@ export function ResponsesTable({
             placeholder="Search responses…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-[200px] rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-1.5 text-[13px] text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
+            className="w-[200px] rounded-full border border-[var(--border)] bg-[var(--background)] px-[14px] py-[7px] text-[13px] text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
           />
           {(['all', 'online', 'local'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setSourceFilter(f)}
-              className={`rounded-full border px-3 py-1.5 font-mono text-[12px] transition-colors ${
+              className={`rounded-full border px-3 py-[6px] font-mono text-[12px] transition-colors ${
                 sourceFilter === f
                   ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]'
                   : 'border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]'
@@ -220,14 +220,14 @@ export function ResponsesTable({
           <table className="w-full border-collapse text-[13px]" style={{ tableLayout: 'fixed' }}>
             <thead>
               <tr>
-                <th className="w-[4%] border-b border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)]">#</th>
+                <th className="w-[4%] border-b border-[var(--border)] bg-[var(--surface)] px-[14px] py-[10px] text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)]">#</th>
                 {fields.map((f) => (
-                  <th key={f.id} className="border-b border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)] overflow-hidden text-ellipsis whitespace-nowrap">
+                  <th key={f.id} className="border-b border-[var(--border)] bg-[var(--surface)] px-[14px] py-[10px] text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)] overflow-hidden text-ellipsis whitespace-nowrap">
                     {f.label}
                   </th>
                 ))}
-                <th className="w-[8%] border-b border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)]">Source</th>
-                <th className="w-[10%] border-b border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)]">Submitted</th>
+                <th className="w-[8%] border-b border-[var(--border)] bg-[var(--surface)] px-[14px] py-[10px] text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)]">Source</th>
+                <th className="w-[10%] border-b border-[var(--border)] bg-[var(--surface)] px-[14px] py-[10px] text-left font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)]">Submitted</th>
               </tr>
             </thead>
             <tbody>
@@ -235,19 +235,19 @@ export function ResponsesTable({
                 const answers = (r.data as { answers?: { fieldId: string; value: unknown }[] })?.answers ?? []
                 return (
                   <tr key={r.id} className="hover:bg-[var(--surface)]">
-                    <td className="border-b border-[var(--border)] px-3.5 py-3 font-mono text-[12px] tabular-nums text-[var(--muted)]">
+                    <td className="border-b border-[var(--border)] px-[14px] py-[12px] font-mono text-[12px] tabular-nums text-[var(--muted)]">
                       {filtered.length - i}
                     </td>
                     {fields.map((f) => {
                       const answer = answers.find((a) => a.fieldId === f.id)
                       const val = answer?.value
                       return (
-                        <td key={f.id} className="overflow-hidden text-ellipsis whitespace-nowrap border-b border-[var(--border)] px-3.5 py-3 text-[var(--foreground)]">
+                        <td key={f.id} className="overflow-hidden text-ellipsis whitespace-nowrap border-b border-[var(--border)] px-[14px] py-[12px] text-[var(--foreground)]">
                           {Array.isArray(val) ? val.join(', ') : String(val ?? '—')}
                         </td>
                       )
                     })}
-                    <td className="border-b border-[var(--border)] px-3.5 py-3">
+                    <td className="border-b border-[var(--border)] px-[14px] py-[12px]">
                       <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[11px] ${
                         r.source === 'online'
                           ? 'border-[color-mix(in_oklch,#16a34a_30%,transparent)] text-[#16a34a]'
@@ -256,7 +256,7 @@ export function ResponsesTable({
                         {r.source === 'online' ? 'Online' : 'Local'}
                       </span>
                     </td>
-                    <td className="border-b border-[var(--border)] px-3.5 py-3 font-mono text-[12px] tabular-nums text-[var(--muted)]">
+                    <td className="border-b border-[var(--border)] px-[14px] py-[12px] font-mono text-[12px] tabular-nums text-[var(--muted)]">
                       {new Date(r.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                   </tr>
