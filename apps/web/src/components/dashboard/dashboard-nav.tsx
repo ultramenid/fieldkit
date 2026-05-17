@@ -1,15 +1,9 @@
 import Link from 'next/link'
 
-export function DashboardNav({
-  userInitials,
-  maxWidth = '960px',
-}: {
-  userInitials: string
-  maxWidth?: string
-}) {
+export function DashboardNav({ userInitials }: { userInitials: string }) {
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--background)]">
-      <div className={`mx-auto flex items-center justify-between px-6 py-[14px]`} style={{ maxWidth }}>
+      <div className="mx-auto flex max-w-[960px] items-center justify-between px-6 py-[14px]">
         <Link href="/" className="font-sans text-[20px] font-medium text-[var(--foreground)] no-underline">
           FieldKit
         </Link>

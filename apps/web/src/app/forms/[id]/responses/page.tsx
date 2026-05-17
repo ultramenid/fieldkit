@@ -45,8 +45,8 @@ export default async function ResponsesPage({
 
   return (
     <div className="min-h-dvh bg-[var(--background)]">
-      <DashboardNav userInitials={initials} maxWidth="1080px" />
-      <main className="mx-auto max-w-[1080px] px-6">
+      <DashboardNav userInitials={initials} />
+      <main className="mx-auto max-w-[960px] px-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 pt-6 text-[13px] text-[var(--muted)]">
           <Link href="/dashboard" className="hover:text-[var(--foreground)] no-underline text-[var(--muted)]">
