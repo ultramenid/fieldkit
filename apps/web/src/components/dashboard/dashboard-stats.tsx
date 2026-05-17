@@ -34,27 +34,30 @@ export function DashboardStats({
   const [forms, setForms] = useState(initialForms)
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const res = await fetch('/api/dashboard/stats')
-      if (res.ok) {
-        const data = await res.json()
+    const es = new EventSource('/api/dashboard/stream')
+
+    es.onmessage = (e) => {
+      const msg = JSON.parse(e.data)
+      if (msg.type === 'update') {
         setStats({
-          totalForms: data.totalForms,
-          totalResponses: data.totalResponses,
-          publishedCount: data.publishedCount,
+          totalForms: msg.totalForms,
+          totalResponses: msg.totalResponses,
+          publishedCount: msg.publishedCount,
         })
-        // Update response counts on form cards
-        if (data.formResponseCounts) {
+        if (msg.formResponseCounts) {
           setForms((prev) =>
             prev.map((f) => ({
               ...f,
-              responseCount: data.formResponseCounts[f.id] ?? f.responseCount,
+              responseCount: msg.formResponseCounts[f.id] ?? f.responseCount,
             }))
           )
         }
       }
-    }, 5000)
-    return () => clearInterval(interval)
+    }
+
+    es.onerror = () => es.close()
+
+    return () => es.close()
   }, [])
 
   return (
