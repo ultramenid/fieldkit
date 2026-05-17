@@ -16,7 +16,7 @@ export default async function FormBuilderPage({
 
   if (!form) notFound()
 
-  const schema = form.schema as {
+  const schema = form.schema as unknown as {
     fields: BuilderField[]
     settings: Record<string, unknown>
   }
