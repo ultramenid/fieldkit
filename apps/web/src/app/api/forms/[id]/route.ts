@@ -24,19 +24,28 @@ export async function PATCH(
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { title, description, fields, settings, published, closed } = body
+  const { title, description, fields, settings, published, closed, allowMultipleSubmissions } = body
 
   const form = await db.form.findFirst({
     where: { id: params.id, userId: session.user.id },
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  const existingSchema = form.schema as { fields?: unknown[]; settings?: Record<string, unknown> }
+
   await db.form.update({
     where: { id: params.id },
     data: {
       title: title ?? form.title,
       description: description ?? form.description,
-      schema: { fields: fields ?? [], settings: settings ?? {} },
+      schema: {
+        fields: fields ?? existingSchema.fields ?? [],
+        settings: {
+          ...(existingSchema.settings ?? {}),
+          ...(settings ?? {}),
+          ...(allowMultipleSubmissions !== undefined ? { allowMultipleSubmissions } : {}),
+        },
+      },
       ...(published !== undefined ? { published } : {}),
       ...(closed !== undefined ? { closed } : {}),
     },

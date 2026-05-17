@@ -12,6 +12,7 @@ interface FormViewProps {
   confirmationMessage?: string
   isPreview?: boolean
   isClosed?: boolean
+  allowMultipleSubmissions?: boolean
 }
 
 function FieldInput({ field, value, onChange }: {
@@ -149,9 +150,14 @@ export function FormView({
   confirmationMessage = 'Thank you for your response.',
   isPreview = false,
   isClosed = false,
+  allowMultipleSubmissions = false,
 }: FormViewProps) {
+  const storageKey = `fieldkit_submitted_${formId}`
+  const alreadySubmitted = !isPreview && !allowMultipleSubmissions &&
+    typeof window !== 'undefined' && !!localStorage.getItem(storageKey)
+
   const [values, setValues] = useState<Record<string, string | string[] | number | null>>({})
-  const [submitted, setSubmitted] = useState(false)
+  const [submitted, setSubmitted] = useState(alreadySubmitted)
   const [submitting, setSubmitting] = useState(false)
 
   const filledCount = fields.filter((f) => {
@@ -172,6 +178,9 @@ export function FormView({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ answers }),
     })
+    if (!allowMultipleSubmissions) {
+      localStorage.setItem(storageKey, '1')
+    }
     setSubmitting(false)
     setSubmitted(true)
   }
@@ -194,7 +203,15 @@ export function FormView({
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
         <h2 className="mb-2 font-sans text-[24px] font-medium text-[var(--fg)]">Response submitted</h2>
-        <p className="text-[15px] text-[var(--muted)]">{confirmationMessage}</p>
+        <p className="mb-6 text-[15px] text-[var(--muted)]">{confirmationMessage}</p>
+        {allowMultipleSubmissions && !isPreview && (
+          <button
+            onClick={() => { setValues({}); setSubmitted(false) }}
+            className="rounded-full border border-[var(--fg)] bg-[var(--fg)] px-6 py-2.5 text-[14px] font-medium text-[var(--bg)] transition-opacity hover:opacity-80"
+          >
+            Submit another response
+          </button>
+        )}
       </div>
     )
   }

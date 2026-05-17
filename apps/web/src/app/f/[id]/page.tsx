@@ -15,10 +15,11 @@ export default async function PublicFormPage({
 
   const schema = form.schema as unknown as {
     fields: BuilderField[]
-    settings: { submitButtonText?: string; confirmationMessage?: string }
+    settings: { submitButtonText?: string; confirmationMessage?: string; allowMultipleSubmissions?: boolean }
   }
 
   const isClosed = (form as { closed?: boolean }).closed ?? false
+  const allowMultipleSubmissions = schema.settings?.allowMultipleSubmissions ?? false
 
   return (
     <div className="min-h-dvh bg-[var(--surface)]">
@@ -40,6 +41,7 @@ export default async function PublicFormPage({
           submitButtonText={schema.settings?.submitButtonText}
           confirmationMessage={schema.settings?.confirmationMessage}
           isClosed={isClosed}
+          allowMultipleSubmissions={allowMultipleSubmissions}
         />
       </main>
       <footer className="py-6 text-center text-[12px] text-[var(--muted)]">

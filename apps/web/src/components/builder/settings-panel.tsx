@@ -31,10 +31,20 @@ export function SettingsPanel() {
   if (!field) {
     return (
       <aside className="overflow-y-auto border-l border-[var(--border)] p-5">
-        <h3 className="mb-3 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
-          Field settings
+        <h3 className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+          Form settings
         </h3>
-        <div className="py-10 text-center text-[13px] text-[var(--muted)]">
+        <div className="mb-4 flex items-center justify-between py-2">
+          <div>
+            <span className="text-[13px] text-[var(--foreground)]">Multiple submissions</span>
+            <p className="mt-0.5 text-[11px] text-[var(--muted)]">Allow respondents to submit more than once</p>
+          </div>
+          <Toggle
+            checked={state.allowMultipleSubmissions}
+            onChange={(val) => dispatch({ type: 'SET_ALLOW_MULTIPLE', allowMultipleSubmissions: val })}
+          />
+        </div>
+        <div className="mt-6 border-t border-[var(--border)] pt-4 text-center text-[13px] text-[var(--muted)]">
           Select a field to edit its settings
         </div>
       </aside>

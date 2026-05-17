@@ -33,6 +33,7 @@ export default async function FormBuilderPage({
     isSaving: false,
     isPublished: (form as { published?: boolean }).published ?? false,
     isClosed: (form as { closed?: boolean }).closed ?? false,
+    allowMultipleSubmissions: (schema.settings?.allowMultipleSubmissions as boolean) ?? false,
   }
 
   return <BuilderShell initialState={initialState} />
