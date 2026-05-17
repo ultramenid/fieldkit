@@ -110,7 +110,7 @@ function FormCard({ form }: { form: FormData }) {
           >
             Responses
           </Link>
-          {form.published && (
+          {form.published && !form.closed && (
             <button
               onClick={() => setShowShare(true)}
               className="rounded-full border border-[var(--border)] px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--foreground)]"
@@ -122,6 +122,7 @@ function FormCard({ form }: { form: FormData }) {
             onClick={exportConfig}
             className="rounded-full border-none bg-transparent px-2.5 py-1.5 text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
           >
+            Local
             Export
           </button>
           <button

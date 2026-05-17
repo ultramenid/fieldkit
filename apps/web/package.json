@@ -14,9 +14,11 @@
     "@aws-sdk/s3-request-presigner": "3.600.0",
     "@fieldkit/form-schema": "*",
     "@prisma/client": "5.16.0",
+    "@types/qrcode": "^1.5.5",
     "next": "14.2.5",
     "next-auth": "5.0.0-beta.19",
     "nextjs-toploader": "^1.6.12",
+    "qrcode": "^1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
