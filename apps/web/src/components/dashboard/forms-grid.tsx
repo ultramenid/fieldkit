@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShareModal } from './share-modal'
+import { DeletePrompt } from './delete-prompt'
 
 interface FormData {
   id: string
@@ -16,14 +17,15 @@ interface FormData {
 
 function FormCard({ form }: { form: FormData }) {
   const [showShare, setShowShare] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const router = useRouter()
 
-  async function handleDelete(e: React.MouseEvent) {
-    e.stopPropagation()
-    if (!confirm(`Delete "${form.title}"? This cannot be undone.`)) return
+  async function handleDelete() {
     setDeleting(true)
     await fetch(`/api/forms/${form.id}`, { method: 'DELETE' })
+    setDeleting(false)
+    setShowDelete(false)
     router.refresh()
   }
 
@@ -106,11 +108,11 @@ function FormCard({ form }: { form: FormData }) {
             Export
           </button>
           <button
-            onClick={handleDelete}
+            onClick={(e) => { e.stopPropagation(); setShowDelete(true) }}
             disabled={deleting}
             className="ml-auto rounded-full border-none bg-transparent px-2.5 py-1.5 text-[12px] text-[var(--muted)] transition-colors hover:text-[#dc2626] disabled:opacity-40"
           >
-            {deleting ? '…' : 'Delete'}
+            Delete
           </button>
         </div>
       </div>
@@ -119,6 +121,14 @@ function FormCard({ form }: { form: FormData }) {
           formId={form.id}
           formTitle={form.title}
           onClose={() => setShowShare(false)}
+        />
+      )}
+      {showDelete && (
+        <DeletePrompt
+          formTitle={form.title}
+          loading={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDelete(false)}
         />
       )}
     </>
