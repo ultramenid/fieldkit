@@ -5,7 +5,7 @@ const steps = [
   { label: 'Export config', variant: 'default' as const },
   { label: 'Import to local', variant: 'amber' as const },
   { label: 'Collect offline', variant: 'amber' as const },
-  { label: 'Sync responses', variant: 'green' as const },
+  { label: 'Sync back', variant: 'green' as const },
 ]
 
 const stepClass = {

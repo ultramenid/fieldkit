@@ -9,6 +9,9 @@
   --muted: #737373;
   --border: #e5e5e5;
   --accent: #8b4513;
+  --font-display: 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,14 +25,17 @@
   }
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
 body {
+  margin: 0;
   color: var(--foreground);
   background-color: var(--background);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
