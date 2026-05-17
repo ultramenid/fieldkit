@@ -28,3 +28,8 @@ Thumbs.db
 # logs
 *.log
 npm-debug.log*
+
+
+# agent
+.claude/
+.CLAUDE.MD
