@@ -47,10 +47,13 @@ export function Sidebar() {
     if (!scrollContainer) return
 
     function updateActive() {
-      const headings = scrollContainer!.querySelectorAll<HTMLElement>('h1[id], h2[id]')
-      let current = 'overview'
+      const headings = Array.from(
+        scrollContainer!.querySelectorAll<HTMLElement>('h1[id], h2[id]')
+      )
+      let current = headings[0]?.id ?? 'overview'
       for (const heading of headings) {
-        if (heading.offsetTop - scrollContainer!.scrollTop <= 100) {
+        const top = heading.getBoundingClientRect().top - scrollContainer!.getBoundingClientRect().top
+        if (top <= 80) {
           current = heading.id
         }
       }
@@ -62,11 +65,14 @@ export function Sidebar() {
     return () => scrollContainer.removeEventListener('scroll', updateActive)
   }, [])
 
-  function scrollTo(id: string) {
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
+    e.preventDefault()
     const scrollContainer = document.getElementById('docs-content-scroll')
     const target = document.getElementById(id)
     if (!scrollContainer || !target) return
-    scrollContainer.scrollTo({ top: target.offsetTop - 24, behavior: 'smooth' })
+    const offset = target.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top + scrollContainer.scrollTop - 24
+    scrollContainer.scrollTo({ top: offset, behavior: 'smooth' })
+    window.history.pushState(null, '', `#${id}`)
   }
 
   return (
@@ -79,16 +85,17 @@ export function Sidebar() {
           <ul className="m-0 list-none p-0">
             {group.links.map(({ label, id }) => (
               <li key={id}>
-                <button
-                  onClick={() => scrollTo(id)}
-                  className={`block w-full rounded-[8px] px-3 py-1.5 text-left text-[14px] transition-colors ${
+                <a
+                  href={`#${id}`}
+                  onClick={(e) => handleClick(e, id)}
+                  className={`block rounded-[8px] px-3 py-1.5 text-[14px] no-underline transition-colors ${
                     activeId === id
                       ? 'bg-[var(--surface)] font-medium text-[var(--foreground)]'
                       : 'text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--foreground)]'
                   }`}
                 >
                   {label}
-                </button>
+                </a>
               </li>
             ))}
           </ul>
