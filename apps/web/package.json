@@ -1,0 +1,31 @@
+{
+  "name": "@fieldkit/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fieldkit/form-schema": "*",
+    "@auth/prisma-adapter": "1.6.0",
+    "@aws-sdk/client-s3": "3.600.0",
+    "@prisma/client": "5.16.0",
+    "next": "14.2.5",
+    "next-auth": "5.0.0-beta.19",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "autoprefixer": "10.4.19",
+    "postcss": "8.4.39",
+    "prisma": "5.16.0",
+    "tailwindcss": "3.4.6",
+    "typescript": "5.5.3"
+  }
+}
