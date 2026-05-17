@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Responses · FieldKit Local Server</title>
+  <style>
+    :root {
+      --bg: #ffffff; --surface: #fafafa; --fg: #000000;
+      --muted: #737373; --border: #e5e5e5; --accent: #8b4513;
+      --success: #22c55e; --warning: #f59e0b; --danger: #dc2626;
+      --font-display: system-ui, -apple-system, sans-serif;
+      --font-body: ui-sans-serif, system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+      --radius: 9999px; --radius-container: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .topnav { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .topnav-inner { max-width: 960px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .logo { font-family: var(--font-display); font-size: 20px; font-weight: 500; text-decoration: none; color: var(--fg); }
+    .env-badge { font-family: var(--font-mono); font-size: 11px; padding: 3px 10px; border-radius: var(--radius); background: color-mix(in oklch, var(--warning) 12%, transparent); color: #b45309; border: 1px solid color-mix(in oklch, var(--warning) 25%, transparent); }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px 48px; }
+    .page-header { padding: 32px 0 24px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .page-header h1 { font-family: var(--font-display); font-size: 24px; font-weight: 500; margin: 0 0 4px; }
+    .page-header p { font-size: 14px; color: var(--muted); margin: 0; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: var(--radius); border: 1px solid transparent; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.15s, border-color 0.15s; }
+    .btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .btn-primary:hover { background: #262626; }
+    .btn-secondary { background: var(--bg); color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--muted); border: none; padding: 6px 10px; font-size: 13px; cursor: pointer; }
+    .btn-ghost:hover { color: var(--fg); }
+    .live-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--radius); background: color-mix(in oklch, var(--success) 12%, transparent); color: #16a34a; font-size: 12px; font-weight: 500; }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; margin-bottom: 0; }
+    .search-input { padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--radius); font: inherit; font-size: 13px; width: 200px; background: var(--bg); color: var(--fg); }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+    .table-wrap { overflow-x: auto; padding-bottom: 48px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+    thead th { background: var(--surface); padding: 10px 14px; text-align: left; font-weight: 500; font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    tbody tr:hover { background: var(--surface); }
+    .row-num { font-family: var(--font-mono); color: var(--muted); font-size: 12px; }
+    .timestamp { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+    .empty-state { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 14px; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); padding: 16px 0 0; }
+    .breadcrumb a { color: var(--muted); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--fg); }
+    .new-row { animation: highlight 3s ease-out; }
+    @keyframes highlight { 0%,10% { background: color-mix(in oklch, var(--success) 10%, transparent); } 100% { background: transparent; } }
+  </style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/" class="logo">FieldKit</a>
+        <span class="env-badge">Local Server</span>
+      </div>
+      <span class="live-badge"><span class="live-dot"></span>Live</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="breadcrumb">
+      <a href="/">Forms</a>
+      <span>/</span>
+      <span id="formTitle">Loading…</span>
+      <span>/</span>
+      <span>Responses</span>
+    </div>
+
+    <div class="page-header">
+      <div>
+        <h1 id="pageTitle">Responses</h1>
+        <p id="pageSubtitle">Loading…</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a id="exportBtn" href="#" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export data
+        </a>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input type="search" class="search-input" placeholder="Search responses…" oninput="filterTable(this.value)" />
+      <span style="font-size:12px;color:var(--muted);font-family:var(--font-mono);" id="liveStatus">Connecting…</span>
+    </div>
+
+    <div class="table-wrap">
+      <div id="emptyState" class="empty-state" style="display:none">No responses yet. Share the form URL to start collecting.</div>
+      <table id="responseTable" style="display:none">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const formId = location.pathname.split('/')[2]
+    let formData = null
+    let allResponses = []
+    let es = null
+
+    async function loadForm() {
+      const res = await fetch('/api/form/' + formId)
+      if (!res.ok) return
+      formData = await res.json()
+      const fields = formData.schema?.fields || []
+      document.title = formData.title + ' · Responses · FieldKit'
+      document.getElementById('formTitle').textContent = formData.title
+      document.getElementById('pageTitle').textContent = formData.title + ' — Responses'
+      document.getElementById('exportBtn').href = '/api/forms/' + formId + '/export'
+
+      // Build table headers
+      const head = document.getElementById('tableHead')
+      head.innerHTML = '<tr><th style="width:4%">#</th>' +
+        fields.map(f => `<th>${esc(f.label)}</th>`).join('') +
+        '<th style="width:10%">Submitted</th></tr>'
+
+      connectSSE()
+    }
+
+    function connectSSE() {
+      if (es) es.close()
+      es = new EventSource('/api/forms/' + formId + '/stream')
+      es.onopen = () => {
+        document.getElementById('liveStatus').textContent = 'Live'
+        document.getElementById('liveStatus').style.color = '#16a34a'
+      }
+      es.onmessage = (e) => {
+        const msg = JSON.parse(e.data)
+        if (msg.type === 'update') updateTable(msg.responses)
+      }
+      es.onerror = () => {
+        document.getElementById('liveStatus').textContent = 'Reconnecting…'
+        document.getElementById('liveStatus').style.color = 'var(--muted)'
+      }
+    }
+
+    function updateTable(responses) {
+      const fields = formData?.schema?.fields || []
+      const prevCount = allResponses.length
+      allResponses = responses
+
+      document.getElementById('pageSubtitle').textContent =
+        responses.length + ' response' + (responses.length !== 1 ? 's' : '')
+
+      const table = document.getElementById('responseTable')
+      const empty = document.getElementById('emptyState')
+
+      if (!responses.length) {
+        table.style.display = 'none'
+        empty.style.display = 'block'
+        return
+      }
+
+      table.style.display = 'table'
+      empty.style.display = 'none'
+
+      const tbody = document.getElementById('tableBody')
+      tbody.innerHTML = responses.map((r, i) => {
+        const answers = (r.data?.answers || [])
+        const isNew = i < (responses.length - prevCount) && prevCount > 0
+        return `<tr class="${isNew ? 'new-row' : ''}">
+          <td class="row-num">${responses.length - i}</td>
+          ${fields.map(f => {
+            const ans = answers.find(a => a.fieldId === f.id)
+            const val = ans?.value
+            const display = Array.isArray(val) ? val.join(', ') : (val ?? '—')
+            return `<td>${esc(String(display))}</td>`
+          }).join('')}
+          <td class="timestamp">${new Date(r.submittedAt).toLocaleString()}</td>
+        </tr>`
+      }).join('')
+    }
+
+    function filterTable(q) {
+      const rows = document.querySelectorAll('#tableBody tr')
+      rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'
+      })
+    }
+
+    function esc(str) {
+      const d = document.createElement('div')
+      d.textContent = str ?? ''
+      return d.innerHTML
+    }
+
+    loadForm()
+  </script>
+</body>
+</html>

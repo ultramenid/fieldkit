@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FieldKit · Local Server</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #ffffff; --surface: #fafafa; --fg: #000000;
@@ -117,10 +117,6 @@
         <div class="label">Active forms</div>
         <div class="value" id="formCount">—</div>
       </div>
-      <div class="status-card">
-        <div class="label">Pending sync</div>
-        <div class="value" id="pendingSync">—</div>
-      </div>
     </div>
 
     <!-- Hidden LAN URL used by JS -->
@@ -206,8 +202,9 @@
               <div class="stat"><div class="stat-num">${f.pendingSync}</div><div class="stat-label">Pending sync</div></div>
             </div>
             <div class="form-actions">
+              <a href="/responses/${f.id}" class="btn btn-secondary">Responses</a>
               <a href="/form/${f.id}" target="_blank" class="btn btn-ghost">Open form</a>
-              <a href="/api/forms/${f.id}/export" class="btn btn-secondary">Export data</a>
+              <a href="/api/forms/${f.id}/export" class="btn btn-ghost">Export</a>
               <button class="btn btn-ghost" onclick="deleteForm('${f.id}')" style="color:#dc2626">Remove</button>
             </div>
           </div>

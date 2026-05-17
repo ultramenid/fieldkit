@@ -7,7 +7,6 @@ import { db, initDb } from './db'
 import type { FormConfig } from '@fieldkit/form-schema'
 
 const ALLOWED_MIME_TYPES = [
-  'application/pdf',
   'image/jpeg',
   'image/png',
   'image/webp',
@@ -27,6 +26,19 @@ function getLanIp(): string {
 
 export function createServer(dataDir: string, port: number) {
   initDb(dataDir)
+
+  // SSE clients per form: formId → set of response objects
+  const sseClients = new Map<string, Set<{ res: import('express').Response }>>()
+
+  function notifyClients(formId: string) {
+    const clients = sseClients.get(formId)
+    if (!clients) return
+    const responses = db.getResponses(formId)
+    const data = JSON.stringify({ type: 'update', responses })
+    clients.forEach(({ res }) => {
+      res.write(`data: ${data}\n\n`)
+    })
+  }
 
   const uploadsDir = path.join(dataDir, 'uploads')
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
@@ -58,7 +70,7 @@ export function createServer(dataDir: string, port: number) {
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('X-Frame-Options', 'DENY')
     res.setHeader('X-XSS-Protection', '1; mode=block')
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:")
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:")
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
     next()
   })
@@ -188,7 +200,34 @@ export function createServer(dataDir: string, port: number) {
     if (!form) return res.status(404).json({ error: 'Form not found' })
     if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Invalid submission' })
     const submissionId = db.addResponse(id, req.body)
+    notifyClients(id)
     res.json({ ok: true, submissionId })
+  })
+
+  // ── SSE for real-time responses ────────────────────────────
+
+  app.get('/api/forms/:id/stream', (req, res) => {
+    const id = req.params.id
+    if (!id || id.includes('/') || id.includes('..')) return res.status(400).end()
+
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.flushHeaders()
+
+    // Send current responses immediately
+    const responses = db.getResponses(id)
+    res.write(`data: ${JSON.stringify({ type: 'update', responses })}\n\n`)
+
+    // Register client
+    if (!sseClients.has(id)) sseClients.set(id, new Set())
+    const client = { res }
+    sseClients.get(id)!.add(client)
+
+    // Clean up on disconnect
+    req.on('close', () => {
+      sseClients.get(id)?.delete(client)
+    })
   })
 
   // ── File upload ─────────────────────────────────────────
@@ -215,6 +254,10 @@ export function createServer(dataDir: string, port: number) {
 
   app.get('/form/:id', (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'form.html'))
+  })
+
+  app.get('/responses/:id', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'responses.html'))
   })
 
   app.get('*', (_req, res) => {

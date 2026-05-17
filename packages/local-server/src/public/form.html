@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FieldKit Form</title>
+  <script src="/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #ffffff; --surface: #fafafa; --fg: #000000;
@@ -127,10 +128,11 @@
     let fileUploads = {}
     let qrGenerated = false
 
-    function showQr() {
+    async function showQr() {
       document.getElementById('qrOverlay').style.display = 'flex'
       if (!qrGenerated) {
-        const url = window.location.href
+        const status = await fetch('/api/status').then(r => r.json())
+        const url = status.lanUrl + '/form/' + formId
         document.getElementById('qrUrl').textContent = url
         QRCode.toCanvas(document.getElementById('qrCanvas'), url, { width: 200, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
         qrGenerated = true
