@@ -34,7 +34,7 @@
     .btn-ghost:hover { color: var(--fg); }
     .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
     .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-    .status-panel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .status-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
     .status-card { border: 1px solid var(--border); border-radius: var(--radius-container); padding: 20px; }
     .status-card .label { font-size: 12px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 8px; }
     .status-card .value { font-family: var(--font-mono); font-size: 20px; font-weight: 500; }
@@ -169,7 +169,6 @@
       const data = await res.json()
       document.getElementById('portValue').textContent = ':' + data.port
       document.getElementById('formCount').textContent = data.formCount
-      document.getElementById('pendingSync').textContent = data.pendingSync
       currentLanUrl = data.lanUrl
     }
 
@@ -199,7 +198,6 @@
             </div>
             <div class="form-stats">
               <div class="stat"><div class="stat-num">${f.responseCount}</div><div class="stat-label">Responses</div></div>
-              <div class="stat"><div class="stat-num">${f.pendingSync}</div><div class="stat-label">Pending sync</div></div>
             </div>
             <div class="form-actions">
               <a href="/responses/${f.id}" class="btn btn-secondary">Responses</a>

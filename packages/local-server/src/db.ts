@@ -92,14 +92,14 @@ export const db = {
     return read().responses.filter(r => r.formId === formId)
   },
 
-  addResponse(formId: string, answers: Record<string, unknown>): string {
+  addResponse(formId: string, body: Record<string, unknown>): string {
     const data = read()
     const submissionId = uuidv4()
     data.responses.push({
       id: uuidv4(),
       formId,
       submissionId,
-      data: { answers },
+      data: body,
       submittedAt: new Date().toISOString(),
       synced: false,
     })

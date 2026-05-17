@@ -163,7 +163,9 @@
 
       const tbody = document.getElementById('tableBody')
       tbody.innerHTML = responses.map((r, i) => {
-        const answers = (r.data?.answers || [])
+        const rawAnswers = r.data?.answers
+        // Handle double-nested: { answers: { answers: [...] } } or { answers: [...] }
+        const answers = Array.isArray(rawAnswers) ? rawAnswers : (rawAnswers?.answers || [])
         const isNew = i < (responses.length - prevCount) && prevCount > 0
         return `<tr class="${isNew ? 'new-row' : ''}">
           <td class="row-num">${responses.length - i}</td>
