@@ -58,7 +58,7 @@ function FormCard({ form }: { form: FormData }) {
   return (
     <>
       <div
-        onClick={() => router.push(`/forms/${form.id}`)}
+        onClick={() => router.push(`/forms/${form.id}/responses`)}
         className="flex cursor-pointer flex-col gap-4 rounded-[12px] border border-[var(--border)] p-6 transition-colors hover:border-[var(--foreground)]"
       >
         <div className="flex items-start justify-between gap-3">
@@ -90,8 +90,16 @@ function FormCard({ form }: { form: FormData }) {
           <Link
             href={`/forms/${form.id}`}
             className="rounded-full border border-[var(--border)] px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] no-underline transition-colors hover:border-[var(--foreground)]"
+            onClick={(e) => e.stopPropagation()}
           >
             Edit
+          </Link>
+          <Link
+            href={`/forms/${form.id}/responses`}
+            className="rounded-full border border-[var(--border)] px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] no-underline transition-colors hover:border-[var(--foreground)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Responses
           </Link>
           {form.published && (
             <button
