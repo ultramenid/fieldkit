@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useBuilder } from '@/lib/builder-context'
 
 export function BuilderNav() {
-  const { state, dispatch } = useBuilder()
+  const { state, dispatch, save } = useBuilder()
+  const [savedFeedback, setSavedFeedback] = useState(false)
 
   function handlePublish() {
     dispatch({ type: 'SET_PUBLISHED', isPublished: true })
@@ -12,6 +14,12 @@ export function BuilderNav() {
 
   function handleToggleClosed() {
     dispatch({ type: 'SET_CLOSED', isClosed: !state.isClosed })
+  }
+
+  async function handleSave() {
+    await save()
+    setSavedFeedback(true)
+    setTimeout(() => setSavedFeedback(false), 1500)
   }
 
   return (
@@ -52,6 +60,13 @@ export function BuilderNav() {
           </svg>
           Preview
         </Link>
+        <button
+          onClick={handleSave}
+          disabled={state.isSaving}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-[13px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--foreground)] disabled:opacity-40"
+        >
+          {savedFeedback ? 'Saved ✓' : 'Save'}
+        </button>
         {!state.isPublished ? (
           <button
             onClick={handlePublish}

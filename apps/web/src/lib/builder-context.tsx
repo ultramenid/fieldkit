@@ -67,6 +67,7 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
 interface BuilderContextValue {
   state: BuilderState
   dispatch: React.Dispatch<BuilderAction>
+  save: () => Promise<void>
 }
 
 const BuilderContext = createContext<BuilderContextValue | null>(null)
@@ -120,7 +121,7 @@ export function BuilderProvider({
   }, [state.isDirty, state.fields, state.title, state.description, state.isPublished, save])
 
   return (
-    <BuilderContext.Provider value={{ state, dispatch }}>
+    <BuilderContext.Provider value={{ state, dispatch, save }}>
       {children}
     </BuilderContext.Provider>
   )
