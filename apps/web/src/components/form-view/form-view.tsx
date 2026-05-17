@@ -154,13 +154,15 @@ export function FormView({
 }: FormViewProps) {
   const storageKey = `fieldkit_submitted_${formId}`
   const [values, setValues] = useState<Record<string, string | string[] | number | null>>({})
-  const [submitted, setSubmitted] = useState(false)
+  const [submitted, setSubmitted] = useState<boolean | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   // Check localStorage client-side only to avoid hydration mismatch
   useEffect(() => {
     if (!isPreview && !allowMultipleSubmissions && localStorage.getItem(storageKey)) {
       setSubmitted(true)
+    } else {
+      setSubmitted(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -188,6 +190,11 @@ export function FormView({
     }
     setSubmitting(false)
     setSubmitted(true)
+  }
+
+  // Wait for client-side localStorage check before rendering
+  if (submitted === null) {
+    return <div className="rounded-[12px] border border-[var(--border)] bg-[var(--bg)] p-12" />
   }
 
   if (isClosed) {
