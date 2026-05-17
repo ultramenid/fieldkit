@@ -138,10 +138,9 @@ export function Canvas() {
             onInput={(e) =>
               dispatch({ type: 'SET_TITLE', title: (e.target as HTMLElement).textContent ?? '' })
             }
+            dangerouslySetInnerHTML={{ __html: state.title }}
             className="mb-2 -ml-2 rounded-[6px] border border-transparent px-2 py-1 font-[family-name:var(--font-display)] text-[24px] font-medium text-[var(--foreground)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)]"
-          >
-            {state.title}
-          </h2>
+          ></h2>
           <p
             contentEditable
             suppressContentEditableWarning
@@ -153,15 +152,9 @@ export function Canvas() {
                 description: (e.target as HTMLElement).textContent ?? '',
               })
             }
-            className="
-              -ml-2 rounded-[6px] border border-transparent px-2 py-1 text-[14px] text-[var(--muted)] outline-none transition-colors
-              hover:border-[var(--border)] hover:bg-[var(--surface)]
-              focus:border-[var(--foreground)] focus:bg-[var(--surface)]
-              empty:before:content-[attr(data-placeholder)] empty:before:text-[var(--muted)] empty:before:opacity-60
-            "
-          >
-            {state.description}
-          </p>
+            dangerouslySetInnerHTML={{ __html: state.description }}
+            className="-ml-2 rounded-[6px] border border-transparent px-2 py-1 text-[14px] text-[var(--muted)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)] empty:before:content-[attr(data-placeholder)] empty:before:text-[var(--muted)] empty:before:opacity-60"
+          ></p>
         </div>
 
         {/* Fields */}
