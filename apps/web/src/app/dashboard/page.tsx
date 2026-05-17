@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { DashboardNav } from '@/components/dashboard/dashboard-nav'
-import { FormsGrid } from '@/components/dashboard/forms-grid'
 import { DashboardStats } from '@/components/dashboard/dashboard-stats'
 
 export const metadata = {
@@ -53,8 +52,8 @@ export default async function DashboardPage() {
           initialTotalForms={forms.length}
           initialTotalResponses={totalResponses}
           initialPublishedCount={publishedCount}
+          initialForms={formData}
         />
-        <FormsGrid forms={formData} />
       </main>
     </div>
   )
