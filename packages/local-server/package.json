@@ -1,0 +1,25 @@
+{
+  "name": "@fieldkit/local-server",
+  "version": "0.1.0",
+  "description": "FieldKit local server for offline form collection",
+  "main": "dist/index.js",
+  "bin": {
+    "fieldkit": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/cli.ts",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "express": "4.19.2",
+    "uuid": "9.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "4.17.21",
+    "@types/uuid": "9.0.8",
+    "@types/node": "20.14.10",
+    "ts-node": "10.9.2",
+    "typescript": "5.5.3"
+  }
+}

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FieldKit · Local Server</title>
+  <style>
+    :root {
+      --bg: #ffffff; --surface: #fafafa; --fg: #000000;
+      --muted: #737373; --border: #e5e5e5; --accent: #8b4513;
+      --success: #22c55e; --warning: #f59e0b; --danger: #dc2626;
+      --font-display: system-ui, -apple-system, sans-serif;
+      --font-body: ui-sans-serif, system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+      --radius: 9999px; --radius-container: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .topnav { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .topnav-inner { max-width: 960px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+    .env-badge { font-family: var(--font-mono); font-size: 11px; padding: 3px 10px; border-radius: var(--radius); background: color-mix(in oklch, var(--warning) 12%, transparent); color: #b45309; border: 1px solid color-mix(in oklch, var(--warning) 25%, transparent); }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+    .page-header { padding: 32px 0 24px; }
+    .page-header h1 { font-family: var(--font-display); font-size: 24px; font-weight: 500; margin: 0 0 4px; }
+    .page-header p { font-size: 14px; color: var(--muted); margin: 0; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: var(--radius); border: 1px solid transparent; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .btn-primary:hover { background: #262626; }
+    .btn-secondary { background: var(--bg); color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--muted); border: none; padding: 6px 10px; }
+    .btn-ghost:hover { color: var(--fg); }
+    .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .status-panel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .status-card { border: 1px solid var(--border); border-radius: var(--radius-container); padding: 20px; }
+    .status-card .label { font-size: 12px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 8px; }
+    .status-card .value { font-family: var(--font-mono); font-size: 20px; font-weight: 500; }
+    .status-card .value.running { color: var(--success); }
+    .network-info { border: 1px solid var(--border); border-radius: var(--radius-container); padding: 20px; margin-bottom: 32px; }
+    .network-info h3 { font-size: 14px; font-weight: 500; margin: 0 0 12px; }
+    .network-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .network-row:last-child { border-bottom: none; }
+    .network-row .label { color: var(--muted); }
+    .network-row .value { font-family: var(--font-mono); }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-family: var(--font-display); font-size: 18px; font-weight: 500; margin: 0; }
+    .form-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 32px; }
+    .form-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border: 1px solid var(--border); border-radius: var(--radius-container); gap: 16px; }
+    .form-item:hover { border-color: #d4d4d4; }
+    .form-item-left { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; }
+    .form-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; flex-shrink: 0; }
+    .form-icon svg { width: 18px; height: 18px; color: var(--muted); }
+    .form-info h4 { font-size: 14px; font-weight: 500; margin: 0 0 2px; }
+    .form-info p { font-size: 12px; color: var(--muted); margin: 0; font-family: var(--font-mono); }
+    .form-stats { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+    .stat { text-align: center; }
+    .stat-num { font-family: var(--font-mono); font-size: 16px; font-weight: 500; }
+    .stat-label { font-size: 11px; color: var(--muted); }
+    .form-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .form-actions .btn { font-size: 12px; padding: 6px 12px; }
+    .import-section { border: 1px solid var(--border); border-radius: var(--radius-container); padding: 24px; margin-bottom: 32px; }
+    .import-section h3 { font-size: 15px; font-weight: 500; margin: 0 0 8px; }
+    .import-section p { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+    .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius-container); padding: 32px; text-align: center; color: var(--muted); font-size: 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .drop-zone:hover { border-color: var(--fg); background: var(--surface); }
+    .drop-zone.dragover { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 8%, transparent); }
+    .setup-section { border: 1px solid var(--border); border-radius: var(--radius-container); padding: 24px; margin-bottom: 48px; }
+    .setup-section h3 { font-size: 15px; font-weight: 500; margin: 0 0 12px; }
+    .code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-family: var(--font-mono); font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .copy-btn { padding: 4px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); font-size: 11px; cursor: pointer; color: var(--muted); flex-shrink: 0; }
+    .copy-btn:hover { border-color: var(--fg); color: var(--fg); }
+    .empty-state { text-align: center; padding: 40px 24px; color: var(--muted); font-size: 14px; border: 1px solid var(--border); border-radius: var(--radius-container); }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--fg); color: var(--bg); padding: 12px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; }
+    @media (max-width: 768px) {
+      .status-panel { grid-template-columns: repeat(2, 1fr); }
+      .form-item { flex-direction: column; align-items: flex-start; }
+      .form-stats { width: 100%; }
+      .form-actions { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="logo">FieldKit</span>
+        <span class="env-badge">Local Server</span>
+      </div>
+      <span id="serverStatus" class="btn btn-success" style="pointer-events:none;">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+        Running
+      </span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>Local Server Admin</h1>
+      <p>Serve forms offline on your local network. Export collected responses and import them into the serverside when ready.</p>
+    </div>
+
+    <!-- Status panel -->
+    <div class="status-panel">
+      <div class="status-card">
+        <div class="label">Status</div>
+        <div class="value running">Running</div>
+      </div>
+      <div class="status-card">
+        <div class="label">Port</div>
+        <div class="value" id="portValue">—</div>
+      </div>
+      <div class="status-card">
+        <div class="label">Active forms</div>
+        <div class="value" id="formCount">—</div>
+      </div>
+      <div class="status-card">
+        <div class="label">Pending sync</div>
+        <div class="value" id="pendingSync">—</div>
+      </div>
+    </div>
+
+    <!-- Network info -->
+    <div class="network-info">
+      <h3>Network access</h3>
+      <div class="network-row">
+        <span class="label">Local URL</span>
+        <span class="value" id="localUrl">—</span>
+      </div>
+      <div class="network-row">
+        <span class="label">LAN URL</span>
+        <span class="value" id="lanUrl">—</span>
+      </div>
+    </div>
+
+    <!-- Imported forms -->
+    <div class="section-header">
+      <h2 class="section-title">Imported Forms</h2>
+      <button class="btn btn-secondary" onclick="document.getElementById('importSection').scrollIntoView({behavior:'smooth',block:'center'})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+        Import form
+      </button>
+    </div>
+    <div class="form-list" id="formList">
+      <div class="empty-state">No forms imported yet. Use the import section below.</div>
+    </div>
+
+    <!-- Import section -->
+    <div class="import-section" id="importSection">
+      <h3>Import form configuration</h3>
+      <p>Drop a .json config file exported from FieldKit, or click to browse.</p>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;color:var(--muted)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Drop config file here or click to browse
+      </div>
+      <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(this)" />
+    </div>
+
+    <!-- Setup -->
+    <div class="setup-section">
+      <h3>Quick setup</h3>
+      <div class="code-block">
+        <code>npm install -g @fieldkit/local-server</code>
+        <button class="copy-btn" onclick="copyText('npm install -g @fieldkit/local-server', this)">Copy</button>
+      </div>
+      <div class="code-block">
+        <code>fieldkit serve</code>
+        <button class="copy-btn" onclick="copyText('fieldkit serve', this)">Copy</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    function showToast(msg) {
+      const t = document.getElementById('toast')
+      t.textContent = msg
+      t.classList.add('show')
+      setTimeout(() => t.classList.remove('show'), 2500)
+    }
+
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text)
+      btn.textContent = 'Copied!'
+      setTimeout(() => btn.textContent = 'Copy', 1500)
+    }
+
+    async function loadStatus() {
+      const res = await fetch('/api/status')
+      const data = await res.json()
+      document.getElementById('portValue').textContent = ':' + data.port
+      document.getElementById('formCount').textContent = data.formCount
+      document.getElementById('pendingSync').textContent = data.pendingSync
+      document.getElementById('localUrl').textContent = `http://localhost:${data.port}`
+      document.getElementById('lanUrl').textContent = `http://<your-ip>:${data.port}`
+    }
+
+    async function loadForms() {
+      const res = await fetch('/api/forms')
+      const forms = await res.json()
+      const list = document.getElementById('formList')
+
+      if (!forms.length) {
+        list.innerHTML = '<div class="empty-state">No forms imported yet. Use the import section below.</div>'
+        return
+      }
+
+      list.innerHTML = forms.map(f => `
+        <div class="form-item">
+          <div class="form-item-left">
+            <div class="form-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+            <div class="form-info">
+              <h4>${f.title}</h4>
+              <p>v${f.version} · ${(f.schema.fields || []).length} fields · Imported ${new Date(f.imported_at).toLocaleDateString()}</p>
+            </div>
+          </div>
+          <div class="form-stats">
+            <div class="stat">
+              <div class="stat-num">${f.response_count}</div>
+              <div class="stat-label">Responses</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num">${f.pending_sync}</div>
+              <div class="stat-label">Pending sync</div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <a href="/form/${f.id}" target="_blank" class="btn btn-ghost">Open form</a>
+            <a href="/api/forms/${f.id}/export" class="btn btn-secondary">Export data</a>
+            <button class="btn btn-ghost" onclick="deleteForm('${f.id}')" style="color:#dc2626">Remove</button>
+          </div>
+        </div>
+      `).join('')
+    }
+
+    async function handleImport(input) {
+      const file = input.files[0]
+      if (!file) return
+      const text = await file.text()
+      let config
+      try { config = JSON.parse(text) } catch { return showToast('Invalid JSON file') }
+
+      const res = await fetch('/api/forms/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        showToast(data.action === 'updated' ? 'Form updated' : 'Form imported successfully')
+        loadForms()
+        loadStatus()
+      } else {
+        showToast('Error: ' + data.error)
+      }
+      input.value = ''
+      document.getElementById('dropZone').innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;color:var(--muted)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Drop config file here or click to browse`
+    }
+
+    async function deleteForm(id) {
+      if (!confirm('Remove this form and all its responses?')) return
+      await fetch('/api/forms/' + id, { method: 'DELETE' })
+      showToast('Form removed')
+      loadForms()
+      loadStatus()
+    }
+
+    // Drag and drop
+    const dz = document.getElementById('dropZone')
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover') })
+    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'))
+    dz.addEventListener('drop', async e => {
+      e.preventDefault()
+      dz.classList.remove('dragover')
+      const file = e.dataTransfer.files[0]
+      if (!file) return
+      const input = document.getElementById('fileInput')
+      const dt = new DataTransfer()
+      dt.items.add(file)
+      input.files = dt.files
+      handleImport(input)
+    })
+
+    loadStatus()
+    loadForms()
+    setInterval(() => { loadStatus(); loadForms() }, 10000)
+  </script>
+</body>
+</html>
