@@ -140,7 +140,15 @@ export function Canvas() {
   }
 
   return (
-    <main className="flex flex-col items-center overflow-y-auto bg-[var(--surface)] p-10">
+    <main
+      className="flex flex-col items-center overflow-y-auto bg-[var(--surface)] p-10"
+      onClick={(e) => {
+        // Deselect field when clicking outside the form card
+        if (e.target === e.currentTarget) {
+          dispatch({ type: 'SELECT_FIELD', id: null })
+        }
+      }}
+    >
       <div className="w-full max-w-[540px] rounded-[12px] border border-[var(--border)] bg-[var(--background)] p-10">
         {/* Form header */}
         <div className="mb-8 border-b border-[var(--border)] pb-6">

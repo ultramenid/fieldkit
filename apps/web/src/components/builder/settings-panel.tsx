@@ -212,6 +212,29 @@ export function SettingsPanel() {
         </svg>
         Delete field
       </button>
+
+      {/* Sticky form settings */}
+      <div className="mt-6 border-t border-[var(--border)] pt-4">
+        <h3 className="mb-3 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+          Form settings
+        </h3>
+        <div className="rounded-[12px] border border-[var(--border)] p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-[13px] font-medium text-[var(--foreground)]">Multiple submissions</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted)]">
+                Allow respondents to submit more than once
+              </p>
+            </div>
+            <div className="flex-shrink-0 pt-0.5">
+              <Toggle
+                checked={state.allowMultipleSubmissions}
+                onChange={(val) => dispatch({ type: 'SET_ALLOW_MULTIPLE', allowMultipleSubmissions: val })}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </aside>
   )
 }
