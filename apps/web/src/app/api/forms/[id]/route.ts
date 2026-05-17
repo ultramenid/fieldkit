@@ -24,7 +24,7 @@ export async function PATCH(
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { title, description, fields, settings, published } = body
+  const { title, description, fields, settings, published, closed } = body
 
   const form = await db.form.findFirst({
     where: { id: params.id, userId: session.user.id },
@@ -38,6 +38,7 @@ export async function PATCH(
       description: description ?? form.description,
       schema: { fields: fields ?? [], settings: settings ?? {} },
       ...(published !== undefined ? { published } : {}),
+      ...(closed !== undefined ? { closed } : {}),
     },
   })
 
