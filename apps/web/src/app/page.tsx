@@ -99,7 +99,7 @@ export default function Home() {
       <Nav />
       <Hero />
       <main className="mx-auto w-full max-w-[960px] px-6 pb-20">
-        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-neutral-500">
+        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
           Serverside
         </p>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
@@ -108,9 +108,9 @@ export default function Home() {
           ))}
         </div>
 
-        <hr className="my-10 border-t border-neutral-200" />
+        <hr className="my-10 border-t border-[var(--border)]" />
 
-        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-neutral-500">
+        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
           Localserver
         </p>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
@@ -119,9 +119,9 @@ export default function Home() {
           ))}
         </div>
 
-        <hr className="my-10 border-t border-neutral-200" />
+        <hr className="my-10 border-t border-[var(--border)]" />
 
-        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-neutral-500">
+        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
           How it works
         </p>
         <div className="mb-6">
@@ -129,7 +129,7 @@ export default function Home() {
         </div>
         <InstallSnippet />
       </main>
-      <footer className="mt-auto border-t border-neutral-200 px-6 py-6 text-center text-[13px] text-neutral-500">
+      <footer className="mt-auto border-t border-[var(--border)] px-6 py-6 text-center text-[13px] text-[var(--muted)]">
         FieldKit · Built for field teams
       </footer>
     </div>
