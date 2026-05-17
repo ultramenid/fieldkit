@@ -39,6 +39,7 @@ export function ResponsesTable({
   const [sourceFilter, setSourceFilter] = useState<'all' | 'online' | 'local'>('all')
   const [closed, setClosed] = useState(initialClosed)
   const [importBanner, setImportBanner] = useState<string | null>(null)
+  const [connected, setConnected] = useState(false)
   const router = useRouter()
 
   const refresh = useCallback(async () => {
@@ -49,12 +50,30 @@ export function ResponsesTable({
     }
   }, [formId])
 
-  // Poll every 5s for real-time updates
+  // SSE for real-time updates
   useEffect(() => {
     if (closed) return
-    const interval = setInterval(refresh, 5000)
-    return () => clearInterval(interval)
-  }, [closed, refresh])
+    const es = new EventSource(`/api/forms/${formId}/stream`)
+
+    es.onopen = () => setConnected(true)
+
+    es.onmessage = (e) => {
+      const msg = JSON.parse(e.data)
+      if (msg.type === 'update') {
+        setResponses(msg.responses)
+      }
+    }
+
+    es.onerror = () => {
+      setConnected(false)
+      es.close()
+    }
+
+    return () => {
+      es.close()
+      setConnected(false)
+    }
+  }, [formId, closed])
 
   async function toggleClosed() {
     const next = !closed
@@ -206,7 +225,10 @@ export function ResponsesTable({
           ))}
         </div>
         {!closed && (
-          <span className="font-mono text-[12px] text-[var(--muted)]">Auto-refresh: ON</span>
+          <span className={`flex items-center gap-1.5 font-mono text-[12px] ${connected ? 'text-[#16a34a]' : 'text-[var(--muted)]'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-[#22c55e] animate-pulse' : 'bg-[var(--muted)]'}`} />
+            {connected ? 'Live' : 'Connecting…'}
+          </span>
         )}
       </div>
 
