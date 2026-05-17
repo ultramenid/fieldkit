@@ -1,7 +1,7 @@
 # FieldKit — Project Setup Design
 
 **Date:** 2026-05-17  
-**Scope:** Step 1 — monorepo scaffold, shared types package, Next.js app, Prisma schema
+**Scope:** Step 1 — monorepo scaffold, shared types package, Next.js app, Prisma schema, MinIO storage config
 
 ---
 
@@ -26,7 +26,8 @@ fieldkit/
 │           ├── app/              # App Router root (layout.tsx, page.tsx placeholders)
 │           ├── lib/
 │           │   ├── db.ts         # singleton Prisma client
-│           │   └── auth.ts       # NextAuth config (Google provider)
+│           │   ├── auth.ts       # NextAuth config (Google provider)
+│           │   └── storage.ts    # MinIO S3 client config
 │           └── components/       # empty, ready for step 2+
 └── packages/
     └── form-schema/              # shared TypeScript types, no runtime code
@@ -183,6 +184,20 @@ Singleton Prisma client using the standard Next.js pattern (global cache to avoi
 
 NextAuth config with Google provider. Extends session to include `user.id`. No custom pages yet — those come in step 2.
 
+### `src/lib/storage.ts`
+
+MinIO client config using the AWS SDK v3 S3-compatible client (`@aws-sdk/client-s3`). Exports a configured `S3Client` instance and a `STORAGE_BUCKET` constant. No upload logic — that comes when the file field type is built.
+
+### MinIO Environment Variables (added to `.env.example`)
+
+```bash
+S3_ENDPOINT="http://localhost:9000"
+S3_ACCESS_KEY="fieldkit"
+S3_SECRET_KEY="changeme123"
+S3_BUCKET="fieldkit-uploads"
+S3_REGION="us-east-1"
+```
+
 ---
 
 ## What Is NOT in Scope
@@ -191,6 +206,7 @@ NextAuth config with Google provider. Extends session to include `user.id`. No c
 - No API routes
 - No UI components
 - No Docker Compose (that's deployment, not setup)
+- No file upload API routes (MinIO client config only)
 - No local server package (step 8)
 
 ---
@@ -202,3 +218,4 @@ NextAuth config with Google provider. Extends session to include `user.id`. No c
 3. `npx prisma migrate dev --name init` runs clean against a local Postgres instance
 4. `npm run dev` in `apps/web` starts without errors
 5. TypeScript strict mode passes with `tsc --noEmit`
+6. `src/lib/storage.ts` exports a configured `S3Client` and `STORAGE_BUCKET` without errors
