@@ -181,6 +181,50 @@ export function SettingsPanel() {
         </>
       )}
 
+      {/* File upload settings */}
+      {field.type === 'file' && (
+        <>
+          <SectionLabel>File settings</SectionLabel>
+          <SettingRow label="Max file size (MB)">
+            <input
+              type="number"
+              value={field.validation?.maxFileSize ? field.validation.maxFileSize / (1024 * 1024) : ''}
+              placeholder="10"
+              min="1"
+              max="100"
+              onChange={(e) =>
+                update({
+                  validation: {
+                    ...field.validation,
+                    maxFileSize: e.target.value ? Number(e.target.value) * 1024 * 1024 : undefined,
+                  },
+                })
+              }
+              className={inputClass}
+            />
+          </SettingRow>
+          <SettingRow label="Accepted types">
+            <select
+              value={field.validation?.acceptedTypes?.join(',') ?? ''}
+              onChange={(e) =>
+                update({
+                  validation: {
+                    ...field.validation,
+                    acceptedTypes: e.target.value ? e.target.value.split(',') : undefined,
+                  },
+                })
+              }
+              className={inputClass}
+            >
+              <option value="">Any file type</option>
+              <option value="image/jpeg,image/png,image/webp">Images only (JPG, PNG, WebP)</option>
+              <option value="application/pdf">PDF only</option>
+              <option value="image/jpeg,image/png,image/webp,application/pdf">Images + PDF</option>
+            </select>
+          </SettingRow>
+        </>
+      )}
+
       {/* Options */}
       {hasOptions && (
         <>
