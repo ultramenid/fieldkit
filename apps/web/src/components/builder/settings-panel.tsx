@@ -170,7 +170,7 @@ export function SettingsPanel() {
                 />
                 <button
                   onClick={() => update({ options: options.filter((_, j) => j !== i) })}
-                  className="flex-shrink-0 rounded px-2 py-1 text-[12px] text-[#dc2626] transition-colors hover:bg-[color-mix(in_oklch,#dc2626_10%,transparent)]"
+                  className="flex-shrink-0 rounded-full px-2 py-1 text-[12px] text-[#dc2626] transition-colors hover:bg-[color-mix(in_oklch,#dc2626_10%,transparent)]"
                 >
                   ×
                 </button>
