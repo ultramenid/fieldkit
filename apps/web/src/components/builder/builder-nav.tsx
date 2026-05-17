@@ -52,29 +52,26 @@ export function BuilderNav() {
           </svg>
           Preview
         </Link>
-        {state.isPublished && (
+        {!state.isPublished ? (
+          <button
+            onClick={handlePublish}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--foreground)] bg-[var(--foreground)] px-4 py-2 text-[13px] font-medium text-[var(--background)] transition-opacity hover:opacity-80"
+          >
+            Publish
+          </button>
+        ) : (
           <button
             onClick={handleToggleClosed}
             className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-medium transition-colors ${
               state.isClosed
                 ? 'border-[var(--border)] bg-[var(--background)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]'
-                : 'border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--foreground)]'
+                : 'border-[#16a34a] bg-[#16a34a] text-white hover:opacity-80'
             }`}
           >
-            <span className={`h-1.5 w-1.5 rounded-full ${state.isClosed ? 'bg-[var(--muted)]' : 'bg-[#22c55e]'}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${state.isClosed ? 'bg-[var(--muted)]' : 'bg-white'}`} />
             {state.isClosed ? 'Reopen form' : 'Close form'}
           </button>
         )}
-        <button
-          onClick={handlePublish}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-medium transition-colors ${
-            state.isPublished
-              ? 'border-[#16a34a] bg-[#16a34a] text-white'
-              : 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] hover:opacity-80'
-          }`}
-        >
-          {state.isPublished ? 'Published ✓' : 'Publish'}
-        </button>
       </div>
     </header>
   )
