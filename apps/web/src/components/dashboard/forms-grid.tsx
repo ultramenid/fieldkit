@@ -11,6 +11,7 @@ interface FormData {
   title: string
   description: string
   published: boolean
+  closed: boolean
   createdAt: string
   responseCount: number
 }
@@ -63,9 +64,17 @@ function FormCard({ form }: { form: FormData }) {
       >
         <div className="flex items-start justify-between gap-3">
           <h3 className="m-0 text-[16px] font-medium text-[var(--foreground)]">{form.title}</h3>
-          <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 py-0.5 font-mono text-[12px] text-[var(--muted)]`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${form.published ? 'bg-[#22c55e]' : 'bg-[var(--muted)]'}`} />
-            {form.published ? 'Live' : 'Draft'}
+          <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 font-mono text-[12px] ${
+            !form.published
+              ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]'
+              : form.closed
+              ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]'
+              : 'border-[color-mix(in_oklch,#16a34a_30%,transparent)] bg-[color-mix(in_oklch,#22c55e_10%,transparent)] text-[#16a34a]'
+          }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${
+              !form.published ? 'bg-[var(--muted)]' : form.closed ? 'bg-[var(--muted)]' : 'bg-[#22c55e]'
+            }`} />
+            {!form.published ? 'Draft' : form.closed ? 'Closed' : 'Live'}
           </span>
         </div>
         <div className="flex items-center gap-4 text-[13px] text-[var(--muted)]">

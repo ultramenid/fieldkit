@@ -34,6 +34,7 @@ export default async function DashboardPage() {
     title: f.title,
     description: f.description,
     published: (f as { published?: boolean }).published ?? false,
+    closed: (f as { closed?: boolean }).closed ?? false,
     createdAt: f.createdAt.toISOString(),
     responseCount: f._count.responses,
   }))
