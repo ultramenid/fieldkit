@@ -123,27 +123,8 @@
       </div>
     </div>
 
-    <!-- Network info -->
-    <div class="network-info">
-      <h3>Network access</h3>
-      <div class="network-row">
-        <span class="label">Local URL</span>
-        <span class="value" id="localUrl">—</span>
-      </div>
-      <div class="network-row">
-        <span class="label">LAN URL</span>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="value" id="lanUrl">—</span>
-          <button class="copy-btn" onclick="copyText(document.getElementById('lanUrl').textContent, this)" style="font-size:11px;">Copy</button>
-        </div>
-      </div>
-      <div style="margin-top:16px;display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
-        <div>
-          <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">Scan to open admin on another device</p>
-          <canvas id="qrAdmin" style="border-radius:8px;border:1px solid var(--border);"></canvas>
-        </div>
-      </div>
-    </div>
+    <!-- Hidden LAN URL used by JS -->
+    <span id="lanUrl" style="display:none">—</span>
 
     <!-- Imported forms -->
     <div class="section-header">
@@ -166,19 +147,6 @@
         Drop config file here or click to browse
       </div>
       <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(this)" />
-    </div>
-
-    <!-- Setup -->
-    <div class="setup-section">
-      <h3>Quick setup</h3>
-      <div class="code-block">
-        <code>npm install -g @fieldkit/local-server</code>
-        <button class="copy-btn" onclick="copyText('npm install -g @fieldkit/local-server', this)">Copy</button>
-      </div>
-      <div class="code-block">
-        <code>fieldkit serve</code>
-        <button class="copy-btn" onclick="copyText('fieldkit serve', this)">Copy</button>
-      </div>
     </div>
   </main>
 
@@ -204,65 +172,62 @@
       document.getElementById('portValue').textContent = ':' + data.port
       document.getElementById('formCount').textContent = data.formCount
       document.getElementById('pendingSync').textContent = data.pendingSync
-      document.getElementById('localUrl').textContent = data.localUrl
       document.getElementById('lanUrl').textContent = data.lanUrl
-
-      // Generate QR code for LAN admin URL
-      QRCode.toCanvas(document.getElementById('qrAdmin'), data.lanUrl, {
-        width: 140, margin: 2,
-        color: { dark: '#000000', light: '#ffffff' }
-      })
     }
 
     async function loadForms() {
       const res = await fetch('/api/forms')
       const forms = await res.json()
       const list = document.getElementById('formList')
+      const lanUrl = document.getElementById('lanUrl').textContent || window.location.origin
 
       if (!forms.length) {
         list.innerHTML = '<div class="empty-state">No forms imported yet. Use the import section below.</div>'
         return
       }
 
-      list.innerHTML = forms.map(f => `
-        <div class="form-item">
-          <div class="form-item-left">
-            <div class="form-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      list.innerHTML = forms.map(f => {
+        const formUrl = `${lanUrl}/form/${f.id}`
+        return `
+        <div class="form-item" style="flex-direction:column;align-items:stretch;gap:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div class="form-item-left">
+              <div class="form-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+              </div>
+              <div class="form-info">
+                <h4>${f.title}</h4>
+                <p>v${f.version} · ${(f.schema.fields || []).length} fields · Imported ${new Date(f.importedAt).toLocaleDateString()}</p>
+              </div>
             </div>
-            <div class="form-info">
-              <h4>${f.title}</h4>
-              <p>v${f.version} · ${(f.schema.fields || []).length} fields · Imported ${new Date(f.importedAt).toLocaleDateString()}</p>
+            <div class="form-stats">
+              <div class="stat"><div class="stat-num">${f.responseCount}</div><div class="stat-label">Responses</div></div>
+              <div class="stat"><div class="stat-num">${f.pendingSync}</div><div class="stat-label">Pending sync</div></div>
+            </div>
+            <div class="form-actions">
+              <a href="/form/${f.id}" target="_blank" class="btn btn-ghost">Open form</a>
+              <a href="/api/forms/${f.id}/export" class="btn btn-secondary">Export data</a>
+              <button class="btn btn-ghost" onclick="deleteForm('${f.id}')" style="color:#dc2626">Remove</button>
             </div>
           </div>
-          <div class="form-stats">
-            <div class="stat">
-              <div class="stat-num">${f.responseCount}</div>
-              <div class="stat-label">Responses</div>
+          <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--surface);border-radius:var(--radius-container);flex-wrap:wrap;">
+            <canvas id="qr-${f.id}" style="border-radius:6px;flex-shrink:0;"></canvas>
+            <div style="flex:1;min-width:0;">
+              <p style="font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);margin:0 0 6px;">Form URL (share with respondents)</p>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <code style="font-family:var(--font-mono);font-size:13px;word-break:break-all;">${formUrl}</code>
+                <button class="copy-btn" onclick="copyText('${formUrl}', this)">Copy</button>
+              </div>
             </div>
-            <div class="stat">
-              <div class="stat-num">${f.pendingSync}</div>
-              <div class="stat-label">Pending sync</div>
-            </div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <canvas id="qr-${f.id}" style="border-radius:6px;border:1px solid var(--border);"></canvas>
-            <span style="font-size:10px;color:var(--muted);font-family:var(--font-mono);">Scan to open form</span>
-          </div>
-          <div class="form-actions">
-            <a href="/form/${f.id}" target="_blank" class="btn btn-ghost">Open form</a>
-            <a href="/api/forms/${f.id}/export" class="btn btn-secondary">Export data</a>
-            <button class="btn btn-ghost" onclick="deleteForm('${f.id}')" style="color:#dc2626">Remove</button>
-          </div>
-        </div>
-      `).join('')
+        </div>`
+      }).join('')
 
-      // Generate QR codes for each form after DOM update
+      // Generate QR codes after DOM update
       forms.forEach(f => {
-        const lanBase = document.getElementById('lanUrl')?.textContent?.replace(/\/+$/, '') || window.location.origin
-        const formUrl = `${lanBase}/form/${f.id}`
+        const formUrl = `${lanUrl}/form/${f.id}`
         const canvas = document.getElementById('qr-' + f.id)
-        if (canvas) QRCode.toCanvas(canvas, formUrl, { width: 80, margin: 1, color: { dark: '#000000', light: '#ffffff' } })
+        if (canvas) QRCode.toCanvas(canvas, formUrl, { width: 100, margin: 1, color: { dark: '#000000', light: '#ffffff' } })
       })
     }
 
