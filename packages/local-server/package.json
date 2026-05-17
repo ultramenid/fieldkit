@@ -7,7 +7,7 @@
     "fieldkit": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/public dist/",
     "dev": "ts-node src/cli.ts",
     "start": "node dist/cli.js"
   },
