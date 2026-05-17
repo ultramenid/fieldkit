@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useBuilder } from '@/lib/builder-context'
 import { FieldItem } from './field-item'
 
@@ -9,6 +9,8 @@ const DRAG_THRESHOLD = 5
 export function Canvas() {
   const { state, dispatch } = useBuilder()
   const fieldsRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const descRef = useRef<HTMLParagraphElement>(null)
   const dragState = useRef<{
     el: HTMLElement
     ghost: HTMLElement
@@ -17,6 +19,17 @@ export function Canvas() {
     offsetX: number
     offsetY: number
   } | null>(null)
+
+  // Set initial content once on mount — never update via React to avoid cursor jumping
+  useEffect(() => {
+    if (titleRef.current && !titleRef.current.textContent) {
+      titleRef.current.textContent = state.title
+    }
+    if (descRef.current && !descRef.current.textContent) {
+      descRef.current.textContent = state.description
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>, fieldId: string) {
     if ((e.target as HTMLElement).closest('input, select, textarea, button')) return
@@ -132,16 +145,17 @@ export function Canvas() {
         {/* Form header */}
         <div className="mb-8 border-b border-[var(--border)] pb-6">
           <h2
+            ref={titleRef}
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
             onInput={(e) =>
               dispatch({ type: 'SET_TITLE', title: (e.target as HTMLElement).textContent ?? '' })
             }
-            dangerouslySetInnerHTML={{ __html: state.title }}
             className="mb-2 -ml-2 rounded-[6px] border border-transparent px-2 py-1 font-[family-name:var(--font-display)] text-[24px] font-medium text-[var(--foreground)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)]"
           ></h2>
           <p
+            ref={descRef}
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
@@ -152,7 +166,6 @@ export function Canvas() {
                 description: (e.target as HTMLElement).textContent ?? '',
               })
             }
-            dangerouslySetInnerHTML={{ __html: state.description }}
             className="-ml-2 rounded-[6px] border border-transparent px-2 py-1 text-[14px] text-[var(--muted)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)] empty:before:content-[attr(data-placeholder)] empty:before:text-[var(--muted)] empty:before:opacity-60"
           ></p>
         </div>

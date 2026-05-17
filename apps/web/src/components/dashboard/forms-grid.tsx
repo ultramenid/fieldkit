@@ -63,7 +63,7 @@ function FormCard({ form }: { form: FormData }) {
         className="flex cursor-pointer flex-col gap-4 rounded-[12px] border border-[var(--border)] p-6 transition-colors hover:border-[var(--foreground)]"
       >
         <div className="flex items-start justify-between gap-3">
-          <h3 className="m-0 text-[16px] font-medium text-[var(--foreground)]">{form.title}</h3>
+          <h3 className="m-0 min-w-0 flex-1 truncate text-[16px] font-medium text-[var(--foreground)]">{form.title}</h3>
           <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-[10px] py-[3px] font-mono text-[12px] ${
             !form.published
               ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]'
