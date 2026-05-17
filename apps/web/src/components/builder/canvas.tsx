@@ -138,7 +138,7 @@ export function Canvas() {
             onInput={(e) =>
               dispatch({ type: 'SET_TITLE', title: (e.target as HTMLElement).textContent ?? '' })
             }
-            className="mb-2 -ml-2 rounded-[6px] border border-transparent px-2 py-1 font-sans text-[24px] font-medium text-[var(--foreground)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)]"
+            className="mb-2 -ml-2 rounded-[6px] border border-transparent px-2 py-1 font-[family-name:var(--font-display)] text-[24px] font-medium text-[var(--foreground)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)]"
           >
             {state.title}
           </h2>
