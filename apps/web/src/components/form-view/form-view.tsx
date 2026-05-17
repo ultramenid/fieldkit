@@ -202,18 +202,21 @@ export function FormView({
   return (
     <div className="rounded-[12px] border border-[var(--border)] bg-[var(--bg)] px-12 py-12 max-sm:px-6 max-sm:py-8">
       <h1 className="mb-2 font-sans text-[28px] font-medium leading-tight text-[var(--fg)] max-sm:text-[22px]">{title}</h1>
-      {description && (
-        <p className="mb-9 text-[15px] leading-relaxed text-[var(--muted)]">{description}</p>
-      )}
 
-      {/* Progress bar */}
+      {/* Progress: percentage + thin bar */}
       {fields.length > 0 && (
-        <div className="mb-8 flex items-center gap-3 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
-          <span className="whitespace-nowrap font-mono text-[12px] text-[var(--muted)]">{filledCount} of {fields.length}</span>
-          <div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--border)]">
+        <div className="mb-6">
+          <div className="mb-1.5 flex items-center justify-between">
+            {description && <p className="text-[15px] leading-relaxed text-[var(--muted)]">{description}</p>}
+            <span className="ml-auto whitespace-nowrap font-mono text-[12px] text-[var(--muted)]">{progress}%</span>
+          </div>
+          <div className="h-[3px] w-full overflow-hidden rounded-full bg-[var(--border)]">
             <div className="h-full rounded-full bg-[var(--fg)] transition-all duration-300" style={{ width: `${progress}%` }} />
           </div>
         </div>
+      )}
+      {!fields.length && description && (
+        <p className="mb-9 text-[15px] leading-relaxed text-[var(--muted)]">{description}</p>
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-7">
