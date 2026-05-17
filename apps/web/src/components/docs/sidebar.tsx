@@ -43,27 +43,34 @@ export function Sidebar() {
   const [activeId, setActiveId] = useState('overview')
 
   useEffect(() => {
-    const headings = document.querySelectorAll<HTMLElement>('h1[id], h2[id]')
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id)
-          }
+    const scrollContainer = document.getElementById('docs-content-scroll')
+    if (!scrollContainer) return
+
+    function updateActive() {
+      const headings = scrollContainer!.querySelectorAll<HTMLElement>('h1[id], h2[id]')
+      let current = 'overview'
+      for (const heading of headings) {
+        if (heading.offsetTop - scrollContainer!.scrollTop <= 100) {
+          current = heading.id
         }
-      },
-      { rootMargin: '-10% 0px -80% 0px' }
-    )
-    headings.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+      }
+      setActiveId(current)
+    }
+
+    scrollContainer.addEventListener('scroll', updateActive, { passive: true })
+    updateActive()
+    return () => scrollContainer.removeEventListener('scroll', updateActive)
   }, [])
 
   function scrollTo(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    const scrollContainer = document.getElementById('docs-content-scroll')
+    const target = document.getElementById(id)
+    if (!scrollContainer || !target) return
+    scrollContainer.scrollTo({ top: target.offsetTop - 24, behavior: 'smooth' })
   }
 
   return (
-    <aside className="sticky top-[60px] hidden h-fit max-h-[calc(100dvh-60px)] overflow-y-auto border-r border-[var(--border)] px-5 py-8 md:block">
+    <aside className="hidden h-full overflow-y-auto border-r border-[var(--border)] px-5 py-8 md:block">
       {sections.map((group) => (
         <div key={group.label} className="mb-6">
           <h4 className="mb-3 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">

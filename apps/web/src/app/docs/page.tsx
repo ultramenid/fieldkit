@@ -9,11 +9,13 @@ export const metadata = {
 
 export default function DocsPage() {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <Nav />
-      <div className="mx-auto grid w-full max-w-[960px] grid-cols-[220px_1fr] max-md:grid-cols-1">
+      <div className="mx-auto grid w-full max-w-[960px] flex-1 grid-cols-[220px_1fr] overflow-hidden max-md:grid-cols-1">
         <Sidebar />
-        <DocsContent />
+        <div id="docs-content-scroll" className="overflow-y-auto">
+          <DocsContent />
+        </div>
       </div>
     </div>
   )
