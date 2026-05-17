@@ -67,6 +67,7 @@ export function Canvas() {
     const ghost = el.cloneNode(true) as HTMLElement
     ghost.style.cssText = `position:fixed;z-index:9999;pointer-events:none;opacity:0.9;width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;transform:rotate(1deg) scale(1.02);box-shadow:0 8px 32px rgba(0,0,0,0.12);border:2px solid var(--foreground);border-radius:12px;background:var(--background);`
     document.body.appendChild(ghost)
+    document.body.style.userSelect = 'none'
 
     const placeholder = document.createElement('div')
     placeholder.style.cssText = `height:${rect.height}px;border:2px dashed var(--accent);border-radius:12px;background:color-mix(in oklch,var(--accent) 14%,transparent);pointer-events:none;`
@@ -132,6 +133,7 @@ export function Canvas() {
     ds.el.style.opacity = ''
     ds.placeholder.remove()
     ds.ghost.remove()
+    document.body.style.userSelect = ''
     dragState.current = null
 
     if (ds.fromIndex !== toIndex) {

@@ -68,6 +68,20 @@ export function SettingsPanel() {
 
   return (
     <aside className="overflow-y-auto border-l border-[var(--border)] p-5">
+      {/* Form settings — always at top */}
+      <div className="mb-5 rounded-[12px] border border-[var(--border)] p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <p className="text-[13px] font-medium text-[var(--foreground)]">Multiple submissions</p>
+            <p className="mt-0.5 text-[11px] text-[var(--muted)]">Allow more than one response per device</p>
+          </div>
+          <Toggle
+            checked={state.allowMultipleSubmissions}
+            onChange={(val) => dispatch({ type: 'SET_ALLOW_MULTIPLE', allowMultipleSubmissions: val })}
+          />
+        </div>
+      </div>
+
       <h3 className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
         Field settings
       </h3>
@@ -212,29 +226,6 @@ export function SettingsPanel() {
         </svg>
         Delete field
       </button>
-
-      {/* Sticky form settings */}
-      <div className="mt-6 border-t border-[var(--border)] pt-4">
-        <h3 className="mb-3 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
-          Form settings
-        </h3>
-        <div className="rounded-[12px] border border-[var(--border)] p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <p className="text-[13px] font-medium text-[var(--foreground)]">Multiple submissions</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted)]">
-                Allow respondents to submit more than once
-              </p>
-            </div>
-            <div className="flex-shrink-0 pt-0.5">
-              <Toggle
-                checked={state.allowMultipleSubmissions}
-                onChange={(val) => dispatch({ type: 'SET_ALLOW_MULTIPLE', allowMultipleSubmissions: val })}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
     </aside>
   )
 }
