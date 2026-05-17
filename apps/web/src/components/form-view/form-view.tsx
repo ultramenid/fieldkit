@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { BuilderField } from '@/lib/builder-types'
 
 interface FormViewProps {
@@ -153,12 +153,17 @@ export function FormView({
   allowMultipleSubmissions = false,
 }: FormViewProps) {
   const storageKey = `fieldkit_submitted_${formId}`
-  const alreadySubmitted = !isPreview && !allowMultipleSubmissions &&
-    typeof window !== 'undefined' && !!localStorage.getItem(storageKey)
-
   const [values, setValues] = useState<Record<string, string | string[] | number | null>>({})
-  const [submitted, setSubmitted] = useState(alreadySubmitted)
+  const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  // Check localStorage client-side only to avoid hydration mismatch
+  useEffect(() => {
+    if (!isPreview && !allowMultipleSubmissions && localStorage.getItem(storageKey)) {
+      setSubmitted(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const filledCount = fields.filter((f) => {
     const v = values[f.id]
