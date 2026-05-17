@@ -1,10 +1,11 @@
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { Client } from 'pg'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   const session = await auth()
@@ -17,59 +18,58 @@ export async function GET(
   })
   if (!form) return new Response('Not found', { status: 404 })
 
-  let lastCount = await db.response.count({ where: { formId: params.id } })
+  const encoder = new TextEncoder()
 
   const stream = new ReadableStream({
     async start(controller) {
-      const encoder = new TextEncoder()
-
       function send(data: unknown) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
 
-      // Send current responses immediately on connect
-      const initialResponses = await db.response.findMany({
-        where: { formId: params.id },
-        orderBy: { submittedAt: 'desc' },
-      })
-      send({
-        type: 'update',
-        responses: initialResponses.map((r) => ({
-          id: r.id,
-          submissionId: r.submissionId,
-          source: r.source,
-          submittedAt: r.submittedAt.toISOString(),
-          data: r.data,
-        })),
-      })
+      async function fetchAndSend() {
+        const responses = await db.response.findMany({
+          where: { formId: params.id },
+          orderBy: { submittedAt: 'desc' },
+        })
+        send({
+          type: 'update',
+          responses: responses.map((r) => ({
+            id: r.id,
+            submissionId: r.submissionId,
+            source: r.source,
+            submittedAt: r.submittedAt.toISOString(),
+            data: r.data,
+          })),
+        })
+      }
 
-      const interval = setInterval(async () => {
+      // Send current responses immediately on connect
+      await fetchAndSend()
+
+      // Set up Postgres LISTEN — only queries when a new response is inserted
+      const pgClient = new Client({ connectionString: process.env.DATABASE_URL })
+      await pgClient.connect()
+      await pgClient.query('LISTEN new_response')
+
+      pgClient.on('notification', async (msg) => {
         try {
-          const count = await db.response.count({ where: { formId: params.id } })
-          if (count !== lastCount) {
-            lastCount = count
-            const responses = await db.response.findMany({
-              where: { formId: params.id },
-              orderBy: { submittedAt: 'desc' },
-            })
-            const serialized = responses.map((r) => ({
-              id: r.id,
-              submissionId: r.submissionId,
-              source: r.source,
-              submittedAt: r.submittedAt.toISOString(),
-              data: r.data,
-            }))
-            send({ type: 'update', responses: serialized })
+          const payload = JSON.parse(msg.payload ?? '{}')
+          // Only push if notification is for this form
+          if (payload.formId === params.id) {
+            await fetchAndSend()
           }
         } catch {
-          clearInterval(interval)
-          controller.close()
+          // ignore parse errors
         }
-      }, 2000)
+      })
+
+      pgClient.on('error', () => {
+        controller.close()
+      })
 
       // Clean up when client disconnects
-      _req.signal.addEventListener('abort', () => {
-        clearInterval(interval)
+      req.signal.addEventListener('abort', async () => {
+        await pgClient.end().catch(() => {})
         controller.close()
       })
     },
