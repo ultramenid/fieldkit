@@ -255,14 +255,14 @@ export function FormView({
               {field.label}
               {field.required && <span className="ml-0.5 text-[#dc2626]">*</span>}
             </label>
+            {field.helpText && (
+              <p className="text-[12px] text-[var(--muted)]">{field.helpText}</p>
+            )}
             <FieldInput
               field={field}
               value={values[field.id] ?? null}
               onChange={(val) => setValues((prev) => ({ ...prev, [field.id]: val }))}
             />
-            {field.helpText && (
-              <p className="text-[12px] text-[var(--muted)]">{field.helpText}</p>
-            )}
           </div>
         ))}
 
