@@ -11,9 +11,6 @@ export function DashboardNav({ userInitials }: { userInitials: string }) {
           <Link href="/dashboard" className="text-[14px] font-medium text-[var(--foreground)] no-underline">
             Forms
           </Link>
-          <Link href="/dashboard/responses" className="text-[14px] text-[var(--muted)] no-underline hover:text-[var(--foreground)]">
-            Responses
-          </Link>
           <Link href="/docs" className="text-[14px] text-[var(--muted)] no-underline hover:text-[var(--foreground)]">
             Docs
           </Link>

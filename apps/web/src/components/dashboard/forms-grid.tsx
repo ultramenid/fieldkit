@@ -16,7 +16,16 @@ interface FormData {
 
 function FormCard({ form }: { form: FormData }) {
   const [showShare, setShowShare] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const router = useRouter()
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!confirm(`Delete "${form.title}"? This cannot be undone.`)) return
+    setDeleting(true)
+    await fetch(`/api/forms/${form.id}`, { method: 'DELETE' })
+    router.refresh()
+  }
 
   function exportConfig() {
     fetch(`/api/forms/${form.id}`)
@@ -95,6 +104,13 @@ function FormCard({ form }: { form: FormData }) {
             className="rounded-full border-none bg-transparent px-2.5 py-1.5 text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
           >
             Export
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="ml-auto rounded-full border-none bg-transparent px-2.5 py-1.5 text-[12px] text-[var(--muted)] transition-colors hover:text-[#dc2626] disabled:opacity-40"
+          >
+            {deleting ? '…' : 'Delete'}
           </button>
         </div>
       </div>
