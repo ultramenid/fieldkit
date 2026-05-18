@@ -9,14 +9,37 @@ interface ShareModalProps {
   onClose: () => void
 }
 
+const MAX_QR_BYTES = 3000
+const DESC_PLACEHOLDER_PREFIX = 'Full description available at '
+
 export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [configQrDataUrl, setConfigQrDataUrl] = useState<string | null>(null)
   const shareUrl = `${window.location.origin}/f/${formId}`
 
   useEffect(() => {
     QRCode.toDataURL(shareUrl, { width: 200, margin: 2 }).then(setQrDataUrl)
   }, [shareUrl])
+
+  useEffect(() => {
+    fetch(`/api/forms/${formId}/export`)
+      .then((r) => {
+        if (!r.ok) throw new Error('Export failed')
+        return r.json()
+      })
+      .then((config) => {
+        const json = JSON.stringify(config)
+        if (new Blob([json]).size <= MAX_QR_BYTES) {
+          return QRCode.toDataURL(json, { width: 200, margin: 2 })
+        }
+        config.description = `${DESC_PLACEHOLDER_PREFIX}${shareUrl}`
+        const lean = JSON.stringify(config)
+        return QRCode.toDataURL(lean, { width: 200, margin: 2 })
+      })
+      .then(setConfigQrDataUrl)
+      .catch((err) => console.error('Config QR failed:', err))
+  }, [formId, shareUrl])
 
   function copyLink() {
     navigator.clipboard.writeText(shareUrl)
@@ -49,6 +72,14 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
     const a = document.createElement('a')
     a.href = qrDataUrl
     a.download = `${formTitle.toLowerCase().replace(/\s+/g, '-')}-qr.png`
+    a.click()
+  }
+
+  function downloadConfigQR() {
+    if (!configQrDataUrl) return
+    const a = document.createElement('a')
+    a.href = configQrDataUrl
+    a.download = `${formTitle.toLowerCase().replace(/\s+/g, '-')}-mobile-qr.png`
     a.click()
   }
 
@@ -86,7 +117,7 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
           </button>
         </div>
 
-        {/* QR Code */}
+        {/* Online QR Code */}
         {qrDataUrl && (
           <div className="mt-5 flex items-center gap-5">
             <img src={qrDataUrl} alt="QR code" className="h-[100px] w-[100px] rounded-[8px] border border-[var(--border)]" />
@@ -106,6 +137,35 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
             </div>
           </div>
         )}
+
+        {/* Mobile import section */}
+        <div className="mt-6 border-t border-[var(--border)] pt-5">
+          <h4 className="mb-1 text-[14px] font-medium text-[var(--foreground)]">Mobile import</h4>
+          <p className="mb-3 text-[13px] text-[var(--muted)]">
+            Scan with the FieldKit mobile app to import this form for offline use.
+          </p>
+          {configQrDataUrl ? (
+            <div className="flex items-center gap-5">
+              <img src={configQrDataUrl} alt="Mobile config QR" className="h-[100px] w-[100px] rounded-[8px] border border-[var(--border)]" />
+              <div>
+                <p className="mb-2 text-[13px] text-[var(--muted)]">Scan to import offline</p>
+                <button
+                  onClick={downloadConfigQR}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--border)]"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Download QR
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[13px] text-[var(--muted)]">Loading config QR…</p>
+          )}
+        </div>
 
         {/* Local server section */}
         <div className="mt-6 border-t border-[var(--border)] pt-5">
