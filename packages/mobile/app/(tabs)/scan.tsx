@@ -14,6 +14,7 @@ function tryParseConfig(data: string): FormConfig | null {
       typeof parsed === 'object' &&
       parsed !== null &&
       typeof parsed.formId === 'string' &&
+      typeof parsed.title === 'string' &&
       Array.isArray(parsed.fields) &&
       typeof parsed.secret === 'string'
     ) {
@@ -23,6 +24,18 @@ function tryParseConfig(data: string): FormConfig | null {
     // not JSON, fall through to URL parsing
   }
   return null
+}
+
+function buildRecord(config: FormConfig): FormRecord {
+  return {
+    id: config.formId,
+    title: config.title,
+    description: config.description,
+    configJson: JSON.stringify(config),
+    secret: config.secret,
+    importedAt: Date.now(),
+    lastSyncedAt: null,
+  }
 }
 
 export default function ScanScreen() {
@@ -69,11 +82,12 @@ export default function ScanScreen() {
       const formId = match[1]
       const existing = await getForm(formId)
       if (existing) {
+        setScanning(false)
         Alert.alert(
           'Already imported',
           'This form is already imported. Do you want to update it?',
           [
-            { text: 'Cancel', style: 'cancel', onPress: () => setScanning(false) },
+            { text: 'Cancel', style: 'cancel' },
             { text: 'Update', onPress: () => importFromUrl(formId, data) },
           ]
         )
@@ -88,6 +102,7 @@ export default function ScanScreen() {
   }
 
   const importFromUrl = async (formId: string, qrData: string) => {
+    setScanning(true)
     setImporting(true)
 
     try {
@@ -104,22 +119,7 @@ export default function ScanScreen() {
       }
 
       const config = await fetchFormConfig(formId, serverUrl)
-      const now = Date.now()
-      const record: FormRecord = {
-        id: config.formId,
-        title: config.title,
-        description: config.description,
-        configJson: JSON.stringify(config),
-        secret: config.secret,
-        importedAt: now,
-        lastSyncedAt: null,
-      }
-
-      await upsertForm(record)
-      addForm(record)
-      Alert.alert('Imported', `"${config.title}" is ready to fill.`, [
-        { text: 'OK', onPress: () => router.push('/forms') },
-      ])
+      await saveConfigLocally(config)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       Alert.alert('Import failed', msg)
@@ -135,18 +135,19 @@ export default function ScanScreen() {
     try {
       const existing = await getForm(config.formId)
       if (existing) {
+        setScanning(false)
         Alert.alert(
           'Already imported',
           'This form is already imported. Do you want to update it?',
           [
-            { text: 'Cancel', style: 'cancel', onPress: () => { setScanning(false); setImporting(false) } },
-            { text: 'Update', onPress: async () => { await doImportConfig(config) } },
+            { text: 'Cancel', style: 'cancel', onPress: () => setImporting(false) },
+            { text: 'Update', onPress: () => saveConfigLocally(config) },
           ]
         )
         return
       }
 
-      await doImportConfig(config)
+      await saveConfigLocally(config)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       Alert.alert('Import failed', msg)
@@ -156,23 +157,23 @@ export default function ScanScreen() {
     }
   }
 
-  const doImportConfig = async (config: FormConfig) => {
-    const now = Date.now()
-    const record: FormRecord = {
-      id: config.formId,
-      title: config.title,
-      description: config.description,
-      configJson: JSON.stringify(config),
-      secret: config.secret,
-      importedAt: now,
-      lastSyncedAt: null,
+  const saveConfigLocally = async (config: FormConfig) => {
+    setScanning(true)
+    setImporting(true)
+    try {
+      const record = buildRecord(config)
+      await upsertForm(record)
+      addForm(record)
+      Alert.alert('Imported', `"${config.title}" is ready to fill.`, [
+        { text: 'OK', onPress: () => router.push('/forms') },
+      ])
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      Alert.alert('Import failed', msg)
+    } finally {
+      setScanning(false)
+      setImporting(false)
     }
-
-    await upsertForm(record)
-    addForm(record)
-    Alert.alert('Imported', `"${config.title}" is ready to fill.`, [
-      { text: 'OK', onPress: () => router.push('/forms') },
-    ])
   }
 
   return (
