@@ -41,7 +41,7 @@ async function validateUrl(url: string): Promise<void> {
 
   const hostname = parsed.hostname
 
-  if (!isValidHostname(hostname) && hostname !== 'localhost') {
+  if (!isValidHostname(hostname)) {
     throw new Error('Invalid hostname')
   }
 
@@ -72,10 +72,11 @@ async function fetchImageAsBase64(url: string): Promise<string> {
     }
   }
 
-  const contentType = res.headers.get('content-type') ?? ''
-  if (!contentType.startsWith('image/')) {
-    throw new Error('Not an image: ' + contentType)
+  const rawContentType = res.headers.get('content-type') ?? ''
+  if (!rawContentType.startsWith('image/')) {
+    throw new Error('Not an image: ' + rawContentType)
   }
+  const contentType = rawContentType.split(';')[0].trim()
 
   const buffer = Buffer.from(await res.arrayBuffer())
   const b64 = buffer.toString('base64')
