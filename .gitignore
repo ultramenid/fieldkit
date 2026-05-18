@@ -32,6 +32,6 @@ npm-debug.log*
 
 # agent
 .claude/
-.CLAUDE.MD
+CLAUDE.md
 prototype/
 docs/
