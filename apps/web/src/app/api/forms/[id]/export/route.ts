@@ -22,9 +22,15 @@ function isPrivateIp(ip: string): boolean {
   return PRIVATE_IP_RANGES.some((r) => r.test(ip))
 }
 
-function isValidHostname(hostname: string): boolean {
-  if (hostname === 'localhost' || hostname.endsWith('.local')) return false
-  return /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/.test(hostname)
+
+function getStorageHostname(): string | null {
+  const endpoint = process.env.S3_ENDPOINT
+  if (!endpoint) return null
+  try {
+    return new URL(endpoint).hostname
+  } catch {
+    return null
+  }
 }
 
 async function validateUrl(url: string): Promise<void> {
@@ -40,10 +46,8 @@ async function validateUrl(url: string): Promise<void> {
   }
 
   const hostname = parsed.hostname
-
-  if (!isValidHostname(hostname)) {
-    throw new Error('Invalid hostname')
-  }
+  const storageHost = getStorageHostname()
+  if (storageHost && hostname === storageHost) return
 
   if (hostname === 'localhost' || isPrivateIp(hostname)) {
     throw new Error('Blocked internal host')
