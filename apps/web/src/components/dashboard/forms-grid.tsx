@@ -31,24 +31,22 @@ function FormCard({ form }: { form: FormData }) {
   }
 
   function exportConfig() {
-    fetch(`/api/forms/${form.id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const config = {
-          formId: data.id,
-          title: data.title,
-          description: data.description,
-          version: data.version ?? 1,
-          exportedAt: new Date().toISOString(),
-          ...(data.schema ?? {}),
-        }
+    fetch(`/api/forms/${form.id}/export`)
+      .then((r) => {
+        if (!r.ok) throw new Error('Export failed')
+        return r.json()
+      })
+      .then((config) => {
         const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `${data.title.toLowerCase().replace(/\s+/g, '-')}-config.json`
+        a.download = `${form.title.toLowerCase().replace(/\s+/g, '-')}-config.json`
         a.click()
         URL.revokeObjectURL(url)
+      })
+      .catch((err) => {
+        console.error('Export failed:', err)
       })
   }
 
