@@ -1,13 +1,82 @@
 import { NextResponse } from 'next/server'
+import { lookup } from 'node:dns/promises'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-const IMG_SRC_RE = /<img\s[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi
+const IMG_SRC_RE = /<img\s+[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024 // 10MB
+
+const PRIVATE_IP_RANGES = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^0\./,
+  /^169\.254\./,
+  /^::1$/,
+  /^fc00:/i,
+  /^fe80:/i,
+]
+
+function isPrivateIp(ip: string): boolean {
+  return PRIVATE_IP_RANGES.some((r) => r.test(ip))
+}
+
+function isValidHostname(hostname: string): boolean {
+  if (hostname === 'localhost' || hostname.endsWith('.local')) return false
+  return /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/.test(hostname)
+}
+
+async function validateUrl(url: string): Promise<void> {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error('Invalid URL')
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('Blocked protocol: ' + parsed.protocol)
+  }
+
+  const hostname = parsed.hostname
+
+  if (!isValidHostname(hostname) && hostname !== 'localhost') {
+    throw new Error('Invalid hostname')
+  }
+
+  if (hostname === 'localhost' || isPrivateIp(hostname)) {
+    throw new Error('Blocked internal host')
+  }
+
+  const resolved = await lookup(hostname, { all: true })
+  for (const addr of resolved) {
+    if (isPrivateIp(addr.address)) {
+      throw new Error('Blocked private IP: ' + addr.address)
+    }
+  }
+}
 
 async function fetchImageAsBase64(url: string): Promise<string> {
+  await validateUrl(url)
+
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
-  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`)
-  const contentType = res.headers.get('content-type') ?? 'image/png'
+
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
+
+  const contentLength = res.headers.get('content-length')
+  if (contentLength) {
+    const size = parseInt(contentLength, 10)
+    if (isNaN(size) || size > MAX_IMAGE_BYTES) {
+      throw new Error('Image too large')
+    }
+  }
+
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.startsWith('image/')) {
+    throw new Error('Not an image: ' + contentType)
+  }
+
   const buffer = Buffer.from(await res.arrayBuffer())
   const b64 = buffer.toString('base64')
   return `data:${contentType};base64,${b64}`
@@ -15,7 +84,6 @@ async function fetchImageAsBase64(url: string): Promise<string> {
 
 async function inlineImages(html: string): Promise<string> {
   const matches = [...html.matchAll(IMG_SRC_RE)]
-  const replacements: { src: string; replacement: string; index: number }[] = []
 
   const results = await Promise.allSettled(
     matches.map(async (m) => {
@@ -30,6 +98,8 @@ async function inlineImages(html: string): Promise<string> {
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') {
       map.set(matches[i][1], r.value.replacement)
+    } else {
+      console.error('Image fetch failed for form export:', matches[i][1], r.reason)
     }
   })
 
@@ -52,15 +122,17 @@ export async function GET(
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const description = await inlineImages(form.description)
+  const description = await inlineImages(form.description ?? '')
 
+  const schema = form.schema as Record<string, unknown>
   const config = {
     formId: form.id,
+    ...(schema.fields !== undefined ? { fields: schema.fields } : {}),
+    ...(schema.settings !== undefined ? { settings: schema.settings } : {}),
     title: form.title,
     description,
     version: form.version,
     exportedAt: new Date().toISOString(),
-    ...(form.schema as Record<string, unknown>),
   }
 
   return NextResponse.json(config)
