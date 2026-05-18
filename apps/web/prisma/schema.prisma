@@ -66,6 +66,7 @@ model Form {
   version     Int      @default(1)
   published   Boolean  @default(false)
   closed      Boolean  @default(false)
+  mobileSecret String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
