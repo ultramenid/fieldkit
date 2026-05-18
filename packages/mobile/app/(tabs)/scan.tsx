@@ -5,7 +5,25 @@ import { useRouter } from 'expo-router'
 import { useStore } from '../../src/store'
 import { upsertForm, getForm } from '../../src/db/database'
 import { fetchFormConfig, getServerUrl, setServerUrl } from '../../src/api/server'
-import { FormRecord } from '../../src/types'
+import { FormConfig, FormRecord } from '../../src/types'
+
+function tryParseConfig(data: string): FormConfig | null {
+  try {
+    const parsed = JSON.parse(data)
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      typeof parsed.formId === 'string' &&
+      Array.isArray(parsed.fields) &&
+      typeof parsed.secret === 'string'
+    ) {
+      return parsed as FormConfig
+    }
+  } catch {
+    // not JSON, fall through to URL parsing
+  }
+  return null
+}
 
 export default function ScanScreen() {
   const [scanning, setScanning] = useState(false)
@@ -33,9 +51,17 @@ export default function ScanScreen() {
     setScanning(true)
 
     try {
+      // Try embedded config JSON first
+      const parsed = tryParseConfig(data)
+      if (parsed) {
+        await importConfig(parsed)
+        return
+      }
+
+      // Fall back to URL-based import
       const match = data.match(/\/f\/([a-zA-Z0-9_-]+)/)
       if (!match) {
-        Alert.alert('Invalid QR', 'This QR code does not contain a valid form link.')
+        Alert.alert('Invalid QR', 'This QR code does not contain a valid form link or config.')
         setScanning(false)
         return
       }
@@ -48,20 +74,20 @@ export default function ScanScreen() {
           'This form is already imported. Do you want to update it?',
           [
             { text: 'Cancel', style: 'cancel', onPress: () => setScanning(false) },
-            { text: 'Update', onPress: () => importForm(formId, data) },
+            { text: 'Update', onPress: () => importFromUrl(formId, data) },
           ]
         )
         return
       }
 
-      await importForm(formId, data)
+      await importFromUrl(formId, data)
     } catch {
       Alert.alert('Error', 'Failed to scan QR code.')
       setScanning(false)
     }
   }
 
-  const importForm = async (formId: string, qrData: string) => {
+  const importFromUrl = async (formId: string, qrData: string) => {
     setImporting(true)
 
     try {
@@ -101,6 +127,52 @@ export default function ScanScreen() {
       setScanning(false)
       setImporting(false)
     }
+  }
+
+  const importConfig = async (config: FormConfig) => {
+    setImporting(true)
+
+    try {
+      const existing = await getForm(config.formId)
+      if (existing) {
+        Alert.alert(
+          'Already imported',
+          'This form is already imported. Do you want to update it?',
+          [
+            { text: 'Cancel', style: 'cancel', onPress: () => { setScanning(false); setImporting(false) } },
+            { text: 'Update', onPress: async () => { await doImportConfig(config) } },
+          ]
+        )
+        return
+      }
+
+      await doImportConfig(config)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      Alert.alert('Import failed', msg)
+    } finally {
+      setScanning(false)
+      setImporting(false)
+    }
+  }
+
+  const doImportConfig = async (config: FormConfig) => {
+    const now = Date.now()
+    const record: FormRecord = {
+      id: config.formId,
+      title: config.title,
+      description: config.description,
+      configJson: JSON.stringify(config),
+      secret: config.secret,
+      importedAt: now,
+      lastSyncedAt: null,
+    }
+
+    await upsertForm(record)
+    addForm(record)
+    Alert.alert('Imported', `"${config.title}" is ready to fill.`, [
+      { text: 'OK', onPress: () => router.push('/forms') },
+    ])
   }
 
   return (
