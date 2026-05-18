@@ -25,24 +25,22 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
   }
 
   function exportConfig() {
-    fetch(`/api/forms/${formId}`)
-      .then((r) => r.json())
-      .then((form) => {
-        const config = {
-          formId: form.id,
-          title: form.title,
-          description: form.description,
-          version: form.version ?? 1,
-          exportedAt: new Date().toISOString(),
-          ...(form.schema ?? {}),
-        }
+    fetch(`/api/forms/${formId}/export`)
+      .then((r) => {
+        if (!r.ok) throw new Error('Export failed')
+        return r.json()
+      })
+      .then((config) => {
         const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `${form.title.toLowerCase().replace(/\s+/g, '-')}-config.json`
+        a.download = `${formTitle.toLowerCase().replace(/\s+/g, '-')}-config.json`
         a.click()
         URL.revokeObjectURL(url)
+      })
+      .catch((err) => {
+        console.error('Export failed:', err)
       })
   }
 
