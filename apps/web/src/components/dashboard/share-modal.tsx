@@ -12,9 +12,24 @@ interface ShareModalProps {
 const MAX_QR_BYTES = 3000
 const DESC_PLACEHOLDER_PREFIX = 'Full description available at '
 
+function safeFilename(title: string, suffix: string): string {
+  return `${title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}-${suffix}`
+}
+
+function DownloadSvg({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  )
+}
+
 export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [configJson, setConfigJson] = useState<Record<string, unknown> | null>(null)
   const [configQrDataUrl, setConfigQrDataUrl] = useState<string | null>(null)
   const shareUrl = `${window.location.origin}/f/${formId}`
 
@@ -23,23 +38,30 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
   }, [shareUrl])
 
   useEffect(() => {
-    fetch(`/api/forms/${formId}/export`)
+    const controller = new AbortController()
+    fetch(`/api/forms/${formId}/export`, { signal: controller.signal })
       .then((r) => {
         if (!r.ok) throw new Error('Export failed')
         return r.json()
       })
       .then((config) => {
-        const json = JSON.stringify(config)
+        setConfigJson(config)
+        const lean = { ...config }
+        const json = JSON.stringify(lean)
         if (new Blob([json]).size <= MAX_QR_BYTES) {
           return QRCode.toDataURL(json, { width: 200, margin: 2 })
         }
-        config.description = `${DESC_PLACEHOLDER_PREFIX}${shareUrl}`
-        const lean = JSON.stringify(config)
-        return QRCode.toDataURL(lean, { width: 200, margin: 2 })
+        lean.description = `${DESC_PLACEHOLDER_PREFIX}${shareUrl}`
+        return QRCode.toDataURL(JSON.stringify(lean), { width: 200, margin: 2 })
       })
       .then(setConfigQrDataUrl)
-      .catch((err) => console.error('Config QR failed:', err))
-  }, [formId, shareUrl])
+      .catch((err) => {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Config QR failed:', err)
+        }
+      })
+    return () => controller.abort()
+  }, [formId])
 
   function copyLink() {
     navigator.clipboard.writeText(shareUrl)
@@ -48,30 +70,21 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
   }
 
   function exportConfig() {
-    fetch(`/api/forms/${formId}/export`)
-      .then((r) => {
-        if (!r.ok) throw new Error('Export failed')
-        return r.json()
-      })
-      .then((config) => {
-        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${formTitle.toLowerCase().replace(/\s+/g, '-')}-config.json`
-        a.click()
-        URL.revokeObjectURL(url)
-      })
-      .catch((err) => {
-        console.error('Export failed:', err)
-      })
+    if (!configJson) return
+    const blob = new Blob([JSON.stringify(configJson, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = safeFilename(formTitle, 'config.json')
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function downloadQR() {
     if (!qrDataUrl) return
     const a = document.createElement('a')
     a.href = qrDataUrl
-    a.download = `${formTitle.toLowerCase().replace(/\s+/g, '-')}-qr.png`
+    a.download = safeFilename(formTitle, 'qr.png')
     a.click()
   }
 
@@ -79,7 +92,7 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
     if (!configQrDataUrl) return
     const a = document.createElement('a')
     a.href = configQrDataUrl
-    a.download = `${formTitle.toLowerCase().replace(/\s+/g, '-')}-mobile-qr.png`
+    a.download = safeFilename(formTitle, 'mobile-qr.png')
     a.click()
   }
 
@@ -127,11 +140,7 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
                 onClick={downloadQR}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--foreground)]"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
+                <DownloadSvg />
                 Download QR
               </button>
             </div>
@@ -151,13 +160,9 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
                 <p className="mb-2 text-[13px] text-[var(--muted)]">Scan to import offline</p>
                 <button
                   onClick={downloadConfigQR}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--border)]"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--foreground)]"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
+                  <DownloadSvg />
                   Download QR
                 </button>
               </div>
@@ -177,11 +182,7 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
             onClick={exportConfig}
             className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--background)] px-4 py-2 text-[13px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--foreground)]"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <DownloadSvg size={14} />
             Export for local server (.json)
           </button>
         </div>
