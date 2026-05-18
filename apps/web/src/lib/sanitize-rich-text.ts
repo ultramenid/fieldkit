@@ -18,7 +18,7 @@ const ALLOWED_TAGS = new Set([
   'IMG',
 ])
 const SAFE_HREF_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:'])
-const SAFE_SRC_PROTOCOLS = new Set(['http:', 'https:', 'data:'])
+const SAFE_SRC_PROTOCOLS = new Set(['http:', 'https:'])
 const ALIGN_VALUES = new Set(['left', 'center', 'right', 'justify'])
 
 function hasExplicitScheme(value: string): boolean {
