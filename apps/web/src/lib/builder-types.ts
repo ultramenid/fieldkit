@@ -38,7 +38,7 @@ export const DEFAULT_LABELS: Record<FieldType, string> = {
   radio: 'Single choice',
   checkbox: 'Multiple choice',
   date: 'Date',
-  file: 'File upload',
+  file: 'Image upload',
   rating: 'Rating',
 }
 

@@ -7,13 +7,14 @@ import type { BuilderState, BuilderField } from '@/lib/builder-types'
 export default async function FormBuilderPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const session = await auth()
   if (!session?.user?.id) redirect('/auth/signin')
 
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id: id, userId: session.user.id },
   })
 
   if (!form) notFound()

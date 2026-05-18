@@ -77,7 +77,7 @@ function FieldPreview({ field }: { field: BuilderField }) {
     case 'file':
       return (
         <div className="rounded-[12px] border-2 border-dashed border-[var(--border)] p-6 text-center text-[13px] text-[var(--muted)]">
-          Drop file here or click to upload
+          Drop image here or click to upload
         </div>
       )
     case 'rating':

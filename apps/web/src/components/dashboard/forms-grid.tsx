@@ -118,12 +118,7 @@ function FormCard({ form }: { form: FormData }) {
               Share
             </button>
           )}
-          <button
-            onClick={exportConfig}
-            className="rounded-full border-none bg-transparent px-2.5 py-1.5 text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
-          >
-            Local
-          </button>
+
           <button
             onClick={(e) => { e.stopPropagation(); setShowDelete(true) }}
             disabled={deleting}
@@ -154,16 +149,33 @@ function FormCard({ form }: { form: FormData }) {
 
 export function FormsGrid({ forms }: { forms: FormData[] }) {
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<'all' | 'live' | 'closed' >('all')
   const router = useRouter()
 
-  const filtered = forms.filter((f) =>
-    f.title.toLowerCase().includes(search.toLowerCase())
+  const filtered = forms.filter((f) => {
+    if (!f.title.toLowerCase().includes(search.toLowerCase())) return false
+    if (filter === 'live') return f.published && !f.closed
+    if (filter === 'closed') return f.published && f.closed
+    return true
+  })
+
+  const filterBtn = (label: string, value: typeof filter) => (
+    <button
+      onClick={() => setFilter(value)}
+      className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
+        filter === value
+          ? 'bg-[var(--foreground)] text-[var(--background)]'
+          : 'border border-[var(--border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]'
+      }`}
+    >
+      {label}
+    </button>
   )
 
   return (
     <>
       {/* Page header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-8 pt-10">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 pt-10">
         <h1 className="m-0 font-sans text-[28px] font-medium text-[var(--foreground)]">Your Forms</h1>
         <div className="flex items-center gap-3">
           <input
@@ -183,6 +195,13 @@ export function FormsGrid({ forms }: { forms: FormData[] }) {
             New form
           </button>
         </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 pb-6">
+        {filterBtn('All', 'all')}
+        {filterBtn('Live', 'live')}
+        {filterBtn('Closed', 'closed')}
       </div>
 
       {/* Forms grid */}
@@ -205,7 +224,7 @@ export function FormsGrid({ forms }: { forms: FormData[] }) {
         </div>
       ) : (
         <div className="py-20 text-center text-[15px] text-[var(--muted)]">
-          No forms match &ldquo;{search}&rdquo;
+          {search ? <>No forms match &ldquo;{search}&rdquo;</> : `No ${filter} forms`}
         </div>
       )}
     </>

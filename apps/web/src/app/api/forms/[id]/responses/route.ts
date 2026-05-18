@@ -4,33 +4,59 @@ import { auth } from '@/lib/auth'
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const responses = await db.response.findMany({
-    where: { formId: params.id },
-    orderBy: { submittedAt: 'desc' },
+  const { searchParams } = new URL(_req.url)
+  const parsedPage = Number(searchParams.get('page') ?? '1')
+  const parsedPageSize = Number(searchParams.get('pageSize') ?? '25')
+
+  const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? Math.floor(parsedPage) : 1
+  const pageSize = [10, 25, 50].includes(parsedPageSize) ? parsedPageSize : 25
+
+  const total = await db.response.count({
+    where: { formId: id },
   })
 
-  return NextResponse.json(responses)
+  const totalPages = total === 0 ? 1 : Math.ceil(total / pageSize)
+  const safePage = Math.min(page, totalPages)
+
+  const responses = await db.response.findMany({
+    where: { formId: id },
+    orderBy: { submittedAt: 'desc' },
+    skip: (safePage - 1) * pageSize,
+    take: pageSize,
+  })
+
+  return NextResponse.json({
+    responses,
+    pagination: {
+      page: safePage,
+      pageSize,
+      total,
+      totalPages,
+    },
+  })
 }
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -46,13 +72,13 @@ export async function POST(
   for (const r of responses) {
     if (r.submissionId) {
       const existing = await db.response.findFirst({
-        where: { formId: params.id, submissionId: r.submissionId },
+        where: { formId: id, submissionId: r.submissionId },
       })
       if (existing) continue
     }
     await db.response.create({
       data: {
-        formId: params.id,
+        formId: id,
         submissionId: r.submissionId ?? null,
         source: r.source ?? 'local',
         data: r.data ?? r,

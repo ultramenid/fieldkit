@@ -86,7 +86,14 @@
     </div>
 
     <div class="toolbar">
-      <input type="search" class="search-input" placeholder="Search responses…" oninput="filterTable(this.value)" />
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input type="search" class="search-input" placeholder="Search responses…" oninput="onSearchChange(this.value)" />
+        <select id="pageSize" class="search-input" style="width:auto" onchange="onPageSizeChange(this.value)">
+          <option value="10">10 / page</option>
+          <option value="25" selected>25 / page</option>
+          <option value="50">50 / page</option>
+        </select>
+      </div>
       <span style="font-size:12px;color:var(--muted);font-family:var(--font-mono);" id="liveStatus">Connecting…</span>
     </div>
 
@@ -97,17 +104,32 @@
         <tbody id="tableBody"></tbody>
       </table>
     </div>
+    <div id="pagination" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:24px;">
+      <span id="rangeSummary" style="font-size:12px;color:var(--muted);font-family:var(--font-mono);">0 of 0 responses</span>
+      <div id="pageButtons" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
   </main>
 
   <script>
     const formId = location.pathname.split('/')[2]
     let formData = null
     let allResponses = []
+    let filteredResponses = []
+    let searchQuery = ''
+    let currentPage = 1
+    let pageSize = 25
     let es = null
 
     async function loadForm() {
       const res = await fetch('/api/form/' + formId)
-      if (!res.ok) return
+      if (!res.ok) {
+        document.getElementById('formTitle').textContent = 'Unknown form'
+        document.getElementById('pageTitle').textContent = 'Responses'
+        document.getElementById('pageSubtitle').textContent = 'Unable to load form data'
+        document.getElementById('emptyState').textContent = 'Unable to load form responses. Check the form ID and try again.'
+        document.getElementById('emptyState').style.display = 'block'
+        return
+      }
       formData = await res.json()
       const fields = formData.schema?.fields || []
       document.title = formData.title + ' · Responses · FieldKit'
@@ -115,7 +137,6 @@
       document.getElementById('pageTitle').textContent = formData.title + ' — Responses'
       document.getElementById('exportBtn').href = '/api/forms/' + formId + '/export'
 
-      // Build table headers
       const head = document.getElementById('tableHead')
       head.innerHTML = '<tr><th style="width:4%">#</th>' +
         fields.map(f => `<th>${esc(f.label)}</th>`).join('') +
@@ -141,50 +162,151 @@
       }
     }
 
-    function updateTable(responses) {
-      const fields = formData?.schema?.fields || []
-      const prevCount = allResponses.length
-      allResponses = responses
+    function getAnswers(response) {
+      const rawAnswers = response.data?.answers
+      return Array.isArray(rawAnswers) ? rawAnswers : (rawAnswers?.answers || [])
+    }
 
-      document.getElementById('pageSubtitle').textContent =
-        responses.length + ' response' + (responses.length !== 1 ? 's' : '')
+    function applyFilters() {
+      const q = searchQuery.trim().toLowerCase()
+      filteredResponses = allResponses.filter((response) => {
+        if (!q) return true
+        const answers = getAnswers(response)
+        const text = answers.map((answer) => String(answer?.value ?? '')).join(' ').toLowerCase()
+        return text.includes(q)
+      })
+    }
+
+    function renderTableState() {
+      applyFilters()
+
+      const total = filteredResponses.length
+      const totalPages = total === 0 ? 1 : Math.ceil(total / pageSize)
+      currentPage = Math.max(1, Math.min(currentPage, totalPages))
+      document.getElementById('pageSubtitle').textContent = total + ' response' + (total !== 1 ? 's' : '')
+
+      const start = (currentPage - 1) * pageSize
+      const pageRows = filteredResponses.slice(start, start + pageSize)
 
       const table = document.getElementById('responseTable')
       const empty = document.getElementById('emptyState')
+      const tbody = document.getElementById('tableBody')
 
-      if (!responses.length) {
+      if (!total) {
         table.style.display = 'none'
         empty.style.display = 'block'
+        tbody.innerHTML = ''
+      } else {
+        table.style.display = 'table'
+        empty.style.display = 'none'
+        const fields = formData?.schema?.fields || []
+        tbody.innerHTML = pageRows.map((response, i) => {
+          const answers = getAnswers(response)
+          return `<tr>
+            <td class="row-num">${total - (start + i)}</td>
+            ${fields.map(f => {
+              const ans = answers.find(a => a.fieldId === f.id)
+              const val = ans?.value
+              const display = Array.isArray(val) ? val.join(', ') : (val ?? '—')
+              return `<td>${esc(String(display))}</td>`
+            }).join('')}
+            <td class="timestamp">${new Date(response.submittedAt).toLocaleString()}</td>
+          </tr>`
+        }).join('')
+      }
+
+      renderPagination(total, totalPages)
+    }
+
+    function renderPagination(total, totalPages) {
+      const summary = document.getElementById('rangeSummary')
+      const buttons = document.getElementById('pageButtons')
+
+      if (total === 0) {
+        summary.textContent = '0 of 0 responses'
+        buttons.innerHTML = ''
         return
       }
 
-      table.style.display = 'table'
-      empty.style.display = 'none'
+      const start = (currentPage - 1) * pageSize + 1
+      const end = Math.min(currentPage * pageSize, total)
+      summary.textContent = `${start}–${end} of ${total} responses`
 
-      const tbody = document.getElementById('tableBody')
-      tbody.innerHTML = responses.map((r, i) => {
-        const rawAnswers = r.data?.answers
-        // Handle double-nested: { answers: { answers: [...] } } or { answers: [...] }
-        const answers = Array.isArray(rawAnswers) ? rawAnswers : (rawAnswers?.answers || [])
-        const isNew = i < (responses.length - prevCount) && prevCount > 0
-        return `<tr class="${isNew ? 'new-row' : ''}">
-          <td class="row-num">${responses.length - i}</td>
-          ${fields.map(f => {
-            const ans = answers.find(a => a.fieldId === f.id)
-            const val = ans?.value
-            const display = Array.isArray(val) ? val.join(', ') : (val ?? '—')
-            return `<td>${esc(String(display))}</td>`
-          }).join('')}
-          <td class="timestamp">${new Date(r.submittedAt).toLocaleString()}</td>
-        </tr>`
-      }).join('')
+      const parts = []
+      const control = (label, target, disabled, active) => {
+        const classes = active ? 'btn btn-primary' : 'btn btn-secondary'
+        const disabledAttr = disabled ? 'disabled' : `onclick="goToPage(${target})"`
+        const style = 'style="padding:6px 10px;font-size:12px;' + (disabled ? 'opacity:.5;cursor:not-allowed;' : '') + '"'
+        parts.push(`<button class="${classes}" ${style} ${disabledAttr}>${label}</button>`)
+      }
+
+      const pageItems = (() => {
+        if (totalPages <= 9) return Array.from({ length: totalPages }, (_, i) => i + 1)
+
+        const pageSet = new Set([
+          1,
+          2,
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          totalPages - 1,
+          totalPages,
+        ])
+
+        const pages = Array.from(pageSet)
+          .filter((n) => n >= 1 && n <= totalPages)
+          .sort((a, b) => a - b)
+
+        const items = []
+        for (let i = 0; i < pages.length; i += 1) {
+          const current = pages[i]
+          const prev = pages[i - 1]
+          if (prev && current - prev > 1) items.push('ellipsis')
+          items.push(current)
+        }
+
+        return items
+      })()
+
+      control('First', 1, currentPage === 1, false)
+      control('Prev', currentPage - 1, currentPage === 1, false)
+      pageItems.forEach((item) => {
+        if (item === 'ellipsis') {
+          parts.push('<span style="padding:0 4px;font-size:12px;color:var(--muted);font-family:var(--font-mono);">…</span>')
+          return
+        }
+        control(String(item), item, item === currentPage, item === currentPage)
+      })
+      control('Next', currentPage + 1, currentPage === totalPages, false)
+      control('Last', totalPages, currentPage === totalPages, false)
+
+      buttons.innerHTML = parts.join('')
     }
 
-    function filterTable(q) {
-      const rows = document.querySelectorAll('#tableBody tr')
-      rows.forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'
-      })
+    function goToPage(page) {
+      const total = filteredResponses.length
+      const totalPages = total === 0 ? 1 : Math.ceil(total / pageSize)
+      if (page < 1 || page > totalPages || page === currentPage) return
+      currentPage = page
+      renderTableState()
+    }
+
+    function onSearchChange(value) {
+      searchQuery = value
+      currentPage = 1
+      renderTableState()
+    }
+
+    function onPageSizeChange(value) {
+      const parsed = Number(value)
+      pageSize = [10, 25, 50].includes(parsed) ? parsed : 25
+      currentPage = 1
+      renderTableState()
+    }
+
+    function updateTable(responses) {
+      allResponses = [...responses].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+      renderTableState()
     }
 
     function esc(str) {

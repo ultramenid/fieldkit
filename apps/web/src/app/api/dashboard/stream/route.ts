@@ -20,6 +20,7 @@ export async function GET(req: Request) {
       async function fetchAndSend() {
         const forms = await db.form.findMany({
           where: { userId },
+          orderBy: { updatedAt: 'desc' },
           include: { _count: { select: { responses: true } } },
         })
         const totalForms = forms.length
@@ -27,16 +28,26 @@ export async function GET(req: Request) {
         const publishedCount = forms.filter((f) => (f as { published?: boolean }).published).length
         const formResponseCounts: Record<string, number> = {}
         forms.forEach((f) => { formResponseCounts[f.id] = f._count.responses })
-        send({ type: 'update', totalForms, totalResponses, publishedCount, formResponseCounts })
+        const formsList = forms.map((f) => ({
+          id: f.id,
+          title: f.title,
+          description: f.description,
+          published: (f as { published?: boolean }).published ?? false,
+          closed: (f as { closed?: boolean }).closed ?? false,
+          createdAt: f.createdAt.toISOString(),
+          responseCount: f._count.responses,
+        }))
+        send({ type: 'update', totalForms, totalResponses, publishedCount, formResponseCounts, forms: formsList })
       }
 
       // Send current stats immediately on connect
       await fetchAndSend()
 
-      // Listen for any new response inserts
+      // Listen for new responses and form changes
       const pgClient = new Client({ connectionString: process.env.DATABASE_URL })
       await pgClient.connect()
       await pgClient.query('LISTEN new_response')
+      await pgClient.query('LISTEN form_change')
 
       pgClient.on('notification', async () => {
         try {

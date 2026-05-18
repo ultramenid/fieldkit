@@ -33,7 +33,6 @@ const sections = [
     label: 'Reference',
     links: [
       { label: 'Config format', id: 'config-format' },
-      { label: 'API endpoints', id: 'api' },
       { label: 'Troubleshooting', id: 'troubleshooting' },
     ],
   },

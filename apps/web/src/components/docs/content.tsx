@@ -61,19 +61,21 @@ function StepList({ steps }: { steps: { title: string; body: React.ReactNode }[]
 
 function Diagram() {
   return (
-    <div className="mb-6 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <span className="rounded-full border border-[#16a34a] px-[18px] py-2.5 text-[13px] font-medium text-[#16a34a]">
-          Serverside
-        </span>
-        <span className="text-[18px] text-[var(--muted)]">→ export config →</span>
-        <span className="rounded-full border border-[#b45309] px-[18px] py-2.5 text-[13px] font-medium text-[#b45309]">
-          Local Server
-        </span>
-        <span className="text-[18px] text-[var(--muted)]">→ export data →</span>
-        <span className="rounded-full border border-[#16a34a] px-[18px] py-2.5 text-[13px] font-medium text-[#16a34a]">
-          Serverside
-        </span>
+    <div className="mb-6 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-4 text-center md:px-4">
+      <div className="overflow-x-auto">
+        <div className="mx-auto flex min-w-max items-center justify-center gap-1.5 md:gap-2 whitespace-nowrap">
+          <span className="rounded-full border border-[#16a34a] px-4 py-1.5 text-[12px] font-medium text-[#16a34a]">
+            Serverside
+          </span>
+          <span className="text-[13px] text-[var(--muted)]">→ export config →</span>
+          <span className="rounded-full border border-[#b45309] px-4 py-1.5 text-[12px] font-medium text-[#b45309]">
+            Local Server
+          </span>
+          <span className="text-[13px] text-[var(--muted)]">→ export data →</span>
+          <span className="rounded-full border border-[#16a34a] px-4 py-1.5 text-[12px] font-medium text-[#16a34a]">
+            Serverside
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -112,8 +114,8 @@ export function DocsContent() {
               title: 'Install & start the Local Server',
               body: (
                 <>
-                  Run <IC>npm install -g @fieldkit/local-server</IC> then <IC>fieldkit serve</IC>. The
-                  admin panel opens at <IC>http://localhost:3000</IC>.
+                  Run <IC>npm install -g @malichamdan/fieldkit-local-server</IC> then <IC>fieldkit</IC>. The
+                  admin panel opens at <IC>http://localhost:3002</IC> by default.
                 </>
               ),
             },
@@ -147,17 +149,18 @@ export function DocsContent() {
           on the serverside, export the config, then import it through the local server&apos;s web UI.
         </P>
         <CodeBlock>
-          <span className="comment"># 1. Install globally{'\n'}</span>
-          <span className="cmd">npm install -g @fieldkit/local-server{'\n\n'}</span>
-          <span className="comment"># 2. Start the server{'\n'}</span>
-          <span className="cmd">fieldkit serve{'\n\n'}</span>
-          <span className="comment"># Server running at http://localhost:3000{'\n'}</span>
-          <span className="comment"># Open the admin panel in your browser to import configs</span>
+          <span className="comment"># Install globally{'\n'}</span>
+          <span className="cmd">npm install -g @malichamdan/fieldkit-local-server{'\n\n'}</span>
+          <span className="comment"># Start server (default: 3002){'\n'}</span>
+          <span className="cmd">fieldkit{'\n\n'}</span>
+          <span className="comment"># Optional custom port{'\n'}</span>
+          <span className="cmd">fieldkit --port=3000</span>
         </CodeBlock>
         <P>
-          Once the server is running, open <IC>http://localhost:3000</IC> in your browser. Use the{' '}
-          <strong>Import Config</strong> button to upload the JSON file exported from the serverside. No
-          terminal commands needed for import.
+          Once the server is running, open <IC>http://localhost:3002</IC> in your browser (or use{' '}
+          <IC>fieldkit --port=3000</IC> if you want port 3000). Use the <strong>Import Config</strong>{' '}
+          button to upload the JSON file exported from the serverside. No terminal commands needed for
+          import.
         </P>
         <Callout title="Important">
           <p>
@@ -194,7 +197,7 @@ export function DocsContent() {
             ['Single choice', 'One answer from few options', 'Radio buttons, custom options'],
             ['Multiple choice', 'Select all that apply', 'Checkboxes, min/max selections'],
             ['Date', 'Dates of birth, event dates', 'Min/max date range'],
-            ['File upload', 'Documents, photos', 'Allowed types, max size'],
+            ['Image upload', 'Photos, screenshots', 'JPG, PNG, WebP, GIF up to 10MB'],
             ['Rating', 'Satisfaction, quality scores', 'Star count (1–10)'],
           ]}
         />
@@ -235,24 +238,21 @@ export function DocsContent() {
         <UL>
           <li><strong>Direct link</strong> — copy the form URL to clipboard</li>
           <li><strong>QR code</strong> — download a QR code image for printing</li>
-          <li><strong>Embed code</strong> — HTML snippet to embed the form in another website</li>
-          <li><strong>Email invite</strong> — send the form link to a list of email addresses</li>
+          <li><strong>Export config</strong> — download a JSON config for the local server</li>
         </UL>
-        <H3>Access control</H3>
+        <H3>Availability controls</H3>
         <DataTable
           headers={['Setting', 'Behavior']}
           rows={[
-            ['Public', 'Anyone with the link can submit'],
-            ['One response per device', 'Uses browser fingerprint to prevent duplicates'],
-            ['Require email', 'Respondent must enter email before accessing the form'],
-            ['Close after date', 'Form stops accepting responses after a set date'],
-            ['Close after count', 'Form closes after N responses received'],
+            ['Publish / unpublish', 'Draft forms are private; published forms accept responses'],
+            ['Close / reopen form', 'Temporarily stop or resume new submissions'],
+            ['Allow multiple submissions', 'Choose whether a device can submit once or multiple times'],
           ]}
         />
         <Callout title="Note">
           <p>
-            Unpublishing a form immediately stops accepting new responses. Existing responses are
-            preserved and still visible in the Responses table.
+            Unpublishing or closing a form stops new submissions, but existing responses are preserved and
+            still visible in the Responses table.
           </p>
         </Callout>
       </section>
@@ -264,9 +264,9 @@ export function DocsContent() {
         <H3>How to export</H3>
         <OL>
           <li>Go to the <strong>Dashboard</strong></li>
-          <li>Click the <strong>⋯</strong> menu on the form you want to export</li>
-          <li>Select <strong>Export config</strong></li>
-          <li>A <IC>.json</IC> file downloads to your machine</li>
+          <li>Click <strong>Share</strong> on the form you want to export</li>
+          <li>Click <strong>Export for local server (.json)</strong></li>
+          <li>A .json config file downloads to your machine</li>
         </OL>
         <H3>What&apos;s included in the config</H3>
         <UL>
@@ -319,13 +319,11 @@ export function DocsContent() {
           <li>The system merges responses, deduplicating by submission ID</li>
         </OL>
         <H3>Exporting final data</H3>
-        <P>Click <strong>Export</strong> on the Responses page to download all compiled data:</P>
+        <P>Click <strong>Export CSV</strong> on the Responses page to download compiled data:</P>
         <DataTable
           headers={['Format', 'Best for']}
           rows={[
-            ['CSV', 'Spreadsheets (Excel, Google Sheets)'],
-            ['JSON', 'Programmatic processing, databases'],
-            ['XLSX', 'Excel with formatting preserved'],
+            ['CSV', 'Spreadsheets (Excel, Google Sheets) and quick reporting'],
           ]}
         />
         <Callout title="Deduplication">
@@ -341,36 +339,31 @@ export function DocsContent() {
       <section>
         <H2 id="install">Local Server Installation</H2>
         <P>
-          The local server runs on any machine with Node.js 18+ installed. It works on Windows, macOS,
-          and Linux.
+          The local server runs on any machine with Node.js installed. It works on Windows, macOS, and
+          Linux.
         </P>
         <H3>System requirements</H3>
         <DataTable
-          headers={['Requirement', 'Minimum', 'Recommended']}
+          headers={['Requirement', 'Guidance', 'Notes']}
           rows={[
-            ['Node.js', <IC key="n1">18.0.0</IC>, <IC key="n2">20.x LTS</IC>],
-            ['RAM', '256 MB', '512 MB'],
-            ['Disk', '50 MB', '200 MB'],
-            ['Network', 'LAN access', 'LAN + Wi-Fi AP'],
+            ['Node.js', <IC key="n1">18+</IC>, 'Use an active LTS release when possible'],
+            ['RAM', '256 MB+', 'More is helpful for larger response volumes'],
+            ['Disk', '50 MB+', 'Allocate extra space for uploaded files and exports'],
+            ['Network', 'LAN access', 'Devices must be on the same local network'],
           ]}
         />
         <H3>Install on Windows</H3>
         <CodeBlock>
           <span className="comment"># Using PowerShell (run as Administrator){'\n'}</span>
-          <span className="cmd">npm install -g @fieldkit/local-server{'\n\n'}</span>
+          <span className="cmd">npm install -g @malichamdan/fieldkit-local-server{'\n\n'}</span>
           <span className="comment"># Verify installation{'\n'}</span>
           <span className="cmd">fieldkit --version</span>
         </CodeBlock>
         <H3>Install on macOS / Linux</H3>
         <CodeBlock>
-          <span className="cmd">npm install -g @fieldkit/local-server{'\n\n'}</span>
+          <span className="cmd">npm install -g @malichamdan/fieldkit-local-server{'\n\n'}</span>
           <span className="comment"># Or with sudo if needed{'\n'}</span>
-          <span className="cmd">sudo npm install -g @fieldkit/local-server</span>
-        </CodeBlock>
-        <H3>Install via Docker</H3>
-        <CodeBlock>
-          <span className="cmd">docker pull fieldkit/local-server:latest{'\n'}</span>
-          <span className="cmd">docker run -d -p 3000:3000 -v ./config:/app/config fieldkit/local-server</span>
+          <span className="cmd">sudo npm install -g @malichamdan/fieldkit-local-server</span>
         </CodeBlock>
       </section>
 
@@ -383,46 +376,29 @@ export function DocsContent() {
           web UI — no terminal commands needed:
         </P>
         <OL>
-          <li>Start the server with <IC>fieldkit serve</IC></li>
-          <li>Open <IC>http://localhost:3000</IC> in your browser</li>
+          <li>Start the server with <IC>fieldkit</IC> (or <IC>fieldkit --port=3000</IC>)</li>
+          <li>Open <IC>http://localhost:3002</IC> in your browser (or your custom port)</li>
           <li>Click <strong>Import Config</strong> and upload the JSON file exported from the serverside</li>
           <li>The form appears immediately in the admin panel and is ready to serve</li>
         </OL>
         <P>You can import multiple forms — each one gets its own URL path on the local network.</P>
         <H3>Configuration options</H3>
         <P>
-          Server settings are managed through the admin panel or via <IC>fieldkit.config.json</IC> in
-          the working directory:
+          The current CLI supports a minimal runtime configuration:
         </P>
-        <CodeBlock>
-          {`{
-  "port": 3000,
-  "host": "0.0.0.0",
-  "dataDir": "./data",
-  "forms": ["./community-health-survey.json"],
-  "auth": {
-    "enabled": false,
-    "pin": null
-  },
-  "export": {
-    "format": "csv",
-    "autoBackup": true,
-    "backupInterval": "1h"
-  }
-}`}
-        </CodeBlock>
         <DataTable
           headers={['Option', 'Default', 'Description']}
           rows={[
-            [<IC key="p">port</IC>, <IC key="p2">3000</IC>, 'Port the server listens on'],
-            [<IC key="h">host</IC>, <IC key="h2">0.0.0.0</IC>, 'Bind address (0.0.0.0 = all interfaces)'],
-            [<IC key="d">dataDir</IC>, <IC key="d2">./data</IC>, 'Where responses are stored locally'],
-            [<IC key="a">auth.enabled</IC>, <IC key="a2">false</IC>, 'Require PIN to access admin panel'],
-            [<IC key="ap">auth.pin</IC>, <IC key="ap2">null</IC>, '4-digit PIN for admin access'],
-            [<IC key="ef">export.format</IC>, <IC key="ef2">csv</IC>, 'Export format: csv, json, or xlsx'],
-            [<IC key="ab">export.autoBackup</IC>, <IC key="ab2">true</IC>, 'Auto-backup responses to disk'],
+            [<IC key="p">--port=&lt;number&gt;</IC>, <IC key="p2">3002</IC>, 'Set server port at startup'],
+            ['Bind address', <IC key="h2">0.0.0.0</IC>, 'Automatically listens on all interfaces for LAN access'],
+            ['Data directory', <IC key="d2">~/.fieldkit/data</IC>, 'Stores forms, responses, and uploaded files locally'],
           ]}
         />
+        <Callout title="Note">
+          <p>
+            Advanced flags such as <IC>--pin</IC> and <IC>--daemon</IC> are not part of the current CLI.
+          </p>
+        </Callout>
       </section>
 
       {/* Running */}
@@ -430,30 +406,12 @@ export function DocsContent() {
         <H2 id="run">Running the Local Server</H2>
         <P>Start the server, then import configs through the web UI.</P>
         <CodeBlock>
-          <span className="comment"># Start the local server{'\n'}</span>
-          <span className="cmd">fieldkit serve{'\n\n'}</span>
-          <span className="comment"># Start with custom port{'\n'}</span>
-          <span className="cmd">fieldkit serve --port 8080{'\n\n'}</span>
-          <span className="comment"># Start with PIN protection{'\n'}</span>
-          <span className="cmd">fieldkit serve --pin 1234{'\n\n'}</span>
-          <span className="comment"># Run in background (Linux/macOS){'\n'}</span>
-          <span className="cmd">fieldkit serve --daemon</span>
+          <span className="comment"># Start on default port 3002{'\n'}</span>
+          <span className="cmd">fieldkit{'\n\n'}</span>
+          <span className="comment"># Start on a custom port{'\n'}</span>
+          <span className="cmd">fieldkit --port=8080</span>
         </CodeBlock>
-        <P>Once running, the server displays:</P>
-        <CodeBlock>
-          {`┌─────────────────────────────────────────┐
-│  FieldKit Local Server v1.2.0           │
-│                                         │
-│  Form:    Community Health Survey       │
-│  Status:  Running                       │
-│                                         │
-│  Local:   http://localhost:3000         │
-│  Network: http://192.168.1.100:3000    │
-│                                         │
-│  Responses: 0 collected                 │
-│  Uptime:    0m                          │
-└─────────────────────────────────────────┘`}
-        </CodeBlock>
+        <P>Once running, the server prints local and LAN URLs in your terminal output.</P>
         <Callout title="Field deployment tip">
           <p>
             For field deployments, connect a portable Wi-Fi router to the machine running the local
@@ -471,7 +429,7 @@ export function DocsContent() {
           itself. The form master always lives on the serverside.
         </P>
         <H3>Export responses from local server (web UI)</H3>
-        <P>Open the local server admin panel at <IC>http://localhost:3000</IC>:</P>
+        <P>Open the local server admin panel at <IC>http://localhost:3002</IC> (or your custom port):</P>
         <OL>
           <li>Go to the <strong>Responses</strong> tab for the form</li>
           <li>Click <strong>Export Data</strong> in the top-right</li>
@@ -541,45 +499,28 @@ export function DocsContent() {
         </CodeBlock>
       </section>
 
-      {/* API */}
-      <section>
-        <H2 id="api">API Endpoints</H2>
-        <P>The local server exposes a simple REST API for programmatic access:</P>
-        <DataTable
-          headers={['Method', 'Endpoint', 'Description']}
-          rows={[
-            [<IC key="g1">GET</IC>, <IC key="e1">/api/forms</IC>, 'List all loaded forms'],
-            [<IC key="g2">GET</IC>, <IC key="e2">/api/forms/:id</IC>, 'Get form definition'],
-            [<IC key="p1">POST</IC>, <IC key="e3">/api/forms/:id/submit</IC>, 'Submit a response'],
-            [<IC key="g3">GET</IC>, <IC key="e4">/api/responses/:formId</IC>, 'List responses (admin)'],
-            [<IC key="g4">GET</IC>, <IC key="e5">/api/export/:formId</IC>, 'Export responses'],
-            [<IC key="g5">GET</IC>, <IC key="e6">/api/status</IC>, 'Server health check'],
-          ]}
-        />
-      </section>
-
       {/* Troubleshooting */}
       <section>
         <H2 id="troubleshooting">Troubleshooting</H2>
         <H3>Port already in use</H3>
         <CodeBlock>
           <span className="comment"># Use a different port{'\n'}</span>
-          <span className="cmd">fieldkit serve --port 8080{'\n\n'}</span>
+          <span className="cmd">fieldkit --port=8080{'\n\n'}</span>
           <span className="comment"># Or kill the existing process (macOS/Linux){'\n'}</span>
-          <span className="cmd">lsof -ti:3000 | xargs kill</span>
+          <span className="cmd">lsof -ti:3002 | xargs kill</span>
         </CodeBlock>
         <H3>Devices can&apos;t connect</H3>
         <UL>
           <li>Ensure all devices are on the same network/subnet</li>
-          <li>Check firewall settings — port 3000 must be open for inbound connections</li>
+          <li>Check firewall settings — your configured server port (default 3002) must be open for inbound connections</li>
           <li>On Windows, allow Node.js through Windows Firewall when prompted</li>
           <li>Try accessing via the IP address shown in the server output, not <IC>localhost</IC></li>
         </UL>
         <H3>Data not persisting</H3>
         <UL>
-          <li>Check that the <IC>dataDir</IC> path exists and is writable</li>
+          <li>Check that <IC>~/.fieldkit/data</IC> exists and is writable by the current user</li>
           <li>Ensure the server wasn&apos;t killed with <IC>kill -9</IC> — use <IC>Ctrl+C</IC> for graceful shutdown</li>
-          <li>Enable <IC>autoBackup</IC> in config for periodic disk writes</li>
+          <li>Confirm the machine has enough free disk space for responses and uploaded files</li>
         </UL>
       </section>
     </main>

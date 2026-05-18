@@ -6,15 +6,16 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const session = await auth()
   if (!session?.user?.id) {
     return new Response('Unauthorized', { status: 401 })
   }
 
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id: id, userId: session.user.id },
   })
   if (!form) return new Response('Not found', { status: 404 })
 
@@ -28,7 +29,7 @@ export async function GET(
 
       async function fetchAndSend() {
         const responses = await db.response.findMany({
-          where: { formId: params.id },
+          where: { formId: id },
           orderBy: { submittedAt: 'desc' },
         })
         send({
@@ -55,7 +56,7 @@ export async function GET(
         try {
           const payload = JSON.parse(msg.payload ?? '{}')
           // Only push if notification is for this form
-          if (payload.formId === params.id) {
+          if (payload.formId === id) {
             await fetchAndSend()
           }
         } catch {

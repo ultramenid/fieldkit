@@ -150,17 +150,31 @@ export function createServer(dataDir: string, port: number) {
     const files: Record<string, string> = {}
 
     const exportedResponses = responses.map(r => {
-      const answers = ((r.data as { answers?: unknown[] }).answers ?? []) as { fieldId: string; value: unknown }[]
-      const processedAnswers = answers.map(a => {
-        if (typeof a.value === 'string' && a.value.startsWith('/uploads/')) {
-          const filename = path.basename(a.value)
-          const filePath = path.join(uploadsDir, filename)
-          if (fs.existsSync(filePath) && !files[a.value]) {
-            files[a.value] = fs.readFileSync(filePath).toString('base64')
+      const rawAnswers = (r.data as { answers?: unknown }).answers
+      const answers = Array.isArray(rawAnswers)
+        ? rawAnswers
+        : (rawAnswers && typeof rawAnswers === 'object' && Array.isArray((rawAnswers as { answers?: unknown }).answers)
+            ? (rawAnswers as { answers: unknown[] }).answers
+            : [])
+
+      const processedAnswers = answers
+        .filter((answer): answer is { fieldId?: unknown; value?: unknown } => !!answer && typeof answer === 'object')
+        .map(answer => {
+          const normalized = {
+            fieldId: typeof answer.fieldId === 'string' ? answer.fieldId : String(answer.fieldId ?? ''),
+            value: answer.value,
           }
-        }
-        return a
-      })
+
+          if (typeof normalized.value === 'string' && normalized.value.startsWith('/uploads/')) {
+            const filename = path.basename(normalized.value)
+            const filePath = path.join(uploadsDir, filename)
+            if (fs.existsSync(filePath) && !files[normalized.value]) {
+              files[normalized.value] = fs.readFileSync(filePath).toString('base64')
+            }
+          }
+
+          return normalized
+        })
       return {
         submissionId: r.submissionId,
         formId: id,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Field {
@@ -17,11 +17,19 @@ interface Response {
   data: Record<string, unknown>
 }
 
+interface Pagination {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
 interface ResponsesTableProps {
   formId: string
   formTitle: string
   fields: Field[]
   initialResponses: Response[]
+  initialPagination: Pagination
   published: boolean
   closed: boolean
 }
@@ -31,6 +39,7 @@ export function ResponsesTable({
   formTitle,
   fields,
   initialResponses,
+  initialPagination,
   published,
   closed: initialClosed,
 }: ResponsesTableProps) {
@@ -40,14 +49,40 @@ export function ResponsesTable({
   const [closed, setClosed] = useState(initialClosed)
   const [importBanner, setImportBanner] = useState<string | null>(null)
   const [connected, setConnected] = useState(false)
+  const [page, setPage] = useState(initialPagination.page)
+  const [pageSize, setPageSize] = useState(initialPagination.pageSize)
+  const [total, setTotal] = useState(initialPagination.total)
+  const [totalPages, setTotalPages] = useState(initialPagination.totalPages)
+  const pageRef = useRef(page)
+  const pageSizeRef = useRef(pageSize)
+  const refreshRequestIdRef = useRef(0)
   const router = useRouter()
 
-  const refresh = useCallback(async () => {
-    const res = await fetch(`/api/forms/${formId}/responses`)
-    if (res.ok) {
-      const data = await res.json()
-      setResponses(data)
-    }
+  useEffect(() => {
+    pageRef.current = page
+  }, [page])
+
+  useEffect(() => {
+    pageSizeRef.current = pageSize
+  }, [pageSize])
+
+  const refresh = useCallback(async (nextPage: number, nextPageSize: number) => {
+    const requestId = refreshRequestIdRef.current + 1
+    refreshRequestIdRef.current = requestId
+
+    const params = new URLSearchParams({
+      page: String(nextPage),
+      pageSize: String(nextPageSize),
+    })
+    const res = await fetch(`/api/forms/${formId}/responses?${params.toString()}`)
+    if (!res.ok || requestId !== refreshRequestIdRef.current) return
+    const data = await res.json()
+    if (requestId !== refreshRequestIdRef.current) return
+    setResponses(data.responses)
+    setPage(data.pagination.page)
+    setPageSize(data.pagination.pageSize)
+    setTotal(data.pagination.total)
+    setTotalPages(data.pagination.totalPages)
   }, [formId])
 
   // SSE for real-time updates
@@ -60,20 +95,19 @@ export function ResponsesTable({
     es.onmessage = (e) => {
       const msg = JSON.parse(e.data)
       if (msg.type === 'update') {
-        setResponses(msg.responses)
+        void refresh(pageRef.current, pageSizeRef.current)
       }
     }
 
     es.onerror = () => {
       setConnected(false)
-      es.close()
     }
 
     return () => {
       es.close()
       setConnected(false)
     }
-  }, [formId, closed])
+  }, [formId, closed, refresh])
 
   async function toggleClosed() {
     const next = !closed
@@ -92,14 +126,17 @@ export function ResponsesTable({
     const text = await file.text()
     const json = JSON.parse(text)
     const responses = Array.isArray(json) ? json : json.responses ?? []
+    const files = !Array.isArray(json) && json && typeof json === 'object' && json.files && typeof json.files === 'object'
+      ? json.files
+      : undefined
     const res = await fetch(`/api/forms/${formId}/responses`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ responses }),
+      body: JSON.stringify({ responses, files }),
     })
     const data = await res.json()
     setImportBanner(`${data.imported} new responses imported from local server`)
-    await refresh()
+    await refresh(page, pageSize)
     e.target.value = ''
   }
 
@@ -139,6 +176,56 @@ export function ResponsesTable({
 
   const onlineCount = responses.filter((r) => r.source === 'online').length
   const localCount = responses.filter((r) => r.source !== 'online').length
+  const isLocalFilterActive = search.trim().length > 0 || sourceFilter !== 'all'
+  const displayTotal = isLocalFilterActive ? filtered.length : total
+  const displayPage = isLocalFilterActive ? 1 : page
+  const displayPageSize = isLocalFilterActive ? Math.max(filtered.length, 1) : pageSize
+  const displayTotalPages = isLocalFilterActive ? 1 : totalPages
+  const displayStart = displayTotal === 0 ? 0 : (displayPage - 1) * displayPageSize + 1
+  const displayEnd = displayTotal === 0 ? 0 : Math.min(displayPage * displayPageSize, displayTotal)
+  const displayPageItems = (() => {
+    if (displayTotalPages <= 9) {
+      return Array.from({ length: displayTotalPages }, (_, i) => i + 1)
+    }
+
+    const pageSet = new Set<number>([
+      1,
+      2,
+      displayPage - 1,
+      displayPage,
+      displayPage + 1,
+      displayTotalPages - 1,
+      displayTotalPages,
+    ])
+
+    const pages = Array.from(pageSet)
+      .filter((n) => n >= 1 && n <= displayTotalPages)
+      .sort((a, b) => a - b)
+
+    const items: Array<number | 'ellipsis'> = []
+    for (let i = 0; i < pages.length; i += 1) {
+      const current = pages[i]
+      const prev = pages[i - 1]
+
+      if (prev && current - prev > 1) {
+        items.push('ellipsis')
+      }
+
+      items.push(current)
+    }
+
+    return items
+  })()
+
+  function goToPage(nextPage: number) {
+    if (nextPage < 1 || nextPage > displayTotalPages || nextPage === displayPage) return
+    void refresh(nextPage, pageSize)
+  }
+
+  function handlePageSizeChange(nextSize: number) {
+    if (![10, 25, 50].includes(nextSize)) return
+    void refresh(1, nextSize)
+  }
 
   return (
     <div>
@@ -147,7 +234,7 @@ export function ResponsesTable({
         <div>
           <h1 className="m-0 font-sans text-[24px] font-medium text-[var(--foreground)]">{formTitle}</h1>
           <p className="mt-1 text-[14px] text-[var(--muted)]">
-            {responses.length} responses
+            {displayTotal} responses
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -207,13 +294,28 @@ export function ResponsesTable({
             type="search"
             placeholder="Search responses…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              const nextSearch = e.target.value
+              const nextFilterActive = nextSearch.trim().length > 0 || sourceFilter !== 'all'
+              setSearch(nextSearch)
+              setPage(1)
+              if (!nextFilterActive) {
+                void refresh(1, pageSize)
+              }
+            }}
             className="w-[200px] rounded-full border border-[var(--border)] bg-[var(--background)] px-[14px] py-[7px] text-[13px] text-[var(--foreground)] focus:border-[var(--accent)] focus:outline-none"
           />
           {(['all', 'online', 'local'] as const).map((f) => (
             <button
               key={f}
-              onClick={() => setSourceFilter(f)}
+              onClick={() => {
+                const nextFilterActive = search.trim().length > 0 || f !== 'all'
+                setSourceFilter(f)
+                setPage(1)
+                if (!nextFilterActive) {
+                  void refresh(1, pageSize)
+                }
+              }}
               className={`rounded-full border px-3 py-[6px] font-mono text-[12px] transition-colors ${
                 sourceFilter === f
                   ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]'
@@ -233,7 +335,7 @@ export function ResponsesTable({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto pb-12">
+      <div className="overflow-x-auto">
         {filtered.length === 0 ? (
           <div className="py-20 text-center text-[15px] text-[var(--muted)]">
             {responses.length === 0 ? 'No responses yet.' : 'No responses match your filter.'}
@@ -258,7 +360,7 @@ export function ResponsesTable({
                 return (
                   <tr key={r.id} className="hover:bg-[var(--surface)]">
                     <td className="border-b border-[var(--border)] px-[14px] py-[12px] font-mono text-[12px] tabular-nums text-[var(--muted)]">
-                      {filtered.length - i}
+                      {displayTotal - ((displayPage - 1) * displayPageSize + i)}
                     </td>
                     {fields.map((f) => {
                       const answer = answers.find((a) => a.fieldId === f.id)
@@ -287,6 +389,44 @@ export function ResponsesTable({
             </tbody>
           </table>
         )}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pb-8 pt-4">
+        <span className="font-mono text-[12px] text-[var(--muted)]">
+          {displayTotal === 0 ? '0 of 0 responses' : `${displayStart}–${displayEnd} of ${displayTotal} responses`}
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={pageSize}
+            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+            className="rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-[6px] font-mono text-[12px]"
+          >
+            <option value={10}>10 / page</option>
+            <option value={25}>25 / page</option>
+            <option value={50}>50 / page</option>
+          </select>
+
+          <button onClick={() => goToPage(1)} disabled={displayPage === 1} className="rounded-full border border-[var(--border)] px-3 py-[6px] font-mono text-[12px] disabled:opacity-50">First</button>
+          <button onClick={() => goToPage(displayPage - 1)} disabled={displayPage === 1} className="rounded-full border border-[var(--border)] px-3 py-[6px] font-mono text-[12px] disabled:opacity-50">Prev</button>
+
+          {displayPageItems.map((n, index) => (
+            n === 'ellipsis' ? (
+              <span key={`ellipsis-${index}`} className="px-1 font-mono text-[12px] text-[var(--muted)]">…</span>
+            ) : (
+              <button
+                key={n}
+                onClick={() => goToPage(n)}
+                disabled={n === displayPage}
+                className={`rounded-full border px-3 py-[6px] font-mono text-[12px] ${n === displayPage ? 'border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]' : 'border-[var(--border)]'}`}
+              >
+                {n}
+              </button>
+            )
+          ))}
+
+          <button onClick={() => goToPage(displayPage + 1)} disabled={displayPage === displayTotalPages} className="rounded-full border border-[var(--border)] px-3 py-[6px] font-mono text-[12px] disabled:opacity-50">Next</button>
+          <button onClick={() => goToPage(displayTotalPages)} disabled={displayPage === displayTotalPages} className="rounded-full border border-[var(--border)] px-3 py-[6px] font-mono text-[12px] disabled:opacity-50">Last</button>
+        </div>
       </div>
     </div>
   )

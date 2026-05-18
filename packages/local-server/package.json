@@ -1,6 +1,6 @@
 {
-  "name": "@fieldkit/local-server",
-  "version": "0.1.0",
+  "name": "@malichamdan/fieldkit-local-server",
+  "version": "0.1.1",
   "description": "FieldKit local server for offline form collection",
   "main": "dist/index.js",
   "bin": {
@@ -12,13 +12,17 @@
     "start": "node dist/cli.js"
   },
   "dependencies": {
-    "express": "4.19.2",
+    "express": "^4.22.2",
+    "multer": "^2.1.1",
+    "qr-creator": "^1.0.0",
+    "qrcode": "^1.5.4",
     "uuid": "9.0.1"
   },
   "devDependencies": {
     "@types/express": "4.17.21",
-    "@types/uuid": "9.0.8",
+    "@types/multer": "^2.1.0",
     "@types/node": "20.14.10",
+    "@types/uuid": "9.0.8",
     "ts-node": "10.9.2",
     "typescript": "5.5.3"
   }

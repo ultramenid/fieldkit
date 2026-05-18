@@ -4,9 +4,9 @@ import { randomUUID } from 'crypto'
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id
+  const { id } = await params
   if (!id || id.length > 128) {
     return NextResponse.json({ error: 'Invalid form ID' }, { status: 400 })
   }

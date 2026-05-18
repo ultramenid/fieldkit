@@ -6,10 +6,12 @@ import type { BuilderField } from '@/lib/builder-types'
 export default async function PublicFormPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
+
   const form = await db.form.findFirst({
-    where: { id: params.id, published: true },
+    where: { id, published: true },
   })
   if (!form) notFound()
 

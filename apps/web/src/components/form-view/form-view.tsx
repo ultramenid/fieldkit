@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { BuilderField } from '@/lib/builder-types'
 
 interface FormViewProps {
@@ -15,6 +15,115 @@ interface FormViewProps {
   allowMultipleSubmissions?: boolean
 }
 
+function FileUpload({ field, value, onChange }: {
+  field: BuilderField
+  value: string | null
+  onChange: (val: string | null) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleFile(file: File) {
+    setError(null)
+    setUploading(true)
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Upload failed'); setUploading(false); return }
+
+      const uploadRes = await fetch(data.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      })
+      if (!uploadRes.ok) { setError('Upload failed'); setUploading(false); return }
+
+      setFileName(file.name)
+      onChange(data.fileUrl)
+
+      if (file.type.startsWith('image/')) {
+        setPreviewUrl(URL.createObjectURL(file))
+      } else {
+        setPreviewUrl(null)
+      }
+    } catch {
+      setError('Upload failed')
+    }
+    setUploading(false)
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file) handleFile(file)
+  }
+
+  function handleRemove(e: React.MouseEvent) {
+    e.stopPropagation()
+    onChange(null)
+    setFileName(null)
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null) }
+  }
+
+  return (
+    <div
+      onClick={() => !uploading && inputRef.current?.click()}
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+      className="mt-1 cursor-pointer rounded-[12px] border-2 border-dashed border-[var(--border)] p-8 text-center transition-colors hover:border-[var(--muted)] hover:bg-[var(--surface)]"
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp,.gif"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+      />
+      {uploading ? (
+        <p className="text-[14px] text-[var(--muted)]">Uploading…</p>
+      ) : value && fileName ? (
+        <div className="flex flex-col items-center gap-2">
+          {previewUrl && (
+            <img src={previewUrl} alt={fileName} className="max-h-[160px] max-w-full rounded-[8px] object-contain" />
+          )}
+          {!previewUrl && (
+            <svg className="h-10 w-10 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+          )}
+          <p className="text-[14px] text-[var(--fg)]">{fileName}</p>
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="text-[12px] text-[var(--muted)] underline hover:text-[var(--fg)]"
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <>
+          <svg className="mx-auto mb-2 h-8 w-8 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <p className="text-[14px] text-[var(--muted)]">Drop image here or click to upload</p>
+          <span className="text-[12px] text-[var(--border)]">JPG, PNG, WebP, GIF up to 10MB</span>
+        </>
+      )}
+      {error && <p className="mt-2 text-[13px] text-[#dc2626]">{error}</p>}
+    </div>
+  )
+}
+
 function FieldInput({ field, value, onChange }: {
   field: BuilderField
   value: string | string[] | number | null
@@ -26,7 +135,6 @@ function FieldInput({ field, value, onChange }: {
     case 'text':
     case 'email':
     case 'number':
-    case 'date':
       return (
         <input
           type={field.type}
@@ -35,6 +143,16 @@ function FieldInput({ field, value, onChange }: {
           onChange={(e) => onChange(e.target.value)}
           required={field.required}
           className={inputClass}
+        />
+      )
+    case 'date':
+      return (
+        <input
+          type="date"
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+          className="w-full appearance-none rounded-[12px] border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-[15px] text-[var(--fg)] transition-colors focus:border-[var(--fg)] focus:outline-none"
         />
       )
     case 'textarea':
@@ -125,17 +243,7 @@ function FieldInput({ field, value, onChange }: {
       )
     }
     case 'file':
-      return (
-        <div className="mt-1 cursor-pointer rounded-[12px] border-2 border-dashed border-[var(--border)] p-8 text-center transition-colors hover:border-[var(--muted)] hover:bg-[var(--surface)]">
-          <svg className="mx-auto mb-2 h-8 w-8 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-          <p className="text-[14px] text-[var(--muted)]">Drop file here or click to upload</p>
-          <span className="text-[12px] text-[var(--border)]">PDF, JPG, PNG up to 10MB</span>
-        </div>
-      )
+      return <FileUpload field={field} value={value as string | null} onChange={onChange} />
     default:
       return null
   }

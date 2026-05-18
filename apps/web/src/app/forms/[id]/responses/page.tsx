@@ -9,20 +9,27 @@ import type { BuilderField } from '@/lib/builder-types'
 export default async function ResponsesPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const session = await auth()
   if (!session?.user?.id) redirect('/auth/signin')
 
   const form = await db.form.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id: id, userId: session.user.id },
     include: { _count: { select: { responses: true } } },
   })
   if (!form) notFound()
 
+  const defaultPageSize = 25
+  const totalResponses = await db.response.count({
+    where: { formId: id },
+  })
+
   const responses = await db.response.findMany({
-    where: { formId: params.id },
+    where: { formId: id },
     orderBy: { submittedAt: 'desc' },
+    take: defaultPageSize,
   })
 
   const schema = form.schema as unknown as { fields: BuilderField[] }
@@ -42,6 +49,13 @@ export default async function ResponsesPage({
     submittedAt: r.submittedAt.toISOString(),
     data: r.data as Record<string, unknown>,
   }))
+
+  const initialPagination = {
+    page: 1,
+    pageSize: defaultPageSize,
+    total: totalResponses,
+    totalPages: totalResponses === 0 ? 1 : Math.ceil(totalResponses / defaultPageSize),
+  }
 
   return (
     <div className="min-h-dvh bg-[var(--background)]">
@@ -70,6 +84,7 @@ export default async function ResponsesPage({
           formTitle={form.title}
           fields={fields}
           initialResponses={serializedResponses}
+          initialPagination={initialPagination}
           published={form.published}
           closed={form.closed}
         />

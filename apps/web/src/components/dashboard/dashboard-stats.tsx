@@ -44,7 +44,9 @@ export function DashboardStats({
           totalResponses: msg.totalResponses,
           publishedCount: msg.publishedCount,
         })
-        if (msg.formResponseCounts) {
+        if (msg.forms) {
+          setForms(msg.forms)
+        } else if (msg.formResponseCounts) {
           setForms((prev) =>
             prev.map((f) => ({
               ...f,
