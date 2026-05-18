@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto'
 import { NextResponse } from 'next/server'
 import { lookup } from 'node:dns/promises'
 import { auth } from '@/lib/auth'
@@ -127,6 +128,15 @@ export async function GET(
   })
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  let secret = form.mobileSecret
+  if (!secret) {
+    secret = randomBytes(24).toString('base64url')
+    await db.form.update({
+      where: { id: form.id },
+      data: { mobileSecret: secret },
+    })
+  }
+
   const description = await inlineImages(form.description ?? '')
 
   const schema = form.schema as Record<string, unknown>
@@ -137,6 +147,7 @@ export async function GET(
     title: form.title,
     description,
     version: form.version,
+    secret,
     exportedAt: new Date().toISOString(),
   }
 
