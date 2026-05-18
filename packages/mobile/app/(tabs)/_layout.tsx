@@ -1,59 +1,82 @@
-import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Tabs } from 'expo-router'
+import { View, Text, StyleSheet } from 'react-native'
+import { useStore } from '../../src/store'
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+function ConnectionBanner() {
+  const isOnline = useStore((s) => s.isOnline)
+  return (
+    <View style={[styles.banner, isOnline ? styles.bannerOnline : styles.bannerOffline]}>
+      <View style={[styles.dot, isOnline ? styles.dotOnline : styles.dotOffline]} />
+      <Text style={isOnline ? styles.bannerTextOnline : styles.bannerTextOffline}>
+        {isOnline ? 'Connected to server' : 'Offline — responses saved locally'}
+      </Text>
+    </View>
+  )
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+    <>
+      <ConnectionBanner />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: '#000',
+          tabBarInactiveTintColor: '#a3a3a3',
+          tabBarStyle: {
+            borderTopWidth: 1,
+            borderTopColor: '#e5e5e5',
+            backgroundColor: '#fff',
+          },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '500' as const },
         }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
+      >
+        <Tabs.Screen
+          name="forms"
+          options={{
+            title: 'Forms',
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 18, color }}>{'📋'}</Text>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="scan"
+          options={{
+            title: 'Scan',
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 18, color }}>{'📷'}</Text>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 18, color }}>{'⚙'}</Text>
+            ),
+          }}
+        />
+      </Tabs>
+    </>
+  )
 }
+
+const styles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  bannerOnline: { backgroundColor: '#f0fdf4' },
+  bannerOffline: { backgroundColor: '#fefce8' },
+  bannerTextOnline: { fontSize: 12, fontWeight: '500', color: '#166534' },
+  bannerTextOffline: { fontSize: 12, fontWeight: '500', color: '#854d0e' },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  dotOnline: { backgroundColor: '#22c55e' },
+  dotOffline: { backgroundColor: '#f59e0b' },
+})
