@@ -25,6 +25,17 @@
     .form-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-container); padding: 48px; }
     .form-title { font-family: var(--font-display); font-size: 28px; font-weight: 500; margin: 0 0 4px; line-height: 1.2; }
     .form-description { font-size: 15px; color: var(--muted); margin: 0 0 8px; }
+    .form-description p { margin: 0 0 8px; }
+    .form-description p:last-child { margin-bottom: 0; }
+    .form-description strong { font-weight: 600; }
+    .form-description em { font-style: italic; }
+    .form-description u { text-decoration: underline; }
+    .form-description a { color: var(--accent); text-decoration: underline; }
+    .form-description ul, .form-description ol { margin: 8px 0; padding-left: 24px; }
+    .form-description li { margin: 4px 0; }
+    .form-description blockquote { border-left: 2px solid var(--border); padding-left: 12px; margin: 8px 0; font-style: italic; color: var(--muted); }
+    .form-description pre { background: var(--surface); padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 13px; }
+    .form-description img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
     .progress-wrap { margin-bottom: 32px; }
     .progress-meta { display: flex; justify-content: flex-end; margin-bottom: 6px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
@@ -159,7 +170,7 @@
 
       document.title = formData.title + ' · FieldKit'
       document.getElementById('formTitle').textContent = formData.title
-      document.getElementById('formDesc').textContent = formData.description || ''
+      document.getElementById('formDesc').innerHTML = formData.description || ''
       document.getElementById('submitBtn').textContent = settings.submitButtonText || 'Submit response'
       document.getElementById('confirmMsg').textContent = settings.confirmationMessage || 'Thank you for your response.'
       if (settings.allowMultipleSubmissions) document.getElementById('anotherBtn').style.display = 'inline-flex'
