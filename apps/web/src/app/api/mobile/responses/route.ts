@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { db } from '@/lib/db'
 
 const MAX_BATCH_SIZE = 500
 

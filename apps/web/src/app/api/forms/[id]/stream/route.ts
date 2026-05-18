@@ -34,7 +34,7 @@ export async function GET(
         })
         send({
           type: 'update',
-          responses: responses.map((r) => ({
+          responses: responses.map((r: (typeof responses)[number]) => ({
             id: r.id,
             submissionId: r.submissionId,
             source: r.source,

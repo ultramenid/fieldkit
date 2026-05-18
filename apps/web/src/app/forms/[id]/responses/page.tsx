@@ -42,7 +42,7 @@ export default async function ResponsesPage({
     .toUpperCase()
     .slice(0, 2)
 
-  const serializedResponses = responses.map((r) => ({
+  const serializedResponses = responses.map((r: (typeof responses)[number]) => ({
     id: r.id,
     submissionId: r.submissionId,
     source: r.source,

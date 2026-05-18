@@ -14,10 +14,11 @@ export async function GET() {
   })
 
   const totalForms = forms.length
-  const totalResponses = forms.reduce((sum, f) => sum + f._count.responses, 0)
-  const publishedCount = forms.filter((f) => (f as { published?: boolean }).published).length
+  type FormWithCount = (typeof forms)[number]
+  const totalResponses = forms.reduce((sum: number, f: FormWithCount) => sum + f._count.responses, 0)
+  const publishedCount = forms.filter((f: FormWithCount) => f.published).length
   const formResponseCounts: Record<string, number> = {}
-  forms.forEach((f) => { formResponseCounts[f.id] = f._count.responses })
+  forms.forEach((f: FormWithCount) => { formResponseCounts[f.id] = f._count.responses })
 
   return NextResponse.json({ totalForms, totalResponses, publishedCount, formResponseCounts })
 }

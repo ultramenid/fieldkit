@@ -26,15 +26,16 @@ export default async function DashboardPage() {
     include: { _count: { select: { responses: true } } },
   })
 
-  const totalResponses = forms.reduce((sum, f) => sum + f._count.responses, 0)
-  const publishedCount = forms.filter((f) => (f as { published?: boolean }).published).length
+  type FormWithCount = (typeof forms)[number]
+  const totalResponses = forms.reduce((sum: number, f: FormWithCount) => sum + f._count.responses, 0)
+  const publishedCount = forms.filter((f: FormWithCount) => f.published).length
 
-  const formData = forms.map((f) => ({
+  const formData = forms.map((f: FormWithCount) => ({
     id: f.id,
     title: f.title,
     description: f.description,
-    published: (f as { published?: boolean }).published ?? false,
-    closed: (f as { closed?: boolean }).closed ?? false,
+    published: f.published ?? false,
+    closed: f.closed ?? false,
     createdAt: f.createdAt.toISOString(),
     responseCount: f._count.responses,
   }))

@@ -24,16 +24,17 @@ export async function GET(req: Request) {
           include: { _count: { select: { responses: true } } },
         })
         const totalForms = forms.length
-        const totalResponses = forms.reduce((sum, f) => sum + f._count.responses, 0)
-        const publishedCount = forms.filter((f) => (f as { published?: boolean }).published).length
+        type FormWithCount = (typeof forms)[number]
+        const totalResponses = forms.reduce((sum: number, f: FormWithCount) => sum + f._count.responses, 0)
+        const publishedCount = forms.filter((f: FormWithCount) => f.published).length
         const formResponseCounts: Record<string, number> = {}
-        forms.forEach((f) => { formResponseCounts[f.id] = f._count.responses })
-        const formsList = forms.map((f) => ({
+        forms.forEach((f: FormWithCount) => { formResponseCounts[f.id] = f._count.responses })
+        const formsList = forms.map((f: FormWithCount) => ({
           id: f.id,
           title: f.title,
           description: f.description,
-          published: (f as { published?: boolean }).published ?? false,
-          closed: (f as { closed?: boolean }).closed ?? false,
+          published: f.published ?? false,
+          closed: f.closed ?? false,
           createdAt: f.createdAt.toISOString(),
           responseCount: f._count.responses,
         }))
