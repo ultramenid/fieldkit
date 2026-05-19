@@ -74,7 +74,7 @@ export default function FormsList() {
   }
 
   const handleSyncForm = async (formId: string) => {
-    if (!isOnline || syncFormGuardRef.current) return
+    if (!isOnline || syncFormGuardRef.current || syncingFormIds.has(formId)) return
     syncFormGuardRef.current = true
     setSyncingFormIds((prev) => new Set(prev).add(formId))
     try {
@@ -169,7 +169,7 @@ export default function FormsList() {
               syncStatus={getSyncStatus(item, unsyncedCounts[item.id] ?? 0)}
               pendingCount={unsyncedCounts[item.id] ?? 0}
               onPress={() => router.push(`/form/${item.id}`)}
-              onSync={() => handleSyncForm(item.id)}
+              onSync={syncingFormIds.has(item.id) ? undefined : () => handleSyncForm(item.id)}
               onDelete={() => handleDeleteForm(item)}
             />
           )}

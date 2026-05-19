@@ -35,9 +35,15 @@ export function FormCard({
           <SyncBadge
             status={syncStatus}
             pendingCount={pendingCount}
-            onPress={syncStatus === 'pending' ? onSync : undefined}
+            onPress={syncStatus === 'pending' && onSync ? (event) => {
+              event.stopPropagation()
+              onSync()
+            } : undefined}
           />
-          <TouchableOpacity onPress={onDelete} style={styles.deleteBtn}>
+          <TouchableOpacity onPress={(event) => {
+            event.stopPropagation()
+            onDelete()
+          }} style={styles.deleteBtn}>
             <IconTrash size={14} color={TOKENS.colors.gray400} />
           </TouchableOpacity>
         </View>

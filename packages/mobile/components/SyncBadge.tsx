@@ -1,11 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, GestureResponderEvent } from 'react-native'
 import { TOKENS } from '../src/theme/tokens'
 import { IconCheck, IconSync } from '../src/icons'
 
 interface Props {
   status: 'synced' | 'pending' | 'new'
   pendingCount?: number
-  onPress?: () => void
+  onPress?: (event: GestureResponderEvent) => void
 }
 
 export function SyncBadge({ status, pendingCount, onPress }: Props) {
@@ -36,7 +36,7 @@ export function SyncBadge({ status, pendingCount, onPress }: Props) {
   }
 
   if (onPress) {
-    return <TouchableOpacity onPress={onPress}>{badge()}</TouchableOpacity>
+    return <TouchableOpacity onPress={onPress} activeOpacity={0.8}>{badge()}</TouchableOpacity>
   }
   return badge()
 }
