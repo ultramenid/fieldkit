@@ -43,16 +43,58 @@ export async function upsertForm(form: FormRecord): Promise<void> {
 
 export async function getAllForms(): Promise<FormRecord[]> {
   const d = await getDatabase()
-  return d.getAllAsync<FormRecord>(
-    'SELECT * FROM forms ORDER BY imported_at DESC'
+  const rows = await d.getAllAsync<Record<string, unknown>>(
+    `SELECT id, title, description, config_json as configJson, secret, imported_at as importedAt, last_synced_at as lastSyncedAt
+     FROM forms ORDER BY imported_at DESC`
   )
+  return rows as unknown as FormRecord[]
+}
+
+export async function getResponseCountsByForm(): Promise<Record<string, number>> {
+  const d = await getDatabase()
+  const rows = await d.getAllAsync<{ form_id: string; total: number }>(
+    'SELECT form_id, COUNT(*) as total FROM responses GROUP BY form_id'
+  )
+
+  return rows.reduce<Record<string, number>>((acc, row) => {
+    acc[row.form_id] = row.total
+    return acc
+  }, {})
+}
+
+export async function getUnsyncedCountsByForm(): Promise<Record<string, number>> {
+  const d = await getDatabase()
+  const rows = await d.getAllAsync<{ form_id: string; total: number }>(
+    'SELECT form_id, COUNT(*) as total FROM responses WHERE synced = 0 GROUP BY form_id'
+  )
+
+  return rows.reduce<Record<string, number>>((acc, row) => {
+    acc[row.form_id] = row.total
+    return acc
+  }, {})
+}
+
+export async function getUnsyncedResponsesByForm(formId: string): Promise<ResponseRecord[]> {
+  const d = await getDatabase()
+  return d.getAllAsync<ResponseRecord>(
+    'SELECT * FROM responses WHERE synced = 0 AND form_id = ? ORDER BY submitted_at ASC',
+    formId
+  )
+}
+
+export async function deleteFormAndResponses(formId: string): Promise<void> {
+  const d = await getDatabase()
+  await d.runAsync('DELETE FROM responses WHERE form_id = ?', formId)
+  await d.runAsync('DELETE FROM forms WHERE id = ?', formId)
 }
 
 export async function getForm(id: string): Promise<FormRecord | null> {
   const d = await getDatabase()
-  return d.getFirstAsync<FormRecord>(
-    'SELECT * FROM forms WHERE id = ?', id
+  const row = await d.getFirstAsync<Record<string, unknown>>(
+    `SELECT id, title, description, config_json as configJson, secret, imported_at as importedAt, last_synced_at as lastSyncedAt
+     FROM forms WHERE id = ?`, id
   )
+  return (row as unknown as FormRecord) ?? null
 }
 
 export async function insertResponse(
