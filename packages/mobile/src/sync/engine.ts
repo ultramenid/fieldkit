@@ -12,7 +12,10 @@ async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Pr
   if (responses.length === 0) return { synced: 0, errors: 0 }
 
   const form = await getForm(formId)
-  if (!form) return { synced: 0, errors: responses.length }
+  if (!form) {
+    console.error('[sync] form not found:', formId)
+    return { synced: 0, errors: responses.length }
+  }
 
   const batch = responses.slice(0, 20)
 
@@ -25,14 +28,21 @@ async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Pr
         answers: data.answers ?? [],
       }
     })
+    console.log('[sync] posting to server:', { formId, payloadCount: payload.length, secret: form.secret?.slice(0, 4) + '…' })
     const result = await syncResponses(formId, form.secret, payload)
+    console.log('[sync] server response:', JSON.stringify(result))
 
-    if (!result.ok) return { synced: 0, errors: batch.length }
+    if (!result.ok) {
+      console.error('[sync] server returned not ok:', result)
+      return { synced: 0, errors: batch.length }
+    }
 
     await markResponsesSynced(batch.map((r) => r.id))
     await updateFormLastSynced(formId, Date.now())
+    console.log('[sync] success:', { formId, synced: batch.length })
     return { synced: batch.length, errors: 0 }
-  } catch {
+  } catch (e) {
+    console.error('[sync] error:', e)
     return { synced: 0, errors: batch.length }
   }
 }

@@ -36,5 +36,12 @@ export async function syncResponses(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ formId, secret, responses }),
   })
-  return res.json()
-}
+
+  const json = await res.json()
+  if (!res.ok) {
+    throw new Error(`Sync failed: ${res.status} ${JSON.stringify(json)}`)
+  }
+
+  return json as SyncResult
+}    
+
