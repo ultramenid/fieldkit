@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
     backgroundColor: TOKENS.colors.white,
   },
   inner: {
@@ -34,5 +34,5 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotOnline: { backgroundColor: TOKENS.colors.green500 },
   dotOffline: { backgroundColor: TOKENS.colors.amber500 },
-  text: { fontSize: 15, fontWeight: TOKENS.type.weightSemibold, color: TOKENS.colors.black },
+  text: { fontSize: 12, fontWeight: TOKENS.type.weightMedium, color: TOKENS.colors.gray500 },
 })
