@@ -1,13 +1,24 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl,
+  View, FlatList, StyleSheet, RefreshControl,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useStore } from '../../src/store'
-import { getAllForms } from '../../src/db/database'
-import { syncAll } from '../../src/sync/engine'
+import {
+  getAllForms,
+  getResponseCountsByForm,
+  getUnsyncedCountsByForm,
+  deleteFormAndResponses,
+} from '../../src/db/database'
+import { syncAll, syncForm } from '../../src/sync/engine'
 import { FormRecord } from '../../src/types'
+import { ConnectionBanner } from '../../components/ConnectionBanner'
+import { ScreenHeader } from '../../components/ScreenHeader'
+import { SyncBar } from '../../components/SyncBar'
+import { FormCard } from '../../components/FormCard'
+import { EmptyState } from '../../components/EmptyState'
+import { IconQR } from '../../src/icons'
+import { TOKENS } from '../../src/theme/tokens'
 
 export default function FormsList() {
   const router = useRouter()
@@ -18,10 +29,18 @@ export default function FormsList() {
   const setSyncing = useStore((s) => s.setSyncing)
   const lastSynced = useStore((s) => s.lastSynced)
   const setLastSynced = useStore((s) => s.setLastSynced)
+  const [responseCounts, setResponseCounts] = useState<Record<string, number>>({})
+  const [unsyncedCounts, setUnsyncedCounts] = useState<Record<string, number>>({})
 
   const loadForms = useCallback(async () => {
-    const result = await getAllForms()
+    const [result, counts, pending] = await Promise.all([
+      getAllForms(),
+      getResponseCountsByForm(),
+      getUnsyncedCountsByForm(),
+    ])
     setForms(result)
+    setResponseCounts(counts)
+    setUnsyncedCounts(pending)
   }, [setForms])
 
   useEffect(() => {
@@ -33,9 +52,41 @@ export default function FormsList() {
     try {
       await syncAll()
       setLastSynced(Date.now())
+      await loadForms()
     } finally {
       setSyncing(false)
     }
+  }
+
+  const handleSyncForm = async (formId: string) => {
+    if (!isOnline) return
+    setSyncing(true)
+    try {
+      await syncForm(formId)
+      setLastSynced(Date.now())
+      await loadForms()
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handleDeleteForm = (form: FormRecord) => {
+    const { Alert } = require('react-native')
+    Alert.alert(
+      'Delete form',
+      `Delete "${form.title}" and all its responses?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteFormAndResponses(form.id)
+            await loadForms()
+          },
+        },
+      ]
+    )
   }
 
   const formatLastSynced = () => {
@@ -46,38 +97,45 @@ export default function FormsList() {
     return `${diff} min ago`
   }
 
+  const getSyncStatus = (form: FormRecord, pending: number): 'synced' | 'pending' | 'new' => {
+    if (pending > 0) return 'pending'
+    if (form.lastSyncedAt) return 'synced'
+    return 'new'
+  }
+
+  const getFieldTypes = (form: FormRecord): string[] => {
+    try {
+      const config = JSON.parse(form.configJson)
+      if (Array.isArray(config.fields)) {
+        return config.fields.map((f: { type?: string }) => f.type ?? 'field').filter(Boolean)
+      }
+    } catch {}
+    return []
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Forms</Text>
-        <TouchableOpacity
-          style={styles.scanBtn}
-          onPress={() => router.push('/scan')}
-        >
-          <Text style={styles.scanBtnText}>QR</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.syncBar}>
-        <Text style={styles.syncInfo}>Last synced {formatLastSynced()}</Text>
-        <TouchableOpacity
-          style={styles.syncBtn}
-          onPress={handleSync}
-          disabled={isSyncing || !isOnline}
-        >
-          {isSyncing ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.syncBtnText}>Sync Now</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <ConnectionBanner isOnline={isOnline} />
+      <ScreenHeader
+        title="My Forms"
+        action={{
+          icon: <IconQR size={22} color="#000" />,
+          onPress: () => router.push('/scan'),
+          accessibilityLabel: 'Scan QR to import form',
+        }}
+      />
+      <SyncBar
+        lastSynced={formatLastSynced()}
+        isSyncing={isSyncing}
+        canSync={isOnline}
+        onSync={handleSync}
+      />
 
       {forms.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No forms yet</Text>
-          <Text style={styles.emptyDesc}>Scan a QR code to import a form</Text>
-        </View>
+        <EmptyState
+          title="No forms yet"
+          description="Scan a QR code to import a form"
+        />
       ) : (
         <FlatList
           data={forms}
@@ -87,16 +145,17 @@ export default function FormsList() {
             <RefreshControl refreshing={false} onRefresh={loadForms} />
           }
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
+            <FormCard
+              title={item.title}
+              responses={responseCounts[item.id] ?? 0}
+              fieldCount={getFieldTypes(item).length}
+              fields={getFieldTypes(item)}
+              syncStatus={getSyncStatus(item, unsyncedCounts[item.id] ?? 0)}
+              pendingCount={unsyncedCounts[item.id] ?? 0}
               onPress={() => router.push(`/form/${item.id}`)}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                <SyncBadge form={item} />
-              </View>
-              <FormMeta form={item} />
-            </TouchableOpacity>
+              onSync={() => handleSyncForm(item.id)}
+              onDelete={() => handleDeleteForm(item)}
+            />
           )}
         />
       )}
@@ -104,80 +163,7 @@ export default function FormsList() {
   )
 }
 
-function SyncBadge({ form }: { form: FormRecord }) {
-  if (form.lastSyncedAt) {
-    return (
-      <View style={[styles.badge, styles.badgeSynced]}>
-        <Text style={styles.badgeTextSynced}>{'Synced'}</Text>
-      </View>
-    )
-  }
-  return (
-    <View style={[styles.badge, styles.badgeNew]}>
-      <Text style={styles.badgeTextNew}>New</Text>
-    </View>
-  )
-}
-
-function FormMeta({ form }: { form: FormRecord }) {
-  let config: { fields?: unknown[] } = {}
-  try { config = JSON.parse(form.configJson) } catch {}
-
-  return (
-    <View style={styles.cardMeta}>
-      <Text style={styles.metaText}>{Array.isArray(config.fields) ? config.fields.length : 0} fields</Text>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', padding: 20, paddingBottom: 12,
-  },
-  headerTitle: { fontSize: 34, fontWeight: '700', color: '#000' },
-  scanBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#fafafa', borderWidth: 1, borderColor: '#e5e5e5',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  scanBtnText: { fontSize: 16, fontWeight: '600', color: '#000' },
-  syncBar: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16,
-  },
-  syncInfo: { fontSize: 13, color: '#737373' },
-  syncBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingVertical: 8, paddingHorizontal: 16, borderRadius: 9999,
-    backgroundColor: '#000',
-  },
-  syncBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
-  list: { paddingHorizontal: 16, paddingBottom: 100 },
-  card: {
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e5e5',
-    borderRadius: 12, padding: 16, marginBottom: 12,
-  },
-  cardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 8,
-  },
-  cardTitle: { fontSize: 17, fontWeight: '600', color: '#000', flex: 1 },
-  cardMeta: { flexDirection: 'row', gap: 12 },
-  metaText: { fontSize: 13, color: '#737373' },
-  badge: {
-    paddingVertical: 3, paddingHorizontal: 8, borderRadius: 9999,
-    marginLeft: 12,
-  },
-  badgeSynced: { backgroundColor: '#f0fdf4' },
-  badgeNew: { backgroundColor: '#fafafa' },
-  badgeTextSynced: { fontSize: 11, fontWeight: '500', color: '#166534' },
-  badgeTextNew: { fontSize: 11, fontWeight: '500', color: '#737373' },
-  empty: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: { fontSize: 17, fontWeight: '600', color: '#000', marginBottom: 6 },
-  emptyDesc: { fontSize: 14, color: '#737373', textAlign: 'center', lineHeight: 22 },
+  container: { flex: 1, backgroundColor: TOKENS.colors.white },
+  list: { paddingHorizontal: 16, paddingBottom: 110 },
 })
