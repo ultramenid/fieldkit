@@ -17,7 +17,6 @@ import { ScreenHeader } from '../../components/ScreenHeader'
 import { SyncBar } from '../../components/SyncBar'
 import { FormCard } from '../../components/FormCard'
 import { EmptyState } from '../../components/EmptyState'
-import { IconQR } from '../../src/icons'
 import { TOKENS } from '../../src/theme/tokens'
 
 export default function FormsList() {
@@ -116,14 +115,7 @@ export default function FormsList() {
   return (
     <View style={styles.container}>
       <ConnectionBanner isOnline={isOnline} />
-      <ScreenHeader
-        title="My Forms"
-        action={{
-          icon: <IconQR size={22} color="#000" />,
-          onPress: () => router.push('/scan'),
-          accessibilityLabel: 'Scan QR to import form',
-        }}
-      />
+      <ScreenHeader title="My Forms" />
       <SyncBar
         lastSynced={formatLastSynced()}
         isSyncing={isSyncing}
