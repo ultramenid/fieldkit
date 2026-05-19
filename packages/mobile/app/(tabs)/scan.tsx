@@ -185,9 +185,7 @@ export default function ScanScreen() {
       addForm(record)
       scanningRef.current = false
       setScanning(false)
-      Alert.alert('Imported', `"${config.title}" is ready to fill.`, [
-        { text: 'OK', onPress: () => router.replace('/(tabs)/forms') },
-      ])
+      router.replace('/(tabs)/forms')
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       Alert.alert('Import failed', msg)
