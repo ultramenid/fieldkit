@@ -79,9 +79,9 @@ const styles = StyleSheet.create({
   cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
     flexShrink: 0,
-    marginLeft: 8,
+    marginLeft: 6,
   },
   deleteBtn: {
     width: 24,
