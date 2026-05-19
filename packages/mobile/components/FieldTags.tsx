@@ -18,7 +18,7 @@ export function FieldTags({ types }: Props) {
       ))}
       {remaining > 0 && (
         <View style={styles.tag}>
-          <Text style={styles.tagText}>+{remaining}</Text>
+          <Text style={styles.tagText}>{remaining} more</Text>
         </View>
       )}
     </View>
