@@ -62,10 +62,10 @@ export function IconTabSettings({ size = 20, color = '#000' }: IconProps) {
 export function IconSync({ size = 20, color = '#000' }: IconProps) {
   return (
     <IconBase size={size} color={color}>
-      <Path d="M2 8a6 6 0 0 1 10.3-4.1" />
-      <Path d="M14 8a6 6 0 0 1-10.3 4.1" />
-      <Path d="M12 2v4h-4" />
-      <Path d="M4 14v-4h4" />
+      <Path d="M21 2v6h-6" />
+      <Path d="M3 12a9 9 0 0 1 15.4-5.9L21 8" />
+      <Path d="M3 22v-6h6" />
+      <Path d="M21 12a9 9 0 0 1-15.4 5.9L3 16" />
     </IconBase>
   )
 }
