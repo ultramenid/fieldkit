@@ -2,6 +2,8 @@ import { CodeBlock } from './code-block'
 import { Callout } from './callout'
 import { DataTable } from './data-table'
 
+const DEFAULT_PORT = '3002'
+
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
     <h2
@@ -41,12 +43,11 @@ function IC({ children }: { children: React.ReactNode }) {
 
 function StepList({ steps }: { steps: { title: string; body: React.ReactNode }[] }) {
   return (
-    <ol className="mb-6 list-none p-0" style={{ counterReset: 'steps' }}>
+    <ol className="mb-6 list-none p-0">
       {steps.map((step, i) => (
         <li
-          key={i}
+          key={step.title}
           className="relative border-b border-[var(--border)] py-4 pl-12 last:border-b-0"
-          style={{ counterIncrement: 'steps' }}
         >
           <span className="absolute left-0 top-4 grid h-8 w-8 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface)] font-mono text-[13px] font-medium text-[var(--foreground)]">
             {i + 1}
@@ -64,15 +65,15 @@ function Diagram() {
     <div className="mb-6 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-4 text-center md:px-4">
       <div className="overflow-x-auto">
         <div className="mx-auto flex min-w-max items-center justify-center gap-1.5 md:gap-2 whitespace-nowrap">
-          <span className="rounded-full border border-[#16a34a] px-4 py-1.5 text-[12px] font-medium text-[#16a34a]">
+          <span className="rounded-full border border-[#8b4513] px-4 py-1.5 text-[12px] font-medium text-[#8b4513]">
             Serverside
           </span>
           <span className="text-[13px] text-[var(--muted)]">→ export config →</span>
-          <span className="rounded-full border border-[#b45309] px-4 py-1.5 text-[12px] font-medium text-[#b45309]">
+          <span className="rounded-full border border-[var(--muted)] px-4 py-1.5 text-[12px] font-medium text-[var(--muted)]">
             Local Server
           </span>
           <span className="text-[13px] text-[var(--muted)]">→ export data →</span>
-          <span className="rounded-full border border-[#16a34a] px-4 py-1.5 text-[12px] font-medium text-[#16a34a]">
+          <span className="rounded-full border border-[#8b4513] px-4 py-1.5 text-[12px] font-medium text-[#8b4513]">
             Serverside
           </span>
         </div>
@@ -91,93 +92,55 @@ export function DocsContent() {
         Everything you need to build forms online and collect data offline.
       </p>
 
-      {/* How it works */}
+      {/* Quickstart */}
       <section>
-        <H2 id="how-it-works">How it works</H2>
+        <H2 id="quickstart">Quickstart (5 steps)</H2>
         <P>
           FieldKit has two components that work together: a cloud-hosted <strong>Serverside</strong> for
           building and managing forms, and a lightweight <strong>Local Server</strong> for offline data
           collection on local networks.
         </P>
         <Diagram />
-        <StepList
-          steps={[
-            {
-              title: 'Build your form online',
-              body: 'Use the drag-and-drop form builder on the serverside to create fields, set validation rules, and configure settings.',
-            },
-            {
-              title: 'Export as config file',
-              body: 'Download the form as a JSON configuration file from the dashboard or builder.',
-            },
-            {
-              title: 'Install & start the Local Server',
-              body: (
-                <>
-                  Run <IC>npm install -g @malichamdan/fieldkit-local-server</IC> then <IC>fieldkit</IC>. The
-                  admin panel opens at <IC>http://localhost:3002</IC> by default.
-                </>
-              ),
-            },
-            {
-              title: 'Import config via the web UI',
-              body: 'Open the local server admin panel in your browser and upload the config JSON file. No terminal commands needed for import — just drag and drop.',
-            },
-            {
-              title: 'Collect responses offline',
-              body: 'Field teams access the form via the local network — no internet required.',
-            },
-            {
-              title: 'Export response data & sync back',
-              body: 'Export collected responses (not the form config) from the local server admin panel and import them into the serverside. The form master stays on the serverside — only response data flows back.',
-            },
-          ]}
-        />
+        <OL>
+          <li>
+            <a href="#step-build" className="text-[var(--foreground)] underline underline-offset-2 hover:text-[var(--muted)]">
+              Build form online
+            </a>{' '}
+            — create your form using the drag-and-drop builder
+          </li>
+          <li>
+            <a href="#step-export" className="text-[var(--foreground)] underline underline-offset-2 hover:text-[var(--muted)]">
+              Export config
+            </a>{' '}
+            — download the JSON config file from the dashboard
+          </li>
+          <li>
+            <a href="#step-run-local" className="text-[var(--foreground)] underline underline-offset-2 hover:text-[var(--muted)]">
+              Run local server
+            </a>{' '}
+            — install, start, and import your config via web UI
+          </li>
+          <li>
+            <a href="#step-collect" className="text-[var(--foreground)] underline underline-offset-2 hover:text-[var(--muted)]">
+              Collect offline responses
+            </a>{' '}
+            — field teams submit forms on the local network
+          </li>
+          <li>
+            <a href="#step-sync" className="text-[var(--foreground)] underline underline-offset-2 hover:text-[var(--muted)]">
+              Sync responses back
+            </a>{' '}
+            — export from local server and import into serverside
+          </li>
+        </OL>
       </section>
 
-      {/* Quickstart */}
+      {/* Step 1: Build */}
       <section>
-        <H2 id="quickstart">Quickstart</H2>
-        <H3>Serverside (cloud)</H3>
-        <P>
-          Sign in with your Google account at <IC>app.fieldkit.io</IC> and create your first form from
-          the dashboard.
-        </P>
-        <H3>Local Server (offline)</H3>
-        <P>
-          The local server <strong>only serves forms</strong> — it does not create them. You build forms
-          on the serverside, export the config, then import it through the local server&apos;s web UI.
-        </P>
-        <CodeBlock>
-          <span className="comment"># Install globally{'\n'}</span>
-          <span className="cmd">npm install -g @malichamdan/fieldkit-local-server{'\n\n'}</span>
-          <span className="comment"># Start server (default: 3002){'\n'}</span>
-          <span className="cmd">fieldkit{'\n\n'}</span>
-          <span className="comment"># Optional custom port{'\n'}</span>
-          <span className="cmd">fieldkit --port=3000</span>
-        </CodeBlock>
-        <P>
-          Once the server is running, open <IC>http://localhost:3002</IC> in your browser (or use{' '}
-          <IC>fieldkit --port=3000</IC> if you want port 3000). Use the <strong>Import Config</strong>{' '}
-          button to upload the JSON file exported from the serverside. No terminal commands needed for
-          import.
-        </P>
-        <Callout title="Important">
-          <p>
-            The local server cannot create or edit forms — it only serves forms that were built on the
-            serverside and exported as config files. To update a form, edit it on the serverside,
-            re-export, and re-import via the admin panel.
-          </p>
-        </Callout>
-      </section>
-
-      {/* Create a Form */}
-      <section>
-        <H2 id="create-form">Create a Form</H2>
-        <P>
-          The form builder is a drag-and-drop editor where you assemble fields, configure validation,
-          and preview the final result — all from your browser.
-        </P>
+        <H2 id="step-build">1. Build form online</H2>
+        <P><strong>What:</strong> Create your form using the drag-and-drop builder on the serverside.</P>
+        <P><strong>Why:</strong> The serverside is the master source for form definitions. All editing happens here.</P>
+        <H3>Do this now</H3>
         <H3>Starting a new form</H3>
         <OL>
           <li>From the <strong>Dashboard</strong>, click <strong>New form</strong></li>
@@ -221,12 +184,6 @@ export function DocsContent() {
             see. The preview opens in a new tab with the published form layout.
           </p>
         </Callout>
-      </section>
-
-      {/* Share & Publish */}
-      <section>
-        <H2 id="share-form">Share &amp; Publish</H2>
-        <P>Once your form is ready, publish it to make it accessible online or export it for local use.</P>
         <H3>Publishing online</H3>
         <OL>
           <li>Click <strong>Publish</strong> in the builder top bar</li>
@@ -255,12 +212,15 @@ export function DocsContent() {
             still visible in the Responses table.
           </p>
         </Callout>
+        <P><strong>Expected result:</strong> Your form is live and ready to share or export.</P>
       </section>
 
-      {/* Export Config */}
+      {/* Step 2: Export */}
       <section>
-        <H2 id="export-config">Export Config</H2>
-        <P>Export your form as a JSON configuration file so the Local Server can serve it offline.</P>
+        <H2 id="step-export">2. Export config</H2>
+        <P><strong>What:</strong> Download your form as a JSON configuration file so the local server can serve it offline.</P>
+        <P><strong>Why:</strong> The local server needs a config file to display your form — it cannot create forms, only serve them.</P>
+        <H3>Do this now</H3>
         <H3>How to export</H3>
         <OL>
           <li>Go to the <strong>Dashboard</strong></li>
@@ -293,55 +253,15 @@ export function DocsContent() {
             version it&apos;s running so you can verify it matches the latest serverside version.
           </p>
         </Callout>
+        <P><strong>Expected result:</strong> A .json config file on your machine ready for the local server.</P>
       </section>
 
-      {/* View Responses */}
+      {/* Step 3: Run local server */}
       <section>
-        <H2 id="responses">View Responses</H2>
-        <P>
-          The Responses page shows a real-time table of all submissions — both online and imported from
-          local servers.
-        </P>
-        <H3>Response table features</H3>
-        <UL>
-          <li><strong>Real-time updates</strong> — new online submissions appear instantly</li>
-          <li><strong>Source column</strong> — shows whether each response came from &quot;Online&quot; or &quot;Local server&quot;</li>
-          <li><strong>Search</strong> — full-text search across all fields</li>
-          <li><strong>Filter by source</strong> — view only online or only local responses</li>
-          <li><strong>Sort by column</strong> — click any column header to sort</li>
-          <li><strong>Timestamps</strong> — each response shows when it was submitted</li>
-        </UL>
-        <H3>Importing local data</H3>
-        <OL>
-          <li>Export responses from the local server admin panel (JSON format)</li>
-          <li>On the serverside Responses page, click <strong>Import local data</strong></li>
-          <li>Upload the JSON file</li>
-          <li>The system merges responses, deduplicating by submission ID</li>
-        </OL>
-        <H3>Exporting final data</H3>
-        <P>Click <strong>Export CSV</strong> on the Responses page to download compiled data:</P>
-        <DataTable
-          headers={['Format', 'Best for']}
-          rows={[
-            ['CSV', 'Spreadsheets (Excel, Google Sheets) and quick reporting'],
-          ]}
-        />
-        <Callout title="Deduplication">
-          <p>
-            Each response has a unique submission ID generated at the time of submission. When importing
-            local data, the serverside checks these IDs and skips any duplicates — so you can safely
-            import the same file multiple times without creating duplicate entries.
-          </p>
-        </Callout>
-      </section>
-
-      {/* Installation */}
-      <section>
-        <H2 id="install">Local Server Installation</H2>
-        <P>
-          The local server runs on any machine with Node.js installed. It works on Windows, macOS, and
-          Linux.
-        </P>
+        <H2 id="step-run-local">3. Run local server</H2>
+        <P><strong>What:</strong> Install the local server package, start it, and import your config through the web UI.</P>
+        <P><strong>Why:</strong> The local server serves your form on a local network so field teams can access it without internet.</P>
+        <H3>Do this now</H3>
         <H3>System requirements</H3>
         <DataTable
           headers={['Requirement', 'Guidance', 'Notes']}
@@ -352,66 +272,36 @@ export function DocsContent() {
             ['Network', 'LAN access', 'Devices must be on the same local network'],
           ]}
         />
-        <H3>Install on Windows</H3>
+        <H3>Install</H3>
         <CodeBlock>
-          <span className="comment"># Using PowerShell (run as Administrator){'\n'}</span>
+          <span className="comment"># Install globally{'\n'}</span>
           <span className="cmd">npm install -g @malichamdan/fieldkit-local-server{'\n\n'}</span>
           <span className="comment"># Verify installation{'\n'}</span>
           <span className="cmd">fieldkit --version</span>
         </CodeBlock>
-        <H3>Install on macOS / Linux</H3>
+        <H3>Start the server</H3>
         <CodeBlock>
-          <span className="cmd">npm install -g @malichamdan/fieldkit-local-server{'\n\n'}</span>
-          <span className="comment"># Or with sudo if needed{'\n'}</span>
-          <span className="cmd">sudo npm install -g @malichamdan/fieldkit-local-server</span>
+          <span className="comment"># Start on default port {DEFAULT_PORT}{'\n'}</span>
+          <span className="cmd">fieldkit{'\n\n'}</span>
+          <span className="comment"># Or use a custom port{'\n'}</span>
+          <span className="cmd">fieldkit --port=8080</span>
         </CodeBlock>
-      </section>
-
-      {/* Setup */}
-      <section>
-        <H2 id="setup">Setup &amp; Configuration</H2>
-        <H3>Import form configs</H3>
-        <P>
-          The local server requires at least one form config to serve. Import configs through the admin
-          web UI — no terminal commands needed:
-        </P>
+        <P>Once running, the server prints local and LAN URLs in your terminal output.</P>
+        <H3>Import config via web UI</H3>
         <OL>
           <li>Start the server with <IC>fieldkit</IC> (or <IC>fieldkit --port=3000</IC>)</li>
-          <li>Open <IC>http://localhost:3002</IC> in your browser (or your custom port)</li>
+          <li>Open <IC>{`http://localhost:${DEFAULT_PORT}`}</IC> in your browser (or your custom port)</li>
           <li>Click <strong>Import Config</strong> and upload the JSON file exported from the serverside</li>
           <li>The form appears immediately in the admin panel and is ready to serve</li>
         </OL>
         <P>You can import multiple forms — each one gets its own URL path on the local network.</P>
-        <H3>Configuration options</H3>
-        <P>
-          The current CLI supports a minimal runtime configuration:
-        </P>
-        <DataTable
-          headers={['Option', 'Default', 'Description']}
-          rows={[
-            [<IC key="p">--port=&lt;number&gt;</IC>, <IC key="p2">3002</IC>, 'Set server port at startup'],
-            ['Bind address', <IC key="h2">0.0.0.0</IC>, 'Automatically listens on all interfaces for LAN access'],
-            ['Data directory', <IC key="d2">~/.fieldkit/data</IC>, 'Stores forms, responses, and uploaded files locally'],
-          ]}
-        />
-        <Callout title="Note">
+        <Callout title="Important">
           <p>
-            Advanced flags such as <IC>--pin</IC> and <IC>--daemon</IC> are not part of the current CLI.
+            The local server cannot create or edit forms — it only serves forms that were built on the
+            serverside and exported as config files. To update a form, edit it on the serverside,
+            re-export, and re-import via the admin panel.
           </p>
         </Callout>
-      </section>
-
-      {/* Running */}
-      <section>
-        <H2 id="run">Running the Local Server</H2>
-        <P>Start the server, then import configs through the web UI.</P>
-        <CodeBlock>
-          <span className="comment"># Start on default port 3002{'\n'}</span>
-          <span className="cmd">fieldkit{'\n\n'}</span>
-          <span className="comment"># Start on a custom port{'\n'}</span>
-          <span className="cmd">fieldkit --port=8080</span>
-        </CodeBlock>
-        <P>Once running, the server prints local and LAN URLs in your terminal output.</P>
         <Callout title="Field deployment tip">
           <p>
             For field deployments, connect a portable Wi-Fi router to the machine running the local
@@ -419,17 +309,33 @@ export function DocsContent() {
             needed.
           </p>
         </Callout>
+        <P><strong>Expected result:</strong> The local server is running and your form is accessible at the LAN URL shown in the terminal.</P>
       </section>
 
-      {/* Sync */}
+      {/* Step 4: Collect */}
       <section>
-        <H2 id="sync">Sync Response Data Back</H2>
-        <P>
-          The local server only collects <strong>response data</strong> — it never modifies the form
-          itself. The form master always lives on the serverside.
-        </P>
-        <H3>Export responses from local server (web UI)</H3>
-        <P>Open the local server admin panel at <IC>http://localhost:3002</IC> (or your custom port):</P>
+        <H2 id="step-collect">4. Collect offline responses</H2>
+        <P><strong>What:</strong> Field teams visit the local server URL on their devices and submit responses through the form.</P>
+        <P><strong>Why:</strong> This is the core workflow — collecting data from the field where internet is unreliable or unavailable.</P>
+        <H3>Do this now</H3>
+        <OL>
+          <li>Ensure the local server is running and devices are on the same network</li>
+          <li>Share the LAN URL (e.g. <IC>{`http://192.168.1.50:${DEFAULT_PORT}`}</IC>) with field team members</li>
+          <li>Field team members open the URL in any browser on their device</li>
+          <li>Select the form from the list (if multiple forms are imported)</li>
+          <li>Fill out and submit the form</li>
+        </OL>
+        <P><strong>Expected result:</strong> Responses are saved locally on the field machine in the SQLite database, accessible from the admin panel.</P>
+      </section>
+
+      {/* Step 5: Sync */}
+      <section>
+        <H2 id="step-sync">5. Sync responses back</H2>
+        <P><strong>What:</strong> Export collected responses from the local server and import them into the serverside.</P>
+        <P><strong>Why:</strong> Data flows one direction — from local servers back to the serverside where all responses are compiled for analysis.</P>
+        <H3>Do this now</H3>
+        <H3>Export from local server</H3>
+        <P>Open the local server admin panel at <IC>{`http://localhost:${DEFAULT_PORT}`}</IC> (or your custom port):</P>
         <OL>
           <li>Go to the <strong>Responses</strong> tab for the form</li>
           <li>Click <strong>Export Data</strong> in the top-right</li>
@@ -444,7 +350,7 @@ export function DocsContent() {
           ]}
         />
         <P>The file downloads to your device — no terminal commands needed.</P>
-        <H3>Import responses into serverside</H3>
+        <H3>Import into serverside</H3>
         <P>
           On the serverside <strong>Responses</strong> page for the same form, click{' '}
           <strong>Import local data</strong> and upload the exported JSON. The system merges local
@@ -452,8 +358,9 @@ export function DocsContent() {
         </P>
         <H3>Deduplication</H3>
         <P>
-          Each response carries a unique submission ID generated at collection time. Re-importing the
-          same file won&apos;t create duplicates — the serverside skips any submission ID it already has.
+          Each response has a unique submission ID generated at the time of submission. When importing
+          local data, the serverside checks these IDs and skips any duplicates — so you can safely
+          import the same file multiple times without creating duplicate entries.
         </P>
         <H3>What does NOT sync back</H3>
         <P>
@@ -461,6 +368,32 @@ export function DocsContent() {
           If you need to update the form, edit it on the serverside and re-export the config to your
           local server.
         </P>
+        <P><strong>Expected result:</strong> All responses — online and imported — visible in one unified table on the serverside Responses page.</P>
+      </section>
+
+      {/* Troubleshooting */}
+      <section>
+        <H2 id="troubleshooting">Troubleshooting</H2>
+        <H3>Port already in use</H3>
+        <CodeBlock>
+          <span className="comment"># Use a different port{'\n'}</span>
+          <span className="cmd">fieldkit --port=8080{'\n\n'}</span>
+          <span className="comment"># Or kill the existing process (macOS/Linux){'\n'}</span>
+          <span className="cmd">{`lsof -ti:${DEFAULT_PORT} | xargs kill`}</span>
+        </CodeBlock>
+        <H3>Devices can&apos;t connect</H3>
+        <UL>
+          <li>Ensure all devices are on the same network/subnet</li>
+          <li>Check firewall settings — your configured server port (default {DEFAULT_PORT}) must be open for inbound connections</li>
+          <li>On Windows, allow Node.js through Windows Firewall when prompted</li>
+          <li>Try accessing via the IP address shown in the server output, not <IC>localhost</IC></li>
+        </UL>
+        <H3>Data not persisting</H3>
+        <UL>
+          <li>Check that <IC>~/.fieldkit/data</IC> exists and is writable by the current user</li>
+          <li>Ensure the server wasn&apos;t killed with <IC>kill -9</IC> — use <IC>Ctrl+C</IC> for graceful shutdown</li>
+          <li>Confirm the machine has enough free disk space for responses and uploaded files</li>
+        </UL>
       </section>
 
       {/* Config format */}
@@ -497,31 +430,6 @@ export function DocsContent() {
   }
 }`}
         </CodeBlock>
-      </section>
-
-      {/* Troubleshooting */}
-      <section>
-        <H2 id="troubleshooting">Troubleshooting</H2>
-        <H3>Port already in use</H3>
-        <CodeBlock>
-          <span className="comment"># Use a different port{'\n'}</span>
-          <span className="cmd">fieldkit --port=8080{'\n\n'}</span>
-          <span className="comment"># Or kill the existing process (macOS/Linux){'\n'}</span>
-          <span className="cmd">lsof -ti:3002 | xargs kill</span>
-        </CodeBlock>
-        <H3>Devices can&apos;t connect</H3>
-        <UL>
-          <li>Ensure all devices are on the same network/subnet</li>
-          <li>Check firewall settings — your configured server port (default 3002) must be open for inbound connections</li>
-          <li>On Windows, allow Node.js through Windows Firewall when prompted</li>
-          <li>Try accessing via the IP address shown in the server output, not <IC>localhost</IC></li>
-        </UL>
-        <H3>Data not persisting</H3>
-        <UL>
-          <li>Check that <IC>~/.fieldkit/data</IC> exists and is writable by the current user</li>
-          <li>Ensure the server wasn&apos;t killed with <IC>kill -9</IC> — use <IC>Ctrl+C</IC> for graceful shutdown</li>
-          <li>Confirm the machine has enough free disk space for responses and uploaded files</li>
-        </UL>
       </section>
     </main>
   )
