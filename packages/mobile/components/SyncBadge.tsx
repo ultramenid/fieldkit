@@ -1,36 +1,44 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { TOKENS } from '../src/theme/tokens'
 import { IconCheck, IconSync } from '../src/icons'
 
 interface Props {
   status: 'synced' | 'pending' | 'new'
   pendingCount?: number
+  onPress?: () => void
 }
 
-export function SyncBadge({ status, pendingCount }: Props) {
-  if (status === 'pending') {
+export function SyncBadge({ status, pendingCount, onPress }: Props) {
+  const badge = () => {
+    if (status === 'pending') {
+      return (
+        <View style={[styles.badge, styles.badgePending]}>
+          <IconSync size={10} color={TOKENS.colors.amber700} />
+          <Text style={styles.badgeTextPending}>{pendingCount} pending</Text>
+        </View>
+      )
+    }
+
+    if (status === 'synced') {
+      return (
+        <View style={[styles.badge, styles.badgeSynced]}>
+          <IconCheck size={10} color={TOKENS.colors.green700} />
+          <Text style={styles.badgeTextSynced}>Synced</Text>
+        </View>
+      )
+    }
+
     return (
-      <View style={[styles.badge, styles.badgePending]}>
-        <IconSync size={10} color={TOKENS.colors.amber700} />
-        <Text style={styles.badgeTextPending}>{pendingCount} pending</Text>
+      <View style={[styles.badge, styles.badgeNew]}>
+        <Text style={styles.badgeTextNew}>New</Text>
       </View>
     )
   }
 
-  if (status === 'synced') {
-    return (
-      <View style={[styles.badge, styles.badgeSynced]}>
-        <IconCheck size={10} color={TOKENS.colors.green700} />
-        <Text style={styles.badgeTextSynced}>Synced</Text>
-      </View>
-    )
+  if (onPress) {
+    return <TouchableOpacity onPress={onPress}>{badge()}</TouchableOpacity>
   }
-
-  return (
-    <View style={[styles.badge, styles.badgeNew]}>
-      <Text style={styles.badgeTextNew}>New</Text>
-    </View>
-  )
+  return badge()
 }
 
 const styles = StyleSheet.create({

@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { TOKENS } from '../src/theme/tokens'
 import { SyncBadge } from './SyncBadge'
 import { FieldTags } from './FieldTags'
-import { IconSync, IconTrash, IconGrid, IconClock } from '../src/icons'
+import { IconTrash, IconGrid, IconClock } from '../src/icons'
 
 interface Props {
   title: string
@@ -34,13 +34,12 @@ export function FormCard({
           {title}
         </Text>
         <View style={styles.cardActions}>
-          {syncStatus === 'pending' && onSync && (
-            <TouchableOpacity style={styles.iconBtn} onPress={onSync}>
-              <IconSync size={14} color={TOKENS.colors.gray500} />
-            </TouchableOpacity>
-          )}
-          <SyncBadge status={syncStatus} pendingCount={pendingCount} />
-          <TouchableOpacity style={styles.iconBtn} onPress={onDelete}>
+          <SyncBadge
+            status={syncStatus}
+            pendingCount={pendingCount}
+            onPress={syncStatus === 'pending' ? onSync : undefined}
+          />
+          <TouchableOpacity onPress={onDelete} style={styles.deleteBtn}>
             <IconTrash size={14} color={TOKENS.colors.gray400} />
           </TouchableOpacity>
         </View>
@@ -86,17 +85,13 @@ const styles = StyleSheet.create({
   cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
     flexShrink: 0,
-    marginLeft: 12,
+    marginLeft: 8,
   },
-  iconBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: TOKENS.radius.pill,
-    borderWidth: TOKENS.border.width,
-    borderColor: TOKENS.colors.gray200,
-    backgroundColor: TOKENS.colors.white,
+  deleteBtn: {
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
