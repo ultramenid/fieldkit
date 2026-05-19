@@ -27,12 +27,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: TOKENS.border.width,
   },
   bannerOnline: {
-    backgroundColor: TOKENS.colors.green50,
-    borderBottomColor: '#d9f0dc',
+    backgroundColor: TOKENS.colors.white,
+    borderBottomColor: TOKENS.colors.gray200,
   },
   bannerOffline: {
-    backgroundColor: TOKENS.colors.amber50,
-    borderBottomColor: '#f5e3b8',
+    backgroundColor: TOKENS.colors.white,
+    borderBottomColor: TOKENS.colors.gray200,
   },
   inner: {
     flexDirection: 'row',
