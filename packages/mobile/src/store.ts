@@ -24,7 +24,16 @@ export const useStore = create<AppState>((set) => ({
   serverUrl: '',
 
   setForms: (forms) => set({ forms }),
-  addForm: (form) => set((s) => ({ forms: [...s.forms, form] })),
+  addForm: (form) => set((s) => {
+    const index = s.forms.findIndex((f) => f.id === form.id)
+    if (index === -1) {
+      return { forms: [...s.forms, form] }
+    }
+
+    const next = [...s.forms]
+    next[index] = form
+    return { forms: next }
+  }),
   setOnline: (isOnline) => set({ isOnline }),
   setSyncing: (isSyncing) => set({ isSyncing }),
   setLastSynced: (lastSynced) => set({ lastSynced }),
