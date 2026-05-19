@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { useStore } from '../../src/store'
 import { upsertForm, getForm } from '../../src/db/database'
 import { fetchFormConfig, getServerUrl, setServerUrl } from '../../src/api/server'
@@ -52,6 +52,18 @@ export default function ScanScreen() {
       if (scanTimerRef.current) clearTimeout(scanTimerRef.current)
     }
   }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      setCameraActive(true)
+      scanningRef.current = false
+      setScanning(false)
+
+      return () => {
+        setCameraActive(false)
+      }
+    }, [])
+  )
 
   const router = useRouter()
   const addForm = useStore((s) => s.addForm)
