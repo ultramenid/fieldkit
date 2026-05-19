@@ -25,6 +25,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
     backgroundColor: TOKENS.colors.white,
+    borderBottomWidth: TOKENS.border.width,
+    borderBottomColor: TOKENS.colors.gray200,
   },
   inner: {
     flexDirection: 'row',
