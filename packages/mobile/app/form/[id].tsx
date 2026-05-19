@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { FormRenderer } from '../../src/renderer/FormRenderer'
 import { getForm, insertResponse } from '../../src/db/database'
 import { FormConfig } from '../../src/types'
+import { TOKENS } from '../../src/theme/tokens'
 
 export default function FormFillScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -82,27 +83,42 @@ function generateId(): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: TOKENS.colors.white },
   centered: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#fff', padding: 40,
+    backgroundColor: TOKENS.colors.white, padding: 40,
   },
   checkIcon: {
-    fontSize: 48, color: '#22c55e', marginBottom: 16,
+    fontSize: 48, color: TOKENS.colors.green500, marginBottom: 16,
     width: 64, height: 64, lineHeight: 64, textAlign: 'center',
-    borderWidth: 2, borderColor: '#22c55e', borderRadius: 32,
+    borderWidth: 2, borderColor: TOKENS.colors.green500, borderRadius: 32,
     overflow: 'hidden',
   },
-  confirmTitle: { fontSize: 22, fontWeight: '600', color: '#000', marginBottom: 8 },
-  confirmMsg: { fontSize: 15, color: '#737373', marginBottom: 24, textAlign: 'center' },
+  confirmTitle: {
+    fontSize: 22, fontWeight: TOKENS.type.weightSemibold,
+    color: TOKENS.colors.black, marginBottom: 8,
+  },
+  confirmMsg: {
+    fontSize: TOKENS.fontSize.body, color: TOKENS.colors.gray500,
+    marginBottom: 24, textAlign: 'center',
+  },
   submitBtn: {
-    backgroundColor: '#000', borderRadius: 9999, paddingVertical: 14, paddingHorizontal: 28,
+    backgroundColor: TOKENS.colors.black,
+    borderRadius: TOKENS.radius.pill,
+    paddingVertical: 14, paddingHorizontal: 28,
     marginBottom: 12,
   },
-  submitText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  submitText: {
+    fontSize: TOKENS.fontSize.body, fontWeight: TOKENS.type.weightSemibold,
+    color: TOKENS.colors.white,
+  },
   backBtn: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9999,
+    borderWidth: TOKENS.border.width, borderColor: TOKENS.colors.gray200,
+    borderRadius: TOKENS.radius.pill,
     paddingVertical: 14, paddingHorizontal: 28,
   },
-  backText: { fontSize: 14, fontWeight: '500', color: '#000' },
+  backText: {
+    fontSize: TOKENS.fontSize.body, fontWeight: TOKENS.type.weightMedium,
+    color: TOKENS.colors.black,
+  },
 })

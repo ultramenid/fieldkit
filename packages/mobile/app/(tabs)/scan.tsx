@@ -208,20 +208,32 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#fff', padding: 40,
   },
-  permissionTitle: { fontSize: 17, fontWeight: '600', marginBottom: 6 },
-  permissionDesc: { fontSize: 14, color: '#737373', marginBottom: 16 },
-  permissionLink: { fontSize: 14, color: '#000', fontWeight: '500' },
+  permissionTitle: {
+    fontSize: 17, fontWeight: '600', color: '#000', marginBottom: 6,
+  },
+  permissionDesc: {
+    fontSize: 14, color: '#737373', marginBottom: 16, textAlign: 'center',
+  },
+  permissionLink: {
+    fontSize: 14, color: '#000', fontWeight: '500',
+    paddingVertical: 14, paddingHorizontal: 28,
+    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9999,
+    overflow: 'hidden',
+  },
   overlay: {
     position: 'absolute', top: '30%', left: '12%', right: '12%',
     aspectRatio: 1, justifyContent: 'space-between',
   },
   cornerTop: {
-    width: 40, height: 40, borderTopWidth: 3, borderLeftWidth: 3,
+    width: 40, height: 40,
+    borderTopWidth: 3, borderLeftWidth: 3,
     borderColor: '#fff', borderRadius: 4,
   },
   cornerBottom: {
-    width: 40, height: 40, borderBottomWidth: 3, borderRightWidth: 3,
-    borderColor: '#fff', borderRadius: 4, alignSelf: 'flex-end',
+    width: 40, height: 40,
+    borderBottomWidth: 3, borderRightWidth: 3,
+    borderColor: '#fff', borderRadius: 4,
+    alignSelf: 'flex-end',
   },
   footer: {
     position: 'absolute', bottom: 60, left: 0, right: 0,

@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
+  View, Text, TextInput, StyleSheet, Alert,
 } from 'react-native'
 import { useStore } from '../../src/store'
 import { getServerUrl, setServerUrl } from '../../src/api/server'
 import { deleteAllData } from '../../src/db/database'
+import { TOKENS } from '../../src/theme/tokens'
+import { ScreenHeader } from '../../components/ScreenHeader'
+import { PillButton } from '../../components/PillButton'
 
 export default function Settings() {
   const [url, setUrl] = useState('')
@@ -25,7 +28,6 @@ export default function Settings() {
   const handleSyncAll = async () => {
     setSyncing(true)
     try {
-      // syncAll will be wired in Task 17
       Alert.alert('Done', 'Syncing will be available soon.')
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
@@ -54,7 +56,7 @@ export default function Settings() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
+      <ScreenHeader title="Settings" />
 
       <View style={styles.section}>
         <Text style={styles.label}>Server URL</Text>
@@ -63,26 +65,22 @@ export default function Settings() {
           value={url}
           onChangeText={setUrl}
           placeholder="https://fieldkit.app"
-          placeholderTextColor="#a3a3a3"
+          placeholderTextColor={TOKENS.colors.gray400}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
         />
-        <TouchableOpacity style={styles.btn} onPress={handleSaveUrl}>
-          <Text style={styles.btnText}>Save</Text>
-        </TouchableOpacity>
+        <PillButton title="Save" onPress={handleSaveUrl} />
       </View>
 
       <View style={styles.section}>
-        <TouchableOpacity
-          style={[styles.btn, styles.btnPrimary]}
+        <PillButton
+          title={syncing ? 'Syncing...' : 'Sync All Now'}
+          variant="filled"
           onPress={handleSyncAll}
+          loading={syncing}
           disabled={syncing || !isOnline}
-        >
-          <Text style={[styles.btnText, styles.btnPrimaryText]}>
-            {syncing ? 'Syncing...' : 'Sync All Now'}
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
 
       <View style={styles.section}>
@@ -90,35 +88,24 @@ export default function Settings() {
       </View>
 
       <View style={styles.section}>
-        <TouchableOpacity style={styles.btnDestructive} onPress={handleDeleteAll}>
-          <Text style={styles.btnDestructiveText}>Delete All Data</Text>
-        </TouchableOpacity>
+        <PillButton
+          title="Delete All Data"
+          variant="destructive"
+          onPress={handleDeleteAll}
+        />
       </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 20 },
-  title: { fontSize: 34, fontWeight: '700', color: '#000', marginBottom: 32 },
-  section: { marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '500', color: '#000', marginBottom: 8 },
+  container: { flex: 1, backgroundColor: TOKENS.colors.white },
+  section: { marginHorizontal: TOKENS.spacing.padding, marginBottom: TOKENS.spacing.section },
+  label: { fontSize: 14, fontWeight: TOKENS.type.weightMedium, color: TOKENS.colors.black, marginBottom: 8 },
   input: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 12,
-    paddingHorizontal: 16, paddingVertical: 12, fontSize: 15,
-    color: '#000', marginBottom: 12,
+    borderWidth: TOKENS.border.width, borderColor: TOKENS.colors.gray200,
+    borderRadius: TOKENS.radius.container, paddingHorizontal: 16, paddingVertical: 12,
+    fontSize: TOKENS.fontSize.body, color: TOKENS.colors.black, marginBottom: 12,
   },
-  btn: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9999,
-    paddingVertical: 12, alignItems: 'center',
-  },
-  btnText: { fontSize: 14, fontWeight: '500', color: '#000' },
-  btnPrimary: { backgroundColor: '#000', borderColor: '#000' },
-  btnPrimaryText: { color: '#fff' },
-  version: { fontSize: 13, color: '#a3a3a3', textAlign: 'center' },
-  btnDestructive: {
-    borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9999,
-    paddingVertical: 12, alignItems: 'center',
-  },
-  btnDestructiveText: { fontSize: 14, fontWeight: '500', color: '#dc2626' },
+  version: { fontSize: TOKENS.fontSize.small, color: TOKENS.colors.gray400, textAlign: 'center' },
 })
