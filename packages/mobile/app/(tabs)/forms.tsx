@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useRef } from 'react'
 import {
   View, FlatList, StyleSheet, RefreshControl,
 } from 'react-native'
@@ -31,21 +31,31 @@ export default function FormsList() {
   const [responseCounts, setResponseCounts] = useState<Record<string, number>>({})
   const [unsyncedCounts, setUnsyncedCounts] = useState<Record<string, number>>({})
 
+  const loadingRef = useRef(false)
+  const generationRef = useRef(0)
+
   const loadForms = useCallback(async () => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+    const gen = generationRef.current + 1
+    generationRef.current = gen
     const [result, counts, pending] = await Promise.all([
       getAllForms(),
       getResponseCountsByForm(),
       getUnsyncedCountsByForm(),
     ])
+    if (gen !== generationRef.current) return
     setForms(result)
     setResponseCounts(counts)
     setUnsyncedCounts(pending)
+    loadingRef.current = false
   }, [setForms])
 
   useFocusEffect(
     useCallback(() => {
+      if (isSyncing) return
       loadForms()
-    }, [loadForms])
+    }, [loadForms, isSyncing])
   )
 
   const handleSync = async () => {
