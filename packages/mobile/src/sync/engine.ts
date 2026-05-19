@@ -1,6 +1,41 @@
-import { getUnsyncedResponses, markResponsesSynced, updateFormLastSynced, getForm } from '../db/database'
+import {
+  getUnsyncedResponses,
+  getUnsyncedResponsesByForm,
+  markResponsesSynced,
+  updateFormLastSynced,
+  getForm,
+} from '../db/database'
 import { syncResponses } from '../api/server'
 import { ResponseRecord } from '../types'
+
+async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Promise<{ synced: number; errors: number }> {
+  if (responses.length === 0) return { synced: 0, errors: 0 }
+
+  const form = await getForm(formId)
+  if (!form) return { synced: 0, errors: responses.length }
+
+  const batch = responses.slice(0, 20)
+
+  try {
+    const payload = batch.map((r) => {
+      const data = JSON.parse(r.dataJson)
+      return {
+        submissionId: r.submissionId,
+        submittedAt: new Date(r.submittedAt).toISOString(),
+        answers: data.answers ?? [],
+      }
+    })
+    const result = await syncResponses(formId, form.secret, payload)
+
+    if (!result.ok) return { synced: 0, errors: batch.length }
+
+    await markResponsesSynced(batch.map((r) => r.id))
+    await updateFormLastSynced(formId, Date.now())
+    return { synced: batch.length, errors: 0 }
+  } catch {
+    return { synced: 0, errors: batch.length }
+  }
+}
 
 export async function syncAll(): Promise<{ synced: number; errors: number }> {
   const unsynced = await getUnsyncedResponses()
@@ -17,28 +52,15 @@ export async function syncAll(): Promise<{ synced: number; errors: number }> {
   let errorCount = 0
 
   for (const [formId, responses] of grouped) {
-    const form = await getForm(formId)
-    if (!form) {
-      errorCount += responses.length
-      continue
-    }
-
-    const batch = responses.slice(0, 20)
-    try {
-      const parsed = batch.map((r) => JSON.parse(r.dataJson))
-      const result = await syncResponses(formId, form.secret, parsed)
-
-      if (result.ok) {
-        await markResponsesSynced(batch.map((r) => r.id))
-        await updateFormLastSynced(formId, Date.now())
-        syncedCount += batch.length
-      } else {
-        errorCount += batch.length
-      }
-    } catch {
-      errorCount += batch.length
-    }
+    const result = await syncBatchForForm(formId, responses)
+    syncedCount += result.synced
+    errorCount += result.errors
   }
 
   return { synced: syncedCount, errors: errorCount }
+}
+
+export async function syncForm(formId: string): Promise<{ synced: number; errors: number }> {
+  const unsynced = await getUnsyncedResponsesByForm(formId)
+  return syncBatchForForm(formId, unsynced)
 }
