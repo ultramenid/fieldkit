@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TOKENS } from '../src/theme/tokens'
 
 interface Props {
@@ -6,8 +7,10 @@ interface Props {
 }
 
 export function ConnectionBanner({ isOnline }: Props) {
+  const insets = useSafeAreaInsets()
+
   return (
-    <View style={styles.banner}>
+    <View style={[styles.banner, { paddingTop: Math.max(insets.top, 8) }]}>
       <View style={styles.inner}>
         <View style={[styles.dot, isOnline ? styles.dotOnline : styles.dotOffline]} />
         <Text style={styles.text}>
@@ -23,8 +26,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    marginTop: 20,
+    paddingBottom: 6,
     backgroundColor: TOKENS.colors.white,
   },
   inner: {
