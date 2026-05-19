@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { useRouter } from 'expo-router'
@@ -41,6 +41,14 @@ function buildRecord(config: FormConfig): FormRecord {
 export default function ScanScreen() {
   const [scanning, setScanning] = useState(false)
   const [importing, setImporting] = useState(false)
+  const scanningRef = useRef(false)
+  const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (scanTimerRef.current) clearTimeout(scanTimerRef.current)
+    }
+  }, [])
+
   const router = useRouter()
   const addForm = useStore((s) => s.addForm)
   const setServerUrlStore = useStore((s) => s.setServerUrl)
@@ -59,29 +67,37 @@ export default function ScanScreen() {
     )
   }
 
+  const reenableScan = () => {
+    if (scanTimerRef.current) clearTimeout(scanTimerRef.current)
+    scanTimerRef.current = setTimeout(() => {
+      scanningRef.current = false
+      setScanning(false)
+    }, 2000)
+  }
+
   const handleBarcodeScanned = async ({ data }: { data: string }) => {
-    if (scanning || importing) return
+    if (scanningRef.current || importing) return
+    scanningRef.current = true
     setScanning(true)
 
     try {
-      // Try embedded config JSON first
       const parsed = tryParseConfig(data)
       if (parsed) {
         await importConfig(parsed)
         return
       }
 
-      // Fall back to URL-based import
       const match = data.match(/\/f\/([a-zA-Z0-9_-]+)/)
       if (!match) {
         Alert.alert('Invalid QR', 'This QR code does not contain a valid form link or config.')
-        setScanning(false)
+        reenableScan()
         return
       }
 
       const formId = match[1]
       const existing = await getForm(formId)
       if (existing) {
+        scanningRef.current = false
         setScanning(false)
         Alert.alert(
           'Already imported',
@@ -97,12 +113,11 @@ export default function ScanScreen() {
       await importFromUrl(formId, data)
     } catch {
       Alert.alert('Error', 'Failed to scan QR code.')
-      setScanning(false)
+      reenableScan()
     }
   }
 
   const importFromUrl = async (formId: string, qrData: string) => {
-    setScanning(true)
     setImporting(true)
 
     try {
@@ -115,6 +130,7 @@ export default function ScanScreen() {
       }
       if (!serverUrl) {
         Alert.alert('Server not configured', 'Set the server URL in Settings first.')
+        reenableScan()
         return
       }
 
@@ -123,8 +139,8 @@ export default function ScanScreen() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       Alert.alert('Import failed', msg)
+      reenableScan()
     } finally {
-      setScanning(false)
       setImporting(false)
     }
   }
@@ -135,6 +151,7 @@ export default function ScanScreen() {
     try {
       const existing = await getForm(config.formId)
       if (existing) {
+        scanningRef.current = false
         setScanning(false)
         Alert.alert(
           'Already imported',
@@ -151,27 +168,28 @@ export default function ScanScreen() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       Alert.alert('Import failed', msg)
+      reenableScan()
     } finally {
-      setScanning(false)
       setImporting(false)
     }
   }
 
   const saveConfigLocally = async (config: FormConfig) => {
-    setScanning(true)
     setImporting(true)
     try {
       const record = buildRecord(config)
       await upsertForm(record)
       addForm(record)
+      scanningRef.current = false
+      setScanning(false)
       Alert.alert('Imported', `"${config.title}" is ready to fill.`, [
         { text: 'OK', onPress: () => router.push('/forms') },
       ])
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
       Alert.alert('Import failed', msg)
+      reenableScan()
     } finally {
-      setScanning(false)
       setImporting(false)
     }
   }
