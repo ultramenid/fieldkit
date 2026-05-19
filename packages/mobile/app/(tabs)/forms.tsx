@@ -12,7 +12,6 @@ import {
 } from '../../src/db/database'
 import { syncAll, syncForm } from '../../src/sync/engine'
 import { FormRecord } from '../../src/types'
-import { ConnectionBanner } from '../../components/ConnectionBanner'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SyncBar } from '../../components/SyncBar'
 import { FormCard } from '../../components/FormCard'
@@ -139,7 +138,6 @@ export default function FormsList() {
 
   return (
     <View style={styles.container}>
-      <ConnectionBanner isOnline={isOnline} />
       <ScreenHeader title="My Forms" />
       <SyncBar
         lastSynced={formatLastSynced()}
