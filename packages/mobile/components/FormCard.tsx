@@ -2,12 +2,11 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { TOKENS } from '../src/theme/tokens'
 import { SyncBadge } from './SyncBadge'
 import { FieldTags } from './FieldTags'
-import { IconTrash, IconGrid, IconClock } from '../src/icons'
+import { IconTrash, IconGrid } from '../src/icons'
 
 interface Props {
   title: string
   responses: number
-  fieldCount: number
   fields: string[]
   syncStatus: 'synced' | 'pending' | 'new'
   pendingCount: number
@@ -19,7 +18,6 @@ interface Props {
 export function FormCard({
   title,
   responses,
-  fieldCount,
   fields,
   syncStatus,
   pendingCount,
@@ -48,10 +46,6 @@ export function FormCard({
         <View style={styles.metaItem}>
           <IconGrid size={14} color={TOKENS.colors.gray400} />
           <Text style={styles.metaText}>{responses} responses</Text>
-        </View>
-        <View style={styles.metaItem}>
-          <IconClock size={14} color={TOKENS.colors.gray400} />
-          <Text style={styles.metaText}>{fieldCount} fields</Text>
         </View>
       </View>
       <FieldTags types={fields} />

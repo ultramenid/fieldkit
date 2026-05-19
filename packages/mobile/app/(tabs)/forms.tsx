@@ -140,7 +140,6 @@ export default function FormsList() {
             <FormCard
               title={item.title}
               responses={responseCounts[item.id] ?? 0}
-              fieldCount={getFieldTypes(item).length}
               fields={getFieldTypes(item)}
               syncStatus={getSyncStatus(item, unsyncedCounts[item.id] ?? 0)}
               pendingCount={unsyncedCounts[item.id] ?? 0}
