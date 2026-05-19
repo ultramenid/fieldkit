@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet, ReactNode } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { ReactNode } from 'react'
 import { TOKENS } from '../src/theme/tokens'
 
 interface Action {
