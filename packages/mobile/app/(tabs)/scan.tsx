@@ -44,6 +44,7 @@ function buildRecord(config: FormConfig): FormRecord {
 export default function ScanScreen() {
   const [scanning, setScanning] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [cameraActive, setCameraActive] = useState(true)
   const scanningRef = useRef(false)
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function ScanScreen() {
     scanTimerRef.current = setTimeout(() => {
       scanningRef.current = false
       setScanning(false)
+      setCameraActive(true)
     }, 2000)
   }
 
@@ -82,6 +84,7 @@ export default function ScanScreen() {
     if (scanningRef.current || importing) return
     scanningRef.current = true
     setScanning(true)
+    setCameraActive(false)
 
     try {
       const parsed = tryParseConfig(data)
@@ -179,6 +182,9 @@ export default function ScanScreen() {
       const record = buildRecord(config)
       await upsertForm(record)
       addForm(record)
+      scanningRef.current = true
+      setScanning(true)
+      setCameraActive(false)
       router.replace('/(tabs)/forms')
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
@@ -195,7 +201,8 @@ export default function ScanScreen() {
         style={StyleSheet.absoluteFill}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-        onBarcodeScanned={handleBarcodeScanned}
+        active={cameraActive}
+        onBarcodeScanned={cameraActive && !scanning && !importing ? handleBarcodeScanned : undefined}
       />
       <View style={styles.overlay}>
         <View style={styles.cornerTop} />
