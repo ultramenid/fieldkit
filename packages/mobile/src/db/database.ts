@@ -76,7 +76,8 @@ export async function getUnsyncedCountsByForm(): Promise<Record<string, number>>
 export async function getUnsyncedResponsesByForm(formId: string): Promise<ResponseRecord[]> {
   const d = await getDatabase()
   return d.getAllAsync<ResponseRecord>(
-    'SELECT * FROM responses WHERE synced = 0 AND form_id = ? ORDER BY submitted_at ASC',
+    `SELECT id, form_id as formId, submission_id as submissionId, data_json as dataJson, submitted_at as submittedAt, synced
+     FROM responses WHERE synced = 0 AND form_id = ? ORDER BY submitted_at ASC`,
     formId
   )
 }
@@ -113,7 +114,8 @@ export async function insertResponse(
 export async function getUnsyncedResponses(): Promise<ResponseRecord[]> {
   const d = await getDatabase()
   return d.getAllAsync<ResponseRecord>(
-    'SELECT * FROM responses WHERE synced = 0 ORDER BY submitted_at ASC'
+    `SELECT id, form_id as formId, submission_id as submissionId, data_json as dataJson, submitted_at as submittedAt, synced
+     FROM responses WHERE synced = 0 ORDER BY submitted_at ASC`
   )
 }
 
