@@ -1,8 +1,8 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   View, FlatList, StyleSheet, RefreshControl,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { useStore } from '../../src/store'
 import {
   getAllForms,
@@ -42,9 +42,11 @@ export default function FormsList() {
     setUnsyncedCounts(pending)
   }, [setForms])
 
-  useEffect(() => {
-    loadForms()
-  }, [loadForms])
+  useFocusEffect(
+    useCallback(() => {
+      loadForms()
+    }, [loadForms])
+  )
 
   const handleSync = async () => {
     setSyncing(true)
