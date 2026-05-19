@@ -7,9 +7,12 @@ import { upsertForm, getForm } from '../../src/db/database'
 import { fetchFormConfig, getServerUrl, setServerUrl } from '../../src/api/server'
 import { FormConfig, FormRecord } from '../../src/types'
 
+const CONFIG_PREFIX = 'fieldkit://config/'
+
 function tryParseConfig(data: string): FormConfig | null {
   try {
-    const parsed = JSON.parse(data)
+    const raw = data.startsWith(CONFIG_PREFIX) ? data.slice(CONFIG_PREFIX.length) : data
+    const parsed = JSON.parse(raw)
     if (
       typeof parsed === 'object' &&
       parsed !== null &&
