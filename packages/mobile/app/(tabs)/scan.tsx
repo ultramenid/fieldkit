@@ -186,7 +186,7 @@ export default function ScanScreen() {
       scanningRef.current = false
       setScanning(false)
       Alert.alert('Imported', `"${config.title}" is ready to fill.`, [
-        { text: 'OK', onPress: () => router.push('/forms') },
+        { text: 'OK', onPress: () => router.replace('/(tabs)/forms') },
       ])
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
