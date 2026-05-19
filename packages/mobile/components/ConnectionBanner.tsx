@@ -24,15 +24,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderBottomWidth: TOKENS.border.width,
   },
   bannerOnline: {
     backgroundColor: TOKENS.colors.white,
-    borderBottomColor: TOKENS.colors.gray200,
   },
   bannerOffline: {
     backgroundColor: TOKENS.colors.white,
-    borderBottomColor: TOKENS.colors.gray200,
   },
   inner: {
     flexDirection: 'row',
