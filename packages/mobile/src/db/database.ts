@@ -43,11 +43,10 @@ export async function upsertForm(form: FormRecord): Promise<void> {
 
 export async function getAllForms(): Promise<FormRecord[]> {
   const d = await getDatabase()
-  const rows = await d.getAllAsync<Record<string, unknown>>(
+  return d.getAllAsync<FormRecord>(
     `SELECT id, title, description, config_json as configJson, secret, imported_at as importedAt, last_synced_at as lastSyncedAt
      FROM forms ORDER BY imported_at DESC`
   )
-  return rows as unknown as FormRecord[]
 }
 
 export async function getResponseCountsByForm(): Promise<Record<string, number>> {
@@ -90,11 +89,10 @@ export async function deleteFormAndResponses(formId: string): Promise<void> {
 
 export async function getForm(id: string): Promise<FormRecord | null> {
   const d = await getDatabase()
-  const row = await d.getFirstAsync<Record<string, unknown>>(
+  return d.getFirstAsync<FormRecord>(
     `SELECT id, title, description, config_json as configJson, secret, imported_at as importedAt, last_synced_at as lastSyncedAt
      FROM forms WHERE id = ?`, id
-  )
-  return (row as unknown as FormRecord) ?? null
+  ) ?? null
 }
 
 export async function insertResponse(
