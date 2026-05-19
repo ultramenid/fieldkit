@@ -100,13 +100,11 @@ export default function ScanScreen() {
       const formId = match[1]
       const existing = await getForm(formId)
       if (existing) {
-        scanningRef.current = false
-        setScanning(false)
         Alert.alert(
           'Already imported',
           'This form is already imported. Do you want to update it?',
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: 'Cancel', style: 'cancel', onPress: () => reenableScan() },
             { text: 'Update', onPress: () => importFromUrl(formId, data) },
           ]
         )
@@ -154,13 +152,11 @@ export default function ScanScreen() {
     try {
       const existing = await getForm(config.formId)
       if (existing) {
-        scanningRef.current = false
-        setScanning(false)
         Alert.alert(
           'Already imported',
           'This form is already imported. Do you want to update it?',
           [
-            { text: 'Cancel', style: 'cancel', onPress: () => setImporting(false) },
+            { text: 'Cancel', style: 'cancel', onPress: () => { setImporting(false); reenableScan() } },
             { text: 'Update', onPress: () => saveConfigLocally(config) },
           ]
         )
@@ -183,8 +179,6 @@ export default function ScanScreen() {
       const record = buildRecord(config)
       await upsertForm(record)
       addForm(record)
-      scanningRef.current = false
-      setScanning(false)
       router.replace('/(tabs)/forms')
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
