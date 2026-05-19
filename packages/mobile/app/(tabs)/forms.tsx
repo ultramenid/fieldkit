@@ -30,9 +30,11 @@ export default function FormsList() {
   const setLastSynced = useStore((s) => s.setLastSynced)
   const [responseCounts, setResponseCounts] = useState<Record<string, number>>({})
   const [unsyncedCounts, setUnsyncedCounts] = useState<Record<string, number>>({})
+  const [syncingFormIds, setSyncingFormIds] = useState<Set<string>>(new Set())
 
   const loadingRef = useRef(false)
   const generationRef = useRef(0)
+  const syncFormGuardRef = useRef(false)
 
   const loadForms = useCallback(async () => {
     if (loadingRef.current) return
@@ -53,31 +55,42 @@ export default function FormsList() {
 
   useFocusEffect(
     useCallback(() => {
-      if (isSyncing) return
       loadForms()
-    }, [loadForms, isSyncing])
+    }, [loadForms])
   )
 
   const handleSync = async () => {
     setSyncing(true)
     try {
-      await syncAll()
+      const result = await syncAll()
+      console.log('[sync] all done:', result)
       setLastSynced(Date.now())
       await loadForms()
+    } catch (e) {
+      console.error('[sync] all failed:', e)
     } finally {
       setSyncing(false)
     }
   }
 
   const handleSyncForm = async (formId: string) => {
-    if (!isOnline) return
-    setSyncing(true)
+    if (!isOnline || syncFormGuardRef.current) return
+    syncFormGuardRef.current = true
+    setSyncingFormIds((prev) => new Set(prev).add(formId))
     try {
-      await syncForm(formId)
+      const result = await syncForm(formId)
+      console.log('[sync] form done:', formId, result)
       setLastSynced(Date.now())
       await loadForms()
+    } catch (e) {
+      console.error('[sync] form failed:', formId, e)
     } finally {
-      setSyncing(false)
+      syncFormGuardRef.current = false
+      setSyncingFormIds((prev) => {
+        const next = new Set(prev)
+        next.delete(formId)
+        return next
+      })
     }
   }
 
