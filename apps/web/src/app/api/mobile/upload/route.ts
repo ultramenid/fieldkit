@@ -82,6 +82,5 @@ export async function POST(req: Request) {
   }))
 
   const fileUrl = `${process.env.S3_ENDPOINT}/${STORAGE_BUCKET}/${key}`
-  console.log('[mobile-upload] stored:', { key, size: buffer.length, type: detectedType })
   return NextResponse.json({ fileUrl, key, size: buffer.length })
 }

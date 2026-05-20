@@ -18,7 +18,7 @@ interface AppState {
 
 export const useStore = create<AppState>((set) => ({
   forms: [],
-  isOnline: true,
+  isOnline: false,
   isSyncing: false,
   lastSynced: null,
   serverUrl: '',

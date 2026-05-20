@@ -106,8 +106,6 @@ export async function uploadFile(
 
   const filename = localUri.split('/').pop() ?? 'upload.jpg'
 
-  console.log('[upload] uploading:', { uri: localUri.slice(-40), filename, size: info.size, to: `${base}/api/mobile/upload` })
-
   // Use FileSystem.uploadAsync which handles multipart properly on both platforms
   const result = await FileSystem.uploadAsync(`${base}/api/mobile/upload`, localUri, {
     httpMethod: 'POST',
@@ -121,27 +119,7 @@ export async function uploadFile(
   }
 
   const json = JSON.parse(result.body)
-  console.log('[upload] success:', json.fileUrl)
   return json as UploadResult
-}
-
-function guessContentType(uri: string): string {
-  const ext = uri.split('.').pop()?.toLowerCase() ?? ''
-  switch (ext) {
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg'
-    case 'png':
-      return 'image/png'
-    case 'webp':
-      return 'image/webp'
-    case 'gif':
-      return 'image/gif'
-    case 'pdf':
-      return 'application/pdf'
-    default:
-      return 'image/jpeg'
-  }
 }
 
 export async function syncResponses(

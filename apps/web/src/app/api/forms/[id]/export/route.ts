@@ -92,7 +92,6 @@ async function resolveServerUrl(
     if (!isLoopbackHost(forwardedHostname)) {
       return `${protocol}://${forwardedHost}`
     }
-    console.log('[export] Ignoring loopback x-forwarded-host:', forwardedHost)
   }
 
   // Determine the host the client is using
@@ -105,25 +104,21 @@ async function resolveServerUrl(
     // 1. Env var override (explicit always wins)
     const envUrl = process.env.FIELDKIT_SERVER_URL
     if (envUrl) {
-      console.log('[export] Using FIELDKIT_SERVER_URL:', envUrl)
       return envUrl
     }
 
     // 2. Try scanning network interfaces
     const ifaceIp = getLanIp()
     if (ifaceIp) {
-      console.log('[export] LAN IP (iface):', ifaceIp)
       return `http://${ifaceIp}${port}`
     }
 
     // 3. Try socket connect to determine outbound IP
     const outboundIp = await getOutboundIp()
     if (outboundIp) {
-      console.log('[export] LAN IP (socket):', outboundIp)
       return `http://${outboundIp}${port}`
     }
 
-    console.warn('[export] Could not detect LAN IP — using localhost (mobile will not reach this)')
   }
 
   return `${defaultProto}://${rawHost}`
@@ -177,18 +172,6 @@ function getLanIp(): string | null {
   }
 
   all.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name))
-
-  if (all.length > 0) {
-    console.log('[export] LAN IP detected:', all[0].addr, `(interface: ${all[0].name}, candidates: ${all.length})`)
-  } else {
-    console.warn('[export] No LAN IP found! Set FIELDKIT_SERVER_URL in .env.local')
-    console.warn('[export] All interfaces:', JSON.stringify(
-      Object.entries(ifaces).map(([name, addrs]) => ({
-        name,
-        addrs: addrs?.map((a) => ({ family: a.family, internal: a.internal, address: a.address }))
-      }))
-    ))
-  }
 
   return all.length > 0 ? all[0].addr : null
 }
@@ -305,8 +288,6 @@ export async function GET(
   const defaultProto = requestUrl.protocol.replace(':', '') || 'https'
 
   const serverUrl = await resolveServerUrl(hostHeader, forwardedHost, forwardedProto, defaultProto, requestUrl.host)
-
-  console.log('[export] _serverUrl =', serverUrl)
 
   const schema = form.schema as Record<string, unknown>
   const config = {

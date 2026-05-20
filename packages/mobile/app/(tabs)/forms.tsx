@@ -62,7 +62,6 @@ export default function FormsList() {
     setSyncing(true)
     try {
       const result = await syncAll()
-      console.log('[sync] all done:', result)
       setLastSynced(Date.now())
       await loadForms()
     } catch (e) {
@@ -78,7 +77,6 @@ export default function FormsList() {
     setSyncingFormIds((prev) => new Set(prev).add(formId))
     try {
       const result = await syncForm(formId)
-      console.log('[sync] form done:', formId, result)
       setLastSynced(Date.now())
       await loadForms()
     } catch (e) {

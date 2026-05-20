@@ -10,8 +10,7 @@ import { syncResponses, uploadFile, isFileUri } from '../api/server'
 import { ResponseRecord } from '../types'
 
 async function uploadFilesInAnswers(
-  answers: { fieldId: string; value: unknown }[],
-  formId: string
+  answers: { fieldId: string; value: unknown }[]
 ): Promise<{ answers: { fieldId: string; value: unknown }[]; uploaded: number; errors: string[] }> {
   let uploaded = 0
   const errs: string[] = []
@@ -20,17 +19,12 @@ async function uploadFilesInAnswers(
     answers.map(async (a) => {
       if (!isFileUri(a.value)) return a
 
-      const uri = a.value as string
-      console.log('[sync] file detected:', { formId, fieldId: a.fieldId, uriSuffix: uri.slice(-60) })
-
       try {
         const result = await uploadFile(a.value as string)
         uploaded++
-        console.log('[sync] file uploaded OK, replaced with:', result.fileUrl)
         return { ...a, value: result.fileUrl }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        console.error('[sync] file upload FAILED:', msg)
         errs.push(`${a.fieldId}: ${msg}`)
         // Do NOT send local path — server can't use it
         return { ...a, value: null }
@@ -53,14 +47,12 @@ async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Pr
 
   try {
     // Step 1: Upload any files and replace local URIs with server URLs
-    let totalUploaded = 0
     const uploadErrors: string[] = []
 
     const processed = await Promise.all(
       batch.map(async (r) => {
         const data = JSON.parse(r.dataJson)
-        const { answers, uploaded, errors } = await uploadFilesInAnswers(data.answers ?? [], formId)
-        totalUploaded += uploaded
+        const { answers, uploaded, errors } = await uploadFilesInAnswers(data.answers ?? [])
         uploadErrors.push(...errors)
 
         if (uploaded > 0 || errors.length > 0) {
@@ -78,14 +70,9 @@ async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Pr
     if (uploadErrors.length > 0) {
       console.warn('[sync] some uploads failed, those file values set to null:', uploadErrors)
     }
-    if (totalUploaded > 0) {
-      console.log('[sync] total files uploaded:', totalUploaded)
-    }
 
     // Step 2: Sync to server
-    console.log('[sync] posting to server:', { formId, payloadCount: processed.length, secret: form.secret?.slice(0, 4) + '…' })
     const result = await syncResponses(formId, form.secret, processed)
-    console.log('[sync] server response:', JSON.stringify(result))
 
     if (!result.ok) {
       console.error('[sync] server returned not ok:', result)
@@ -94,7 +81,6 @@ async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Pr
 
     await markResponsesSynced(batch.map((r) => r.id))
     await updateFormLastSynced(formId, Date.now())
-    console.log('[sync] success:', { formId, synced: batch.length })
     return { synced: batch.length, errors: 0 }
   } catch (e) {
     console.error('[sync] error:', e)
