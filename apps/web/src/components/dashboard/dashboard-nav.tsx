@@ -12,7 +12,8 @@ export function DashboardNav({ userInitials, userImage, userName, userEmail }: D
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--background)]">
       <div className="mx-auto flex max-w-[960px] items-center justify-between px-6 py-[14px]">
-        <Link href="/" className="font-sans text-[20px] font-medium text-[var(--foreground)] no-underline">
+        <Link href="/" className="flex items-center gap-2.5 font-sans text-[20px] font-medium text-[var(--foreground)] no-underline">
+          <img src="/logo.png" alt="FieldKit" className="h-6 w-6" />
           FieldKit
         </Link>
         <nav className="flex items-center gap-6">

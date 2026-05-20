@@ -4,7 +4,7 @@ import os from 'os'
 import fs from 'fs'
 import multer from 'multer'
 import { db, initDb } from './db'
-import type { FormConfig } from '@fieldkit/form-schema'
+import type { FormConfig } from './types'
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -146,6 +146,7 @@ export function createServer(dataDir: string, port: number) {
     if (!form) return res.status(404).json({ error: 'Form not found' })
 
     const responses = db.getResponses(id)
+    // WARNING: must remain synchronous — adding await here introduces a read-then-write race
 
     const files: Record<string, string> = {}
 
@@ -213,7 +214,7 @@ export function createServer(dataDir: string, port: number) {
     const form = db.getForm(id)
     if (!form) return res.status(404).json({ error: 'Form not found' })
     if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Invalid submission' })
-    const submissionId = db.addResponse(id, req.body)
+    const submissionId = db.addResponse(id, req.body, (req.body as { submissionId?: string }).submissionId)
     notifyClients(id)
     res.json({ ok: true, submissionId })
   })
@@ -274,7 +275,7 @@ export function createServer(dataDir: string, port: number) {
     res.sendFile(path.join(__dirname, 'public', 'responses.html'))
   })
 
-  app.get('*', (_req, res) => {
+  app.get('*path', (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'))
   })
 

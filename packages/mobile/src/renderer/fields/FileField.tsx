@@ -1,7 +1,22 @@
-import { TouchableOpacity, Text, Image, StyleSheet, View } from 'react-native'
+import { TouchableOpacity, Text, Image, StyleSheet, View, Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
+import * as FileSystem from 'expo-file-system/legacy'
 import { FieldWrapper } from './FieldWrapper'
 import { FieldConfig } from '../../types'
+
+const DEFAULT_MAX_SIZE = 20 * 1024 * 1024
+
+function typesToLabel(types?: string[]): string {
+  if (!types || types.length === 0) return 'JPG, PNG, WebP, GIF'
+  const map: Record<string, string> = {
+    'image/jpeg': 'JPG',
+    'image/png': 'PNG',
+    'image/webp': 'WebP',
+    'image/gif': 'GIF',
+    'application/pdf': 'PDF',
+  }
+  return types.map((t) => map[t] ?? t).join(', ')
+}
 
 interface Props {
   field: FieldConfig
@@ -12,13 +27,33 @@ interface Props {
 }
 
 export function FileField({ field, value, error, onChange }: Props) {
+  const maxSize = field.validation?.maxFileSize ?? DEFAULT_MAX_SIZE
+  const maxSizeMB = Math.round((maxSize / (1024 * 1024)) * 10) / 10
+  const acceptedTypes = field.validation?.acceptedTypes?.length ? field.validation.acceptedTypes : undefined
+  const hintText = typesToLabel(acceptedTypes)
+
   const pick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 0.8,
     })
     if (!result.canceled && result.assets[0]) {
-      onChange(result.assets[0].uri)
+      const asset = result.assets[0]
+
+      // Check file size if URI is local
+      if (asset.uri) {
+        try {
+          const info = await FileSystem.getInfoAsync(asset.uri)
+          if (info.exists && info.size && info.size > maxSize) {
+            Alert.alert('File too large', `Maximum size is ${maxSizeMB}MB`)
+            return
+          }
+        } catch {
+          // Silently continue if file info unavailable
+        }
+      }
+
+      onChange(asset.uri)
     }
   }
 
@@ -34,7 +69,7 @@ export function FileField({ field, value, error, onChange }: Props) {
       ) : (
         <TouchableOpacity style={styles.dropZone} onPress={pick}>
           <Text style={styles.dropText}>Tap to select image</Text>
-          <Text style={styles.dropHint}>JPG, PNG, WebP, GIF up to 10MB</Text>
+          <Text style={styles.dropHint}>{hintText} up to {maxSizeMB}MB</Text>
         </TouchableOpacity>
       )}
     </FieldWrapper>

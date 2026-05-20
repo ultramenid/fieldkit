@@ -28,6 +28,7 @@ interface DbData {
 let dataDir: string
 let dbPath: string
 let cache: DbData | null = null
+let cacheMtime: number = 0
 
 export function initDb(dir: string) {
   dataDir = dir
@@ -37,10 +38,16 @@ export function initDb(dir: string) {
     fs.writeFileSync(dbPath, JSON.stringify({ forms: [], responses: [] }, null, 2))
   }
   cache = null
+  cacheMtime = 0
 }
 
 function read(): DbData {
-  if (cache) return cache
+  if (cache) {
+    const stat = fs.statSync(dbPath)
+    if (stat.mtimeMs === cacheMtime) return cache
+  }
+  const stat = fs.statSync(dbPath)
+  cacheMtime = stat.mtimeMs
   cache = JSON.parse(fs.readFileSync(dbPath, 'utf-8')) as DbData
   return cache
 }
@@ -92,9 +99,13 @@ export const db = {
     return read().responses.filter(r => r.formId === formId)
   },
 
-  addResponse(formId: string, body: Record<string, unknown>): string {
+  addResponse(formId: string, body: Record<string, unknown>, clientSubmissionId?: string): string {
     const data = read()
-    const submissionId = uuidv4()
+    if (clientSubmissionId) {
+      const existing = data.responses.find(r => r.formId === formId && r.submissionId === clientSubmissionId)
+      if (existing) return existing.submissionId
+    }
+    const submissionId = clientSubmissionId ?? uuidv4()
     data.responses.push({
       id: uuidv4(),
       formId,

@@ -8,7 +8,8 @@ export async function Nav() {
   return (
     <header className="border-b border-[var(--border)]">
       <div className="mx-auto flex w-full max-w-[960px] items-center justify-between px-6 py-[14px]">
-        <Link href="/" className="font-sans text-[22px] font-medium tracking-tight text-[var(--foreground)]">
+        <Link href="/" className="flex items-center gap-2.5 font-sans text-[22px] font-medium tracking-tight text-[var(--foreground)]">
+          <img src="/logo.png" alt="FieldKit" className="h-7 w-7" />
           FieldKit
         </Link>
         <nav className="flex gap-5">

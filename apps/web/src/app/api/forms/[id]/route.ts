@@ -36,7 +36,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
-  const { title, description, fields, settings, published, closed, allowMultipleSubmissions } = body as Record<string, unknown>
+  const { title, description, fields, settings, published, closed, allowMultipleSubmissions, version } = body as Record<string, unknown>
 
   if (title !== undefined && (typeof title !== 'string' || title.length > 500)) {
     return NextResponse.json({ error: 'Invalid title' }, { status: 400 })
@@ -53,6 +53,9 @@ export async function PATCH(
   if (closed !== undefined && typeof closed !== 'boolean') {
     return NextResponse.json({ error: 'Invalid closed value' }, { status: 400 })
   }
+  if (version !== undefined && (typeof version !== 'number' || !Number.isInteger(version) || version < 0)) {
+    return NextResponse.json({ error: 'Invalid version' }, { status: 400 })
+  }
 
   const form = await db.form.findFirst({
     where: { id: id, userId: session.user.id },
@@ -60,9 +63,10 @@ export async function PATCH(
   if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const existingSchema = form.schema as { fields?: unknown[]; settings?: Record<string, unknown> }
+  const expectedVersion = typeof version === 'number' ? version : form.version
 
-  await db.form.update({
-    where: { id: id },
+  const result = await db.form.updateMany({
+    where: { id: id, userId: session.user.id, version: expectedVersion },
     data: {
       title: (title as string) ?? form.title,
       description: (description as string) ?? form.description,
@@ -76,10 +80,15 @@ export async function PATCH(
       } as object,
       ...(published !== undefined ? { published: published as boolean } : {}),
       ...(closed !== undefined ? { closed: closed as boolean } : {}),
+      version: { increment: 1 },
     },
   })
 
-  return NextResponse.json({ ok: true })
+  if (result.count === 0) {
+    return NextResponse.json({ error: 'Conflict — form was modified since last read. Please refresh.' }, { status: 409 })
+  }
+
+  return NextResponse.json({ ok: true, version: expectedVersion + 1 })
 }
 
 export async function DELETE(

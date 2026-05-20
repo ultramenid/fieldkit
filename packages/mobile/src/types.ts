@@ -7,6 +7,9 @@ export interface FieldValidation {
   maxSelections?: number
   minDate?: string
   maxDate?: string
+  acceptedTypes?: string[]
+  maxFileSize?: number
+  maxStars?: number
 }
 
 export interface FieldConfig {
@@ -19,8 +22,6 @@ export interface FieldConfig {
   required: boolean
   options?: string[]
   validation?: FieldValidation
-  acceptedTypes?: string[]
-  maxSize?: number
 }
 
 export interface FormSettings {
@@ -38,6 +39,7 @@ export interface FormConfig {
   version: number
   secret: string
   exportedAt: string
+  _serverUrl?: string
 }
 
 export interface FormRecord {

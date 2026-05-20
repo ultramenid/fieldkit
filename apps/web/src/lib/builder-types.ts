@@ -13,6 +13,8 @@ export interface BuilderState {
   isPublished: boolean
   isClosed: boolean
   allowMultipleSubmissions: boolean
+  saveGeneration: number
+  version: number
 }
 
 export type BuilderAction =
@@ -28,6 +30,7 @@ export type BuilderAction =
   | { type: 'SET_PUBLISHED'; isPublished: boolean }
   | { type: 'SET_CLOSED'; isClosed: boolean }
   | { type: 'SET_ALLOW_MULTIPLE'; allowMultipleSubmissions: boolean }
+  | { type: 'SET_VERSION'; version: number }
 
 export const DEFAULT_LABELS: Record<FieldType, string> = {
   text: 'Text field',

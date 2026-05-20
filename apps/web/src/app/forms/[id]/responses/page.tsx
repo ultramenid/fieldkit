@@ -87,6 +87,7 @@ export default async function ResponsesPage({
           initialPagination={initialPagination}
           published={form.published}
           closed={form.closed}
+          version={form.version}
         />
       </main>
     </div>

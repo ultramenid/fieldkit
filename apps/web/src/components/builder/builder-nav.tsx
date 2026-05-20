@@ -27,8 +27,9 @@ export function BuilderNav() {
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <Link
           href="/dashboard"
-          className="flex-shrink-0 font-sans text-[22px] font-medium text-[var(--foreground)] no-underline"
+          className="flex flex-shrink-0 items-center gap-2.5 font-sans text-[22px] font-medium text-[var(--foreground)] no-underline"
         >
+          <img src="/logo.png" alt="FieldKit" className="h-7 w-7" />
           FieldKit
         </Link>
         <span className="flex-shrink-0 text-[18px] text-[var(--border)]">/</span>

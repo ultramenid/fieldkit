@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from 'react'
 import { useBuilder } from '@/lib/builder-context'
+import { DescriptionRichEditor } from './description-rich-editor'
 import { FieldItem } from './field-item'
 
 const DRAG_THRESHOLD = 5
@@ -10,7 +11,6 @@ export function Canvas() {
   const { state, dispatch } = useBuilder()
   const fieldsRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
-  const descRef = useRef<HTMLParagraphElement>(null)
   const dragState = useRef<{
     el: HTMLElement
     ghost: HTMLElement
@@ -25,14 +25,11 @@ export function Canvas() {
     if (titleRef.current && !titleRef.current.textContent) {
       titleRef.current.textContent = state.title
     }
-    if (descRef.current && !descRef.current.textContent) {
-      descRef.current.textContent = state.description
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>, fieldId: string) {
-    if ((e.target as HTMLElement).closest('input, select, textarea, button')) return
+    if ((e.target as HTMLElement).closest('input, select, textarea, button, [contenteditable="true"]')) return
     const el = (e.currentTarget as HTMLElement)
     const rect = el.getBoundingClientRect()
     const startX = e.clientX
@@ -65,7 +62,7 @@ export function Canvas() {
     const fromIndex = fields.findIndex((f) => f.dataset.fieldId === fieldId)
 
     const ghost = el.cloneNode(true) as HTMLElement
-    ghost.style.cssText = `position:fixed;z-index:9999;pointer-events:none;opacity:0.9;width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;transform:rotate(1deg) scale(1.02);box-shadow:0 8px 32px rgba(0,0,0,0.12);border:2px solid var(--foreground);border-radius:12px;background:var(--background);`
+    ghost.style.cssText = `position:fixed;z-index:9999;pointer-events:none;opacity:0.9;width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;transform:rotate(1deg) scale(1.02);border:2px solid var(--foreground);border-radius:12px;background:var(--background);`
     document.body.appendChild(ghost)
     document.body.style.userSelect = 'none'
 
@@ -164,20 +161,11 @@ export function Canvas() {
             }
             className="mb-2 -ml-2 rounded-[6px] border border-transparent px-2 py-1 font-[family-name:var(--font-display)] text-[24px] font-medium text-[var(--foreground)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)]"
           ></h2>
-          <p
-            ref={descRef}
-            contentEditable
-            suppressContentEditableWarning
-            spellCheck={false}
-            data-placeholder="Add a form description…"
-            onInput={(e) =>
-              dispatch({
-                type: 'SET_DESCRIPTION',
-                description: (e.target as HTMLElement).textContent ?? '',
-              })
-            }
-            className="-ml-2 rounded-[6px] border border-transparent px-2 py-1 text-[14px] text-[var(--muted)] outline-none transition-colors hover:border-[var(--border)] hover:bg-[var(--surface)] focus:border-[var(--foreground)] focus:bg-[var(--surface)] empty:before:content-[attr(data-placeholder)] empty:before:text-[var(--muted)] empty:before:opacity-60"
-          ></p>
+          <DescriptionRichEditor
+            key="description-editor"
+            value={state.description}
+            onChange={(description) => dispatch({ type: 'SET_DESCRIPTION', description })}
+          />
         </div>
 
         {/* Fields */}

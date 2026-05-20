@@ -13,6 +13,9 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: 'FieldKit',
   description: 'Offline-capable form builder for field data collection',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 export default function RootLayout({

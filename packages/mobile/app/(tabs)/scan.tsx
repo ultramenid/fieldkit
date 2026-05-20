@@ -138,16 +138,27 @@ export default function ScanScreen() {
 
     try {
       const qrOrigin = qrData.match(/^(https?:\/\/[^/]+)/)?.[1]
-      let serverUrl = await getServerUrl()
-      if (!serverUrl && qrOrigin) {
-        serverUrl = qrOrigin
-        await setServerUrl(serverUrl)
-        setServerUrlStore(serverUrl)
-      }
-      if (!serverUrl) {
-        Alert.alert('Server not configured', 'Set the server URL in Settings first.')
+      if (!qrOrigin) {
+        Alert.alert('Invalid QR', 'Could not extract server URL from QR code.')
         reenableScan()
         return
+      }
+
+      // Always try the QR's origin first — it's the authoritative source
+      let serverUrl = qrOrigin
+      try {
+        await setServerUrl(serverUrl)
+        setServerUrlStore(serverUrl)
+      } catch {
+        // QR origin might be localhost (dev browser); fall back to cached URL
+        const cached = await getServerUrl()
+        if (cached) {
+          serverUrl = cached
+        } else {
+          Alert.alert('Server not configured', 'Scan the config QR or set the server URL in Settings first.')
+          reenableScan()
+          return
+        }
       }
 
       const config = await fetchFormConfig(formId, serverUrl)
@@ -165,6 +176,18 @@ export default function ScanScreen() {
     setImporting(true)
 
     try {
+      // Config QR is authoritative for server URL — always apply it
+      if (config._serverUrl) {
+        try {
+          await setServerUrl(config._serverUrl)
+          setServerUrlStore(config._serverUrl)
+        } catch (urlErr: unknown) {
+          // URL validation failed (e.g. localhost) — import form anyway
+          const msg = urlErr instanceof Error ? urlErr.message : 'Invalid server URL'
+          Alert.alert('Server URL skipped', msg + '\n\nForm imported but sync will not work until the web app is accessed via LAN IP.')
+        }
+      }
+
       const existing = await getForm(config.formId)
       if (existing) {
         Alert.alert(

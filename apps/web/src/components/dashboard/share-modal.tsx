@@ -31,10 +31,24 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [configJson, setConfigJson] = useState<Record<string, unknown> | null>(null)
   const [configQrDataUrl, setConfigQrDataUrl] = useState<string | null>(null)
-  const shareUrl = `${window.location.origin}/f/${formId}`
+  const [qrPopup, setQrPopup] = useState<{ type: 'share' | 'config'; title: string } | null>(null)
+  const [hdQrDataUrl, setHdQrDataUrl] = useState<string | null>(null)
+  const [serverOrigin, setServerOrigin] = useState(window.location.origin)
+  const shareUrl = `${serverOrigin}/f/${formId}`
+
+  function openQrPopup(type: 'share' | 'config') {
+    const title = type === 'share' ? 'Scan to open form' : 'Scan to import offline'
+    setQrPopup({ type, title })
+    setHdQrDataUrl(type === 'share' ? qrDataUrl : configQrDataUrl)
+  }
+
+  function closeQrPopup() {
+    setQrPopup(null)
+    setHdQrDataUrl(null)
+  }
 
   useEffect(() => {
-    QRCode.toDataURL(shareUrl, { width: 200, margin: 2 }).then(setQrDataUrl)
+    QRCode.toDataURL(shareUrl, { width: 1024, margin: 2 }).then(setQrDataUrl)
   }, [shareUrl])
 
   useEffect(() => {
@@ -45,14 +59,18 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
         return r.json()
       })
       .then((config) => {
+        if (typeof config._serverUrl === 'string') {
+          setServerOrigin(config._serverUrl)
+        }
         setConfigJson(config)
         const lean = { ...config }
         const json = JSON.stringify(lean)
-        if (new Blob([json]).size <= MAX_QR_BYTES) {
-          return QRCode.toDataURL(json, { width: 200, margin: 2 })
+        const prefix = 'fieldkit://config/'
+        if (new Blob([prefix + json]).size <= MAX_QR_BYTES) {
+          return QRCode.toDataURL(prefix + json, { width: 1024, margin: 2 })
         }
         lean.description = `${DESC_PLACEHOLDER_PREFIX}${shareUrl}`
-        return QRCode.toDataURL(JSON.stringify(lean), { width: 200, margin: 2 })
+        return QRCode.toDataURL(prefix + JSON.stringify(lean), { width: 1024, margin: 2 })
       })
       .then(setConfigQrDataUrl)
       .catch((err) => {
@@ -101,7 +119,7 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-[480px] rounded-[12px] border border-[var(--border)] bg-[var(--background)] p-8">
+      <div className="relative max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-[12px] border border-[var(--border)] bg-[var(--background)] p-8 max-sm:p-6">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-[20px] text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -133,7 +151,16 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
         {/* Online QR Code */}
         {qrDataUrl && (
           <div className="mt-5 flex items-center gap-5">
-            <img src={qrDataUrl} alt="QR code" className="h-[100px] w-[100px] rounded-[8px] border border-[var(--border)]" />
+            <div className="relative shrink-0">
+              <img
+                src={qrDataUrl}
+                alt="Online form QR"
+                className="h-[100px] w-[100px] cursor-pointer rounded-[8px] border-[2px] border-[#2563eb] transition-opacity hover:opacity-80"
+                onClick={() => openQrPopup('share')}
+              />
+              <span className="absolute -top-2 -right-2 rounded-full bg-[#2563eb] px-2 py-0.5 text-[9px] font-semibold text-white">ONLINE</span>
+              <p className="mt-1.5 text-center text-[11px] text-[var(--muted)]">Click to enlarge</p>
+            </div>
             <div>
               <p className="mb-2 text-[13px] text-[var(--muted)]">Scan to open the form</p>
               <button
@@ -154,8 +181,18 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
             Scan with the FieldKit mobile app to import this form for offline use.
           </p>
           {configQrDataUrl ? (
+            <>
             <div className="flex items-center gap-5">
-              <img src={configQrDataUrl} alt="Mobile config QR" className="h-[100px] w-[100px] rounded-[8px] border border-[var(--border)]" />
+              <div className="relative shrink-0">
+              <img
+                src={configQrDataUrl}
+                alt="Mobile config QR"
+                className="h-[100px] w-[100px] cursor-pointer rounded-[8px] border-[2px] border-[var(--accent)] transition-opacity hover:opacity-80"
+                onClick={() => openQrPopup('config')}
+              />
+              <span className="absolute -top-2 -right-2 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[9px] font-semibold text-white">OFFLINE</span>
+              <p className="mt-1.5 text-center text-[11px] text-[var(--muted)]">Click to enlarge</p>
+            </div>
               <div>
                 <p className="mb-2 text-[13px] text-[var(--muted)]">Scan to import offline</p>
                 <button
@@ -167,6 +204,10 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
                 </button>
               </div>
             </div>
+            <p className="mt-2 text-[11px] font-mono text-[var(--muted)]">
+              Server: {serverOrigin}
+            </p>
+            </>
           ) : (
             <p className="text-[13px] text-[var(--muted)]">Loading config QR…</p>
           )}
@@ -187,6 +228,41 @@ export function ShareModal({ formId, formTitle, onClose }: ShareModalProps) {
           </button>
         </div>
       </div>
+
+      {/* QR popup overlay */}
+      {qrPopup && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-2"
+          onClick={closeQrPopup}
+        >
+          <div
+            className="flex w-full max-w-[480px] flex-col items-center rounded-[12px] border border-[var(--border)] bg-[var(--background)] p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeQrPopup}
+              className="mb-3 self-end flex h-8 w-8 items-center justify-center rounded-full text-[22px] leading-none text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+            >
+              ×
+            </button>
+            {hdQrDataUrl ? (
+              <img
+                src={hdQrDataUrl}
+                alt={qrPopup.title}
+                className="w-full max-w-[420px] aspect-square rounded-[8px] border border-[var(--border)]"
+              />
+            ) : (
+              <div className="flex w-full max-w-[420px] aspect-square items-center justify-center rounded-[8px] border border-[var(--border)]">
+                <span className="text-[14px] text-[var(--muted)]">Loading…</span>
+              </div>
+            )}
+            <p className="mt-4 w-full text-center text-[16px] font-medium text-[var(--foreground)] break-words">{qrPopup.title}</p>
+            <p className="mt-1 w-full max-w-full text-center text-[13px] text-[var(--muted)] break-all">
+              {qrPopup.type === 'share' ? shareUrl : 'Open the FieldKit mobile app to scan'}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

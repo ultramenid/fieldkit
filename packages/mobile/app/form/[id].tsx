@@ -113,8 +113,6 @@ const styles = StyleSheet.create({
     color: TOKENS.colors.white,
   },
   backBtn: {
-    borderWidth: TOKENS.border.width, borderColor: TOKENS.colors.gray200,
-    borderRadius: TOKENS.radius.pill,
     paddingVertical: 14, paddingHorizontal: 28,
   },
   backText: {

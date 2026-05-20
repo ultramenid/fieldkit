@@ -3,6 +3,7 @@
 import { createContext, useContext, useReducer, useEffect, useRef, useCallback } from 'react'
 import type { BuilderState, BuilderAction, BuilderField } from './builder-types'
 import { DEFAULT_LABELS, DEFAULT_OPTIONS } from './builder-types'
+import { sanitizeRichTextHtml, normalizePlainDescriptionToHtml } from './sanitize-rich-text'
 
 function reducer(state: BuilderState, action: BuilderAction): BuilderState {
   switch (action.type) {
@@ -20,6 +21,7 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
         fields: [...state.fields, newField],
         selectedId: newField.id,
         isDirty: true,
+        saveGeneration: state.saveGeneration + 1,
       }
     }
     case 'SELECT_FIELD':
@@ -29,12 +31,13 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
         ...state,
         fields: state.fields.map((f) => (f.id === action.id ? { ...f, ...action.patch } : f)),
         isDirty: true,
+        saveGeneration: state.saveGeneration + 1,
       }
     case 'REORDER_FIELDS': {
       const fields = [...state.fields]
       const [moved] = fields.splice(action.fromIndex, 1)
       fields.splice(action.toIndex, 0, moved)
-      return { ...state, fields, isDirty: true }
+      return { ...state, fields, isDirty: true, saveGeneration: state.saveGeneration + 1 }
     }
     case 'DELETE_FIELD': {
       const fields = state.fields.filter((f) => f.id !== action.id)
@@ -43,22 +46,25 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
         fields,
         selectedId: state.selectedId === action.id ? null : state.selectedId,
         isDirty: true,
+        saveGeneration: state.saveGeneration + 1,
       }
     }
     case 'SET_TITLE':
-      return { ...state, title: action.title, isDirty: true }
+      return { ...state, title: action.title, isDirty: true, saveGeneration: state.saveGeneration + 1 }
     case 'SET_DESCRIPTION':
-      return { ...state, description: action.description, isDirty: true }
+      return { ...state, description: action.description, isDirty: true, saveGeneration: state.saveGeneration + 1 }
     case 'SET_SAVING':
       return { ...state, isSaving: action.isSaving }
     case 'MARK_CLEAN':
       return { ...state, isDirty: false, isSaving: false }
     case 'SET_PUBLISHED':
-      return { ...state, isPublished: action.isPublished, isDirty: true }
+      return { ...state, isPublished: action.isPublished, isDirty: true, saveGeneration: state.saveGeneration + 1 }
     case 'SET_CLOSED':
-      return { ...state, isClosed: action.isClosed, isDirty: true }
+      return { ...state, isClosed: action.isClosed, isDirty: true, saveGeneration: state.saveGeneration + 1 }
     case 'SET_ALLOW_MULTIPLE':
-      return { ...state, allowMultipleSubmissions: action.allowMultipleSubmissions, isDirty: true }
+      return { ...state, allowMultipleSubmissions: action.allowMultipleSubmissions, isDirty: true, saveGeneration: state.saveGeneration + 1 }
+    case 'SET_VERSION':
+      return { ...state, version: action.version }
     default:
       return state
   }
@@ -86,26 +92,40 @@ export function BuilderProvider({
 
   const save = useCallback(async () => {
     const s = stateRef.current
+    const capturedGeneration = s.saveGeneration
+    const descriptionHtml = s.description.trim().startsWith('<')
+      ? sanitizeRichTextHtml(s.description)
+      : sanitizeRichTextHtml(normalizePlainDescriptionToHtml(s.description))
     dispatch({ type: 'SET_SAVING', isSaving: true })
     try {
-      await fetch(`/api/forms/${s.formId}`, {
+      const response = await fetch(`/api/forms/${s.formId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: s.title,
-          description: s.description,
+          description: descriptionHtml,
           fields: s.fields,
           settings: {
             submitButtonText: 'Submit',
             confirmationMessage: 'Thank you for your response.',
-            allowMultipleSubmissions: false,
+            allowMultipleSubmissions: s.allowMultipleSubmissions,
           },
           published: s.isPublished,
           closed: s.isClosed,
           allowMultipleSubmissions: s.allowMultipleSubmissions,
+          version: s.version,
         }),
       })
-      dispatch({ type: 'MARK_CLEAN' })
+      if (!response.ok) throw new Error('Failed to save form')
+      const payload = await response.json() as { version?: number }
+      if (typeof payload.version === 'number') {
+        dispatch({ type: 'SET_VERSION', version: payload.version })
+      }
+      if (stateRef.current.saveGeneration === capturedGeneration) {
+        dispatch({ type: 'MARK_CLEAN' })
+      } else {
+        dispatch({ type: 'SET_SAVING', isSaving: false })
+      }
     } catch {
       dispatch({ type: 'SET_SAVING', isSaving: false })
     }
@@ -118,7 +138,7 @@ export function BuilderProvider({
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
     }
-  }, [state.isDirty, state.fields, state.title, state.description, state.isPublished, save])
+  }, [state.isDirty, state.fields, state.title, state.description, state.isPublished, state.isClosed, state.allowMultipleSubmissions, save])
 
   return (
     <BuilderContext.Provider value={{ state, dispatch, save }}>

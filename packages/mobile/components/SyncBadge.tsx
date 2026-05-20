@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingVertical: 3,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderRadius: TOKENS.radius.pill,
   },
   badgeSynced: { backgroundColor: TOKENS.colors.green50 },

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import type { BuilderField } from '@/lib/builder-types'
+import { sanitizeRichTextHtml, normalizePlainDescriptionToHtml } from '@/lib/sanitize-rich-text'
 
 interface FormViewProps {
   formId: string
@@ -15,6 +16,36 @@ interface FormViewProps {
   allowMultipleSubmissions?: boolean
 }
 
+const DEFAULT_MAX_SIZE = 20 * 1024 * 1024
+const DEFAULT_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const DEFAULT_ACCEPTED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+const DEFAULT_HINT_TYPES = 'JPG, PNG, WebP, GIF'
+
+function typesToExtensions(types: string[]): string[] {
+  const map: Record<string, string> = {
+    'image/jpeg': '.jpg,.jpeg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif',
+    'application/pdf': '.pdf',
+  }
+  return types.flatMap((t) => {
+    const ext = map[t]
+    return ext ? ext.split(',') : []
+  })
+}
+
+function typesToLabel(types: string[]): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'JPG',
+    'image/png': 'PNG',
+    'image/webp': 'WebP',
+    'image/gif': 'GIF',
+    'application/pdf': 'PDF',
+  }
+  return types.map((t) => map[t] ?? t).join(', ')
+}
+
 function FileUpload({ field, value, onChange }: {
   field: BuilderField
   value: string | null
@@ -26,14 +57,56 @@ function FileUpload({ field, value, onChange }: {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Read field settings or use defaults
+  const maxSize = field.validation?.maxFileSize ?? DEFAULT_MAX_SIZE
+  const acceptedTypes = field.validation?.acceptedTypes?.length
+    ? field.validation.acceptedTypes
+    : DEFAULT_ACCEPTED_TYPES
+  const acceptAttr = typesToExtensions(acceptedTypes).join(',')
+  const hintText = typesToLabel(acceptedTypes)
+  const maxSizeMB = Math.round((maxSize / (1024 * 1024)) * 10) / 10
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
+  useEffect(() => {
+    if (!value && previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+      setFileName(null)
+    }
+  }, [value, previewUrl])
+
   async function handleFile(file: File) {
     setError(null)
+
+    // Client-side size check from field settings
+    if (file.size > maxSize) {
+      setError(`File too large (max ${maxSizeMB}MB)`)
+      return
+    }
+
+    // Client-side type check from field settings
+    if (!acceptedTypes.includes(file.type)) {
+      setError(`File type not allowed (${hintText})`)
+      return
+    }
+
     setUploading(true)
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }),
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+          maxSize,
+          allowedTypes: acceptedTypes,
+        }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Upload failed'); setUploading(false); return }
@@ -82,9 +155,9 @@ function FileUpload({ field, value, onChange }: {
       <input
         ref={inputRef}
         type="file"
-        accept=".jpg,.jpeg,.png,.webp,.gif"
+        accept={acceptAttr}
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); e.currentTarget.value = '' }}
       />
       {uploading ? (
         <p className="text-[14px] text-[var(--muted)]">Uploading…</p>
@@ -115,8 +188,8 @@ function FileUpload({ field, value, onChange }: {
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          <p className="text-[14px] text-[var(--muted)]">Drop image here or click to upload</p>
-          <span className="text-[12px] text-[var(--border)]">JPG, PNG, WebP, GIF up to 10MB</span>
+          <p className="text-[14px] text-[var(--muted)]">Drop file here or click to upload</p>
+          <span className="text-[12px] text-[var(--border)]">{hintText} up to {maxSizeMB}MB</span>
         </>
       )}
       {error && <p className="mt-2 text-[13px] text-[#dc2626]">{error}</p>}
@@ -262,16 +335,16 @@ export function FormView({
 }: FormViewProps) {
   const storageKey = `fieldkit_submitted_${formId}`
   const [values, setValues] = useState<Record<string, string | string[] | number | null>>({})
-  const [submitted, setSubmitted] = useState<boolean | null>(null)
+  const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submissionStateReady, setSubmissionStateReady] = useState(isPreview || allowMultipleSubmissions)
 
-  // Check localStorage client-side only to avoid hydration mismatch
   useEffect(() => {
     if (!isPreview && !allowMultipleSubmissions && localStorage.getItem(storageKey)) {
       setSubmitted(true)
-    } else {
-      setSubmitted(false)
     }
+    setSubmissionStateReady(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -283,26 +356,44 @@ export function FormView({
 
   const progress = fields.length > 0 ? Math.round((filledCount / fields.length) * 100) : 0
 
+  const descriptionHtml = useMemo(() => {
+    const raw = (description ?? '').trim()
+    if (!raw) return ''
+    const hasHtmlElements = /<\s*\/?[a-z][^>]*>/i.test(raw)
+    const source = hasHtmlElements ? raw : normalizePlainDescriptionToHtml(raw)
+    return sanitizeRichTextHtml(source)
+  }, [description])
+
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (isPreview) { setSubmitted(true); return }
+    setSubmitError(null)
     setSubmitting(true)
-    const answers = fields.map((f) => ({ fieldId: f.id, value: values[f.id] ?? null }))
-    await fetch(`/api/f/${formId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answers }),
-    })
-    if (!allowMultipleSubmissions) {
-      localStorage.setItem(storageKey, '1')
+    try {
+      const answers = fields.map((f) => ({ fieldId: f.id, value: values[f.id] ?? null }))
+      const res = await fetch(`/api/f/${formId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers }),
+      })
+      if (!res.ok) throw new Error('Submit failed. Please try again.')
+
+      if (!allowMultipleSubmissions) {
+        localStorage.setItem(storageKey, '1')
+      }
+      setSubmitted(true)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Submit failed. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
-    setSubmitted(true)
   }
 
-  // Wait for client-side localStorage check before rendering
-  if (submitted === null) {
-    return <div className="rounded-[12px] border border-[var(--border)] bg-[var(--bg)] p-12" />
+  if (!submissionStateReady) {
+    return null
   }
 
   if (isClosed) {
@@ -343,17 +434,31 @@ export function FormView({
       {/* Progress: percentage + thin bar */}
       {fields.length > 0 && (
         <div className="mb-6">
-          <div className="mb-1.5 flex items-center justify-between">
-            {description && <p className="text-[15px] leading-relaxed text-[var(--muted)]">{description}</p>}
-            <span className="ml-auto whitespace-nowrap font-mono text-[12px] text-[var(--muted)]">{progress}%</span>
+          {descriptionHtml && (
+            <div className="mb-3 text-[15px] leading-relaxed text-[var(--muted)] [&_p]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--border)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:overflow-x-auto [&_pre]:rounded-[8px] [&_pre]:bg-[var(--surface)] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_code]:rounded-[4px] [&_code]:bg-[var(--surface)] [&_code]:px-1 [&_code]:font-mono [&_code]:text-[13px] [&_mark]:bg-[color:rgba(139,69,19,0.18)] [&_sup]:align-super [&_sup]:text-[11px] [&_sub]:align-sub [&_sub]:text-[11px] [&_a]:underline [&_a]:underline-offset-2 [&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[10px]">
+              {mounted ? (
+                <span dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
+              ) : (
+                <span>{descriptionHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()}</span>
+              )}
+            </div>
+          )}
+          <div className="mb-1.5 flex items-center justify-end">
+            <span className="whitespace-nowrap font-mono text-[12px] text-[var(--muted)]">{progress}%</span>
           </div>
           <div className="h-[3px] w-full overflow-hidden rounded-full bg-[var(--border)]">
             <div className="h-full rounded-full bg-[var(--fg)] transition-all duration-300" style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
-      {!fields.length && description && (
-        <p className="mb-9 text-[15px] leading-relaxed text-[var(--muted)]">{description}</p>
+      {!fields.length && descriptionHtml && (
+        <div className="mb-9 text-[15px] leading-relaxed text-[var(--muted)] [&_p]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--border)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:overflow-x-auto [&_pre]:rounded-[8px] [&_pre]:bg-[var(--surface)] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_code]:rounded-[4px] [&_code]:bg-[var(--surface)] [&_code]:px-1 [&_code]:font-mono [&_code]:text-[13px] [&_mark]:bg-[color:rgba(139,69,19,0.18)] [&_sup]:align-super [&_sup]:text-[11px] [&_sub]:align-sub [&_sub]:text-[11px] [&_a]:underline [&_a]:underline-offset-2 [&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[10px]">
+          {mounted ? (
+            <span dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
+          ) : (
+            <span>{descriptionHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()}</span>
+          )}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-7">
@@ -373,6 +478,8 @@ export function FormView({
             />
           </div>
         ))}
+
+        {submitError && <p className="text-[13px] text-[#dc2626]">{submitError}</p>}
 
         <div className="mt-2 flex items-center justify-between border-t border-[var(--border)] pt-7 max-sm:flex-col max-sm:gap-3">
           <button

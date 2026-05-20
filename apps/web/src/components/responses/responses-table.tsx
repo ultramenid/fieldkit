@@ -32,6 +32,7 @@ interface ResponsesTableProps {
   initialPagination: Pagination
   published: boolean
   closed: boolean
+  version: number
 }
 
 export function ResponsesTable({
@@ -42,13 +43,16 @@ export function ResponsesTable({
   initialPagination,
   published,
   closed: initialClosed,
+  version: initialVersion,
 }: ResponsesTableProps) {
   const [responses, setResponses] = useState(initialResponses)
   const [search, setSearch] = useState('')
   const [sourceFilter, setSourceFilter] = useState<'all' | 'online' | 'local'>('all')
   const [closed, setClosed] = useState(initialClosed)
+  const [version, setVersion] = useState(initialVersion)
   const [importBanner, setImportBanner] = useState<string | null>(null)
   const [connected, setConnected] = useState(false)
+  const [selectedResponse, setSelectedResponse] = useState<Response | null>(null)
   const [page, setPage] = useState(initialPagination.page)
   const [pageSize, setPageSize] = useState(initialPagination.pageSize)
   const [total, setTotal] = useState(initialPagination.total)
@@ -110,13 +114,20 @@ export function ResponsesTable({
   }, [formId, closed, refresh])
 
   async function toggleClosed() {
+    const prevClosed = closed
     const next = !closed
     setClosed(next)
-    await fetch(`/api/forms/${formId}`, {
+    const res = await fetch(`/api/forms/${formId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ closed: next }),
+      body: JSON.stringify({ closed: next, version }),
     })
+    if (!res.ok) {
+      setClosed(prevClosed)
+      return
+    }
+    const data = await res.json() as { version?: number }
+    if (typeof data.version === 'number') setVersion(data.version)
     router.refresh()
   }
 
@@ -358,7 +369,11 @@ export function ResponsesTable({
               {filtered.map((r, i) => {
                 const answers = (r.data as { answers?: { fieldId: string; value: unknown }[] })?.answers ?? []
                 return (
-                  <tr key={r.id} className="hover:bg-[var(--surface)]">
+                  <tr
+                    key={r.id}
+                    onClick={() => setSelectedResponse(r)}
+                    className="hover:bg-[var(--surface)] cursor-pointer"
+                  >
                     <td className="border-b border-[var(--border)] px-[14px] py-[12px] font-mono text-[12px] tabular-nums text-[var(--muted)]">
                       {displayTotal - ((displayPage - 1) * displayPageSize + i)}
                     </td>
@@ -390,6 +405,82 @@ export function ResponsesTable({
           </table>
         )}
       </div>
+
+      {/* Response detail modal */}
+      {selectedResponse && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20"
+            onClick={() => setSelectedResponse(null)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-h-[85dvh] w-full max-w-[540px] overflow-y-auto rounded-t-[12px] border border-[var(--border)] bg-[var(--background)] p-6 md:inset-x-0 md:top-1/2 md:bottom-auto md:max-h-[80dvh] md:-translate-y-1/2 md:rounded-[12px]">
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h3 className="font-sans text-[18px] font-medium text-[var(--foreground)]">
+                  Response
+                </h3>
+                <p className="mt-1 text-[13px] text-[var(--muted)]">
+                  {new Date(selectedResponse.submittedAt).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedResponse(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {((): JSX.Element[] => {
+                const respAnswers = (selectedResponse.data as { answers?: { fieldId: string; value: unknown }[] })?.answers ?? []
+                return fields.map((f) => {
+                  const answer = respAnswers.find((a) => a.fieldId === f.id)
+                  const val = answer?.value
+                  return (
+                    <div key={f.id} className="rounded-[12px] border border-[var(--border)] px-4 py-3">
+                      <p className="mb-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)] break-words">
+                        {f.label}
+                      </p>
+                      <p className="text-[14px] text-[var(--foreground)] break-words whitespace-normal">
+                        {val == null || val === '' ? '—' : Array.isArray(val) ? val.join(', ') : String(val)}
+                      </p>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+
+            <div className="mt-4 flex items-center gap-3">
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[11px] ${
+                selectedResponse.source === 'online'
+                  ? 'border-[color-mix(in_oklch,#16a34a_30%,transparent)] text-[#16a34a]'
+                  : 'border-[color-mix(in_oklch,#f59e0b_30%,transparent)] text-[#b45309]'
+              }`}>
+                {selectedResponse.source === 'online' ? 'Online' : 'Local'}
+              </span>
+              <span className="font-mono text-[12px] tabular-nums text-[var(--muted)]">
+                {new Date(selectedResponse.submittedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pb-8 pt-4">
         <span className="font-mono text-[12px] text-[var(--muted)]">

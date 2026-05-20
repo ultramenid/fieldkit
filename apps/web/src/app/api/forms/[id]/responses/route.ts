@@ -68,25 +68,40 @@ export async function POST(
   }
 
   // Import with deduplication by submissionId
-  let imported = 0
-  for (const r of responses) {
-    if (r.submissionId) {
-      const existing = await db.response.findFirst({
-        where: { formId: id, submissionId: r.submissionId },
-      })
-      if (existing) continue
-    }
-    await db.response.create({
-      data: {
-        formId: id,
-        submissionId: r.submissionId ?? null,
-        source: r.source ?? 'local',
-        data: r.data ?? r,
-        submittedAt: r.submittedAt ? new Date(r.submittedAt) : new Date(),
-      },
-    })
-    imported++
-  }
+  const result = await db.$transaction(async (tx) => {
+    const submissionIds = responses
+      .filter((r: { submissionId?: string }) => r.submissionId)
+      .map((r: { submissionId?: string }) => r.submissionId as string)
 
-  return NextResponse.json({ imported })
+    const existing = await tx.response.findMany({
+      where: { submissionId: { in: submissionIds } },
+      select: { submissionId: true },
+    })
+
+    const existingIds = new Set(
+      existing
+        .filter((e): e is { submissionId: string } => e.submissionId !== null)
+        .map((e) => e.submissionId)
+    )
+
+    const toCreate = responses.filter(
+      (r: { submissionId?: string }) => !r.submissionId || !existingIds.has(r.submissionId)
+    )
+
+    if (toCreate.length > 0) {
+      await tx.response.createMany({
+        data: toCreate.map((r: { submissionId?: string; source?: string; data?: unknown; submittedAt?: string }) => ({
+          formId: id,
+          submissionId: r.submissionId ?? null,
+          source: r.source ?? 'local',
+          data: r.data ?? r,
+          submittedAt: r.submittedAt ? new Date(r.submittedAt) : new Date(),
+        })),
+      })
+    }
+
+    return { imported: toCreate.length }
+  })
+
+  return NextResponse.json({ imported: result.imported })
 }

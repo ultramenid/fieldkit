@@ -128,6 +128,14 @@ export async function markResponsesSynced(ids: string[]): Promise<void> {
   )
 }
 
+export async function updateResponseData(id: string, dataJson: string): Promise<void> {
+  const d = await getDatabase()
+  await d.runAsync(
+    'UPDATE responses SET data_json = ? WHERE id = ?',
+    dataJson, id
+  )
+}
+
 export async function updateFormLastSynced(formId: string, timestamp: number): Promise<void> {
   const d = await getDatabase()
   await d.runAsync(

@@ -124,9 +124,15 @@ export default function Home() {
         <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
           How it works
         </p>
-        <div className="mb-6">
+        <div className="mb-7">
           <WorkflowStrip />
         </div>
+
+        <hr className="my-10 border-t border-[var(--border)]" />
+
+        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+          Quick Start
+        </p>
         <InstallSnippet />
       </main>
       <footer className="mt-auto border-t border-[var(--border)] px-6 py-6 text-center text-[13px] text-[var(--muted)]">

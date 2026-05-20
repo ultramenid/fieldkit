@@ -15,6 +15,9 @@ export default function SignInPage() {
     <div className="grid min-h-dvh place-items-center bg-[var(--background)] px-6">
       <div className="w-full max-w-[400px]">
         {/* Logo */}
+        <div className="mb-2 flex justify-center">
+          <img src="/logo.png" alt="FieldKit" className="h-16 w-16" />
+        </div>
         <h1 className="mb-2 text-center font-sans text-[28px] font-medium text-[var(--foreground)]">
           FieldKit
         </h1>

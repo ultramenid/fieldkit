@@ -5,7 +5,7 @@ import { db } from './db'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db as never),
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/auth/signin',

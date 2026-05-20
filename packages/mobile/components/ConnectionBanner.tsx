@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, Animated } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TOKENS } from '../src/theme/tokens'
 
@@ -8,11 +9,43 @@ interface Props {
 
 export function ConnectionBanner({ isOnline }: Props) {
   const insets = useSafeAreaInsets()
+  const pulse = useRef(new Animated.Value(1)).current
+
+  useEffect(() => {
+    if (!isOnline) {
+      pulse.setValue(1)
+      return
+    }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    )
+
+    animation.start()
+    return () => animation.stop()
+  }, [isOnline])
 
   return (
     <View style={[styles.banner, { paddingTop: Math.max(insets.top, 8) }]}>
       <View style={styles.inner}>
-        <View style={[styles.dot, isOnline ? styles.dotOnline : styles.dotOffline]} />
+        <Animated.View
+          style={[
+            styles.dot,
+            isOnline ? styles.dotOnline : styles.dotOffline,
+            { opacity: pulse },
+          ]}
+        />
         <Text style={styles.text}>
           {isOnline ? 'Connected to server' : 'Offline — responses saved locally'}
         </Text>

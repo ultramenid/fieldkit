@@ -1,4 +1,6 @@
 import { randomBytes } from 'crypto'
+import { networkInterfaces } from 'os'
+import dgram from 'dgram'
 import { NextResponse } from 'next/server'
 import { lookup } from 'node:dns/promises'
 import { auth } from '@/lib/auth'
@@ -23,6 +25,110 @@ function isPrivateIp(ip: string): boolean {
   return PRIVATE_IP_RANGES.some((r) => r.test(ip))
 }
 
+function isLoopbackHost(hostname: string): boolean {
+  const lower = hostname.toLowerCase()
+  return lower === 'localhost' || lower === '::1' || lower === '[::1]' || lower === '0.0.0.0' || lower.startsWith('127.')
+}
+
+function parsePort(rawHost: string): string {
+  const idx = rawHost.lastIndexOf(':')
+  if (idx === -1) return ''
+  const after = rawHost.slice(idx + 1)
+  // IPv6 addresses contain colons; only treat as port if numeric
+  return /^\d+$/.test(after) ? rawHost.slice(idx) : ''
+}
+
+function parseHostname(rawHost: string): string {
+  // Bracketed IPv6 host: [::1]:3000
+  if (rawHost.startsWith('[')) {
+    const end = rawHost.indexOf(']')
+    if (end !== -1) return rawHost.slice(1, end)
+    return rawHost
+  }
+
+  const idx = rawHost.indexOf(':')
+  return idx === -1 ? rawHost : rawHost.slice(0, idx)
+}
+
+function getOutboundIp(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const socket = dgram.createSocket('udp4')
+    const timeout = setTimeout(() => {
+      socket.close()
+      resolve(null)
+    }, 2000)
+
+    socket.on('error', () => {
+      clearTimeout(timeout)
+      socket.close()
+      resolve(null)
+    })
+
+    // Connect to a public IP to determine local address (no data is sent)
+    socket.connect(80, '1.1.1.1', () => {
+      const addr = socket.address()
+      clearTimeout(timeout)
+      socket.close()
+      if (addr && typeof addr.address === 'string') {
+        resolve(addr.address)
+      } else {
+        resolve(null)
+      }
+    })
+  })
+}
+
+async function resolveServerUrl(
+  hostHeader: string | null,
+  forwardedHost: string | undefined,
+  forwardedProto: string | undefined,
+  defaultProto: string,
+  defaultHost: string
+): Promise<string> {
+  // Use forwarded headers if present (reverse proxy), unless they point to loopback.
+  if (forwardedHost) {
+    const protocol = forwardedProto || defaultProto
+    const forwardedHostname = parseHostname(forwardedHost)
+    if (!isLoopbackHost(forwardedHostname)) {
+      return `${protocol}://${forwardedHost}`
+    }
+    console.log('[export] Ignoring loopback x-forwarded-host:', forwardedHost)
+  }
+
+  // Determine the host the client is using
+  const rawHost = hostHeader || defaultHost
+  const port = parsePort(rawHost)
+  const hostname = parseHostname(rawHost)
+
+  // If client is accessing via localhost/loopback, replace with LAN IP so mobile can reach it
+  if (isLoopbackHost(hostname)) {
+    // 1. Env var override (explicit always wins)
+    const envUrl = process.env.FIELDKIT_SERVER_URL
+    if (envUrl) {
+      console.log('[export] Using FIELDKIT_SERVER_URL:', envUrl)
+      return envUrl
+    }
+
+    // 2. Try scanning network interfaces
+    const ifaceIp = getLanIp()
+    if (ifaceIp) {
+      console.log('[export] LAN IP (iface):', ifaceIp)
+      return `http://${ifaceIp}${port}`
+    }
+
+    // 3. Try socket connect to determine outbound IP
+    const outboundIp = await getOutboundIp()
+    if (outboundIp) {
+      console.log('[export] LAN IP (socket):', outboundIp)
+      return `http://${outboundIp}${port}`
+    }
+
+    console.warn('[export] Could not detect LAN IP — using localhost (mobile will not reach this)')
+  }
+
+  return `${defaultProto}://${rawHost}`
+}
+
 
 function getStorageHostname(): string | null {
   const endpoint = process.env.S3_ENDPOINT
@@ -32,6 +138,59 @@ function getStorageHostname(): string | null {
   } catch {
     return null
   }
+}
+
+// Deprioritized interface name patterns (virtual, tunnel, VM, Docker, etc.)
+const VIRTUAL_IFACE_RE = /^(utun|llw|awdl|bridge|veth|docker|tun|tap|vmnet|vboxnet|lo|gif|stf|anpi|ap|fw|pdp_ip)/i
+
+// Preferred LAN subnets (sorted: most common first)
+const LAN_SUBNETS = [
+  /^192\.168\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+]
+
+function getLanIp(): string | null {
+  const ifaces = networkInterfaces()
+  const all: { addr: string; name: string; priority: number }[] = []
+
+  for (const name of Object.keys(ifaces)) {
+    const net = ifaces[name]
+    if (!net) continue
+    for (const addr of net) {
+      if (addr.family !== 'IPv4' || addr.internal) continue
+
+      let priority = 0
+
+      // Boost common physical interfaces
+      if (/^en\d|^eth\d|^wlan\d|^wl\w/i.test(name)) priority -= 100
+
+      // Penalize virtual/tunnel interfaces
+      if (VIRTUAL_IFACE_RE.test(name)) priority += 100
+
+      // Boost preferred subnets
+      const subnetIdx = LAN_SUBNETS.findIndex((re) => re.test(addr.address))
+      if (subnetIdx !== -1) priority -= 50 + subnetIdx * 10
+
+      all.push({ addr: addr.address, name, priority })
+    }
+  }
+
+  all.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name))
+
+  if (all.length > 0) {
+    console.log('[export] LAN IP detected:', all[0].addr, `(interface: ${all[0].name}, candidates: ${all.length})`)
+  } else {
+    console.warn('[export] No LAN IP found! Set FIELDKIT_SERVER_URL in .env.local')
+    console.warn('[export] All interfaces:', JSON.stringify(
+      Object.entries(ifaces).map(([name, addrs]) => ({
+        name,
+        addrs: addrs?.map((a) => ({ family: a.family, internal: a.internal, address: a.address }))
+      }))
+    ))
+  }
+
+  return all.length > 0 ? all[0].addr : null
 }
 
 async function validateUrl(url: string): Promise<void> {
@@ -116,7 +275,7 @@ async function inlineImages(html: string): Promise<string> {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -139,6 +298,16 @@ export async function GET(
 
   const description = await inlineImages(form.description ?? '')
 
+  const requestUrl = new URL(req.url)
+  const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
+  const forwardedProto = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim()
+  const hostHeader = req.headers.get('host')
+  const defaultProto = requestUrl.protocol.replace(':', '') || 'https'
+
+  const serverUrl = await resolveServerUrl(hostHeader, forwardedHost, forwardedProto, defaultProto, requestUrl.host)
+
+  console.log('[export] _serverUrl =', serverUrl)
+
   const schema = form.schema as Record<string, unknown>
   const config = {
     formId: form.id,
@@ -149,6 +318,7 @@ export async function GET(
     version: form.version,
     secret,
     exportedAt: new Date().toISOString(),
+    _serverUrl: serverUrl,
   }
 
   return NextResponse.json(config)

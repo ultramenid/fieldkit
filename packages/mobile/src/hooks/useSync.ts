@@ -29,8 +29,10 @@ export function useSync() {
   const runSync = async () => {
     setSyncing(true)
     try {
-      await syncAll()
-      setLastSynced(Date.now())
+      const result = await syncAll()
+      if (result.synced > 0) {
+        setLastSynced(Date.now())
+      }
     } catch {} finally {
       setSyncing(false)
     }

@@ -28,7 +28,7 @@ export default async function PreviewPage({
     <div className="min-h-dvh bg-[var(--surface)]">
       <header className="border-b border-[var(--border)] bg-[var(--bg)] px-6 py-4">
         <div className="mx-auto flex max-w-[960px] items-center justify-between">
-          <span className="font-sans text-[15px] font-medium text-[var(--muted)]">FieldKit</span>
+          <span className="flex items-center gap-2 font-sans text-[15px] font-medium text-[var(--muted)]"><img src="/logo.png" alt="FieldKit" className="h-5 w-5" /> FieldKit</span>
           <span className="flex items-center gap-1.5 font-mono text-[12px] text-[var(--muted)]">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--muted)]" />
             Preview

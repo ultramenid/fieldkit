@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "next dev --webpack -H 0.0.0.0",
     "build": "next build --webpack",
     "start": "next start",
     "type-check": "tsc --noEmit"
@@ -12,11 +12,13 @@
     "@auth/prisma-adapter": "^2.11.2",
     "@aws-sdk/client-s3": "^3.1049.0",
     "@aws-sdk/s3-request-presigner": "^3.1049.0",
-    "@fieldkit/form-schema": "*",
+    "@fieldkit/form-schema": "file:../../packages/form-schema",
     "@prisma/client": "^6.19.3",
+    "@tiptap/core": "^3.23.4",
     "@tiptap/extension-highlight": "^3.23.4",
     "@tiptap/extension-image": "^3.23.4",
     "@tiptap/extension-link": "^3.23.4",
+    "@tiptap/extension-placeholder": "^3.23.4",
     "@tiptap/extension-subscript": "^3.23.4",
     "@tiptap/extension-superscript": "^3.23.4",
     "@tiptap/extension-text-align": "^3.23.4",

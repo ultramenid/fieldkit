@@ -73,9 +73,9 @@ export function IconSync({ size = 20, color = '#000' }: IconProps) {
 export function IconTrash({ size = 20, color = '#a3a3a3' }: IconProps) {
   return (
     <IconBase size={size} color={color}>
-      <Path d="M4.5 7h15" />
-      <Path d="M9.5 7V5.5h5V7" />
-      <Path d="M8 7l.7 11h6.6L16 7" />
+      <Path d="M3 6h18" />
+      <Path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+      <Path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
     </IconBase>
   )
 }

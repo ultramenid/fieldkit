@@ -147,13 +147,14 @@ function FormCard({ form }: { form: FormData }) {
 
 export function FormsGrid({ forms }: { forms: FormData[] }) {
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'all' | 'live' | 'closed' >('all')
+  const [filter, setFilter] = useState<'all' | 'live' | 'closed' | 'draft'>('all')
   const router = useRouter()
 
   const filtered = forms.filter((f) => {
     if (!f.title.toLowerCase().includes(search.toLowerCase())) return false
     if (filter === 'live') return f.published && !f.closed
     if (filter === 'closed') return f.published && f.closed
+    if (filter === 'draft') return !f.published
     return true
   })
 
@@ -199,6 +200,7 @@ export function FormsGrid({ forms }: { forms: FormData[] }) {
       <div className="flex gap-2 pb-6">
         {filterBtn('All', 'all')}
         {filterBtn('Live', 'live')}
+        {filterBtn('Draft', 'draft')}
         {filterBtn('Closed', 'closed')}
       </div>
 

@@ -1,38 +1,39 @@
-import React from 'react'
-
-const steps = [
-  { label: 'Build form online', variant: 'green' as const },
-  { label: 'Export config', variant: 'default' as const },
-  { label: 'Import to local', variant: 'amber' as const },
-  { label: 'Collect offline', variant: 'amber' as const },
-  { label: 'Sync back', variant: 'green' as const },
-]
-
-const stepClass = {
-  green: 'border-[#16a34a]/60 text-[#16a34a]',
-  amber: 'border-[#b45309]/60 text-[#b45309]',
-  default: 'border-[var(--border)] text-[var(--foreground)]',
-}
-
 export function WorkflowStrip() {
   return (
-    <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-6">
-      <div className="flex flex-wrap items-center justify-center gap-2.5 text-[13px] font-medium">
-        {steps.map((step, i) => (
-          <React.Fragment key={step.label}>
-            <span
-              className={`whitespace-nowrap rounded-full border px-[14px] py-1.5 ${stepClass[step.variant]}`}
-            >
-              {step.label}
+    <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-4 py-5">
+      <div className="flex flex-col items-center gap-2.5">
+        <span className="whitespace-nowrap rounded-full border border-[#16a34a]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#16a34a]">
+          Build form online
+        </span>
+        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <span className="whitespace-nowrap rounded-full border border-[var(--border)] px-[14px] py-1.5 text-[13px] font-medium text-[var(--foreground)]">
+          Export config
+        </span>
+        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <span className="w-full max-w-[380px] rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-3">
+          <span className="mb-2.5 block text-center font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+            Choose import path
+          </span>
+          <span className="grid gap-2">
+            <span className="whitespace-nowrap rounded-full border border-[#f59e0b]/30 px-[14px] py-1.5 text-center text-[13px] font-medium text-[#b45309]">
+              Local server package
             </span>
-            {i < steps.length - 1 && (
-              <span className="text-[11px] text-[var(--muted)]">→</span>
-            )}
-          </React.Fragment>
-        ))}
+            <span className="whitespace-nowrap rounded-full border border-[#2563eb]/30 px-[14px] py-1.5 text-center text-[13px] font-medium text-[#2563eb]">
+              Scan QR on mobile
+            </span>
+          </span>
+        </span>
+        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <span className="whitespace-nowrap rounded-full border border-[#f59e0b]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#b45309]">
+          Collect offline
+        </span>
+        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <span className="whitespace-nowrap rounded-full border border-[#16a34a]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#16a34a]">
+          Sync responses
+        </span>
       </div>
-      <p className="mt-3 text-center text-[12px] text-[var(--muted)]">
-        No internet required during data collection. Works on any local network.
+      <p className="mx-auto mt-2.5 max-w-[560px] text-center text-[12px] text-[var(--muted)]">
+        Single pipeline: build online, pick one import path, collect offline, then sync when internet is available.
       </p>
     </div>
   )

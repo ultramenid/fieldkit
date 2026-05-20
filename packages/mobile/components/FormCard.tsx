@@ -44,7 +44,7 @@ export function FormCard({
             event.stopPropagation()
             onDelete()
           }} style={styles.deleteBtn}>
-            <IconTrash size={14} color={TOKENS.colors.gray400} />
+            <IconTrash size={18} color={TOKENS.colors.gray400} />
           </TouchableOpacity>
         </View>
       </View>
@@ -85,13 +85,12 @@ const styles = StyleSheet.create({
   cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 0,
     flexShrink: 0,
-    marginLeft: 6,
+    marginLeft: 0,
   },
   deleteBtn: {
-    width: 24,
-    height: 24,
+    padding: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },

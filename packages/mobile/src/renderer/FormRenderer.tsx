@@ -88,20 +88,19 @@ export function FormRenderer({ config, onSubmit }: Props) {
       error: touched[field.id] ? errors[field.id] : undefined,
       onChange: (val: FieldValue) => handleChange(field.id, val),
       onBlur: () => handleBlur(field.id),
-      key: field.id,
     }
 
     switch (field.type) {
-      case 'text': return <TextField {...props} value={values[field.id] as string ?? ''} />
-      case 'email': return <EmailField {...props} value={values[field.id] as string ?? ''} />
-      case 'number': return <NumberField {...props} value={values[field.id] as string ?? ''} />
-      case 'textarea': return <LongTextField {...props} value={values[field.id] as string ?? ''} />
-      case 'select': return <DropdownField {...props} value={values[field.id] as string ?? ''} />
-      case 'radio': return <SingleChoiceField {...props} value={values[field.id] as string ?? ''} />
-      case 'checkbox': return <MultiChoiceField {...props} value={values[field.id] as string[] ?? []} onChange={(val: string[]) => handleChange(field.id, val)} />
-      case 'date': return <DateField {...props} value={values[field.id] as string ?? ''} />
-      case 'file': return <FileField {...props} value={values[field.id] as string ?? ''} />
-      case 'rating': return <RatingField {...props} value={values[field.id] as number ?? 0} onChange={(val: number) => handleChange(field.id, val)} />
+      case 'text': return <TextField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'email': return <EmailField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'number': return <NumberField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'textarea': return <LongTextField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'select': return <DropdownField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'radio': return <SingleChoiceField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'checkbox': return <MultiChoiceField key={field.id} {...props} value={values[field.id] as string[] ?? []} onChange={(val: string[]) => handleChange(field.id, val)} />
+      case 'date': return <DateField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'file': return <FileField key={field.id} {...props} value={values[field.id] as string ?? ''} />
+      case 'rating': return <RatingField key={field.id} {...props} value={values[field.id] as number ?? 0} onChange={(val: number) => handleChange(field.id, val)} />
       default: return null
     }
   }
