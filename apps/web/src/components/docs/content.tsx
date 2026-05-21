@@ -185,7 +185,7 @@ export function DocsContent() {
           server or mobile app.
         </Step>
 
-        <Callout>
+        <Callout type="warning">
           <strong>Important:</strong> The exported config includes a <strong>mobile secret</strong> —
           a unique key that lets the mobile app and local server authenticate with the web
           platform. Don't share the config file publicly. Only distribute it to devices that
@@ -236,7 +236,7 @@ export function DocsContent() {
           or only online submissions.
         </p>
 
-        <Callout>
+        <Callout type="tip">
           <strong>Tip:</strong> Keep the responses table open during active data collection.
           Watching submissions arrive in real time is the fastest way to catch issues — a field
           team sending unexpected values, a validation gap, or a form configuration problem
@@ -314,7 +314,7 @@ export function DocsContent() {
           platform manually.
         </p>
 
-        <Callout>
+        <Callout type="tip">
           <strong>Tip:</strong> Localserver works great with a phone hotspot. Turn on your
           phone's hotspot, connect the localserver machine and respondent devices to it,
           and you have a self-contained data-collection network. No cell signal needed beyond
@@ -384,7 +384,7 @@ export function DocsContent() {
           link you can share.
         </Step>
 
-        <Callout>
+        <Callout type="tip">
           <strong>Multiple forms:</strong> You can import more than one config. Each form
           gets its own route and collects responses independently. Switch between forms
           from the admin panel.
@@ -409,7 +409,7 @@ export function DocsContent() {
           ID, so re-importing the same data is safe.
         </p>
 
-        <Callout>
+        <Callout type="tip">
           <strong>Tip:</strong> Export regularly if you're collecting for a long session.
           Localserver stores everything in SQLite, which is reliable, but the only copy is
           on that machine until you export. A quick export between sessions protects against
@@ -509,7 +509,7 @@ export function DocsContent() {
           correctly set so the exported URL is reachable from the field.
         </p>
 
-        <Callout>
+        <Callout type="warning">
           <strong>Note:</strong> The server URL is embedded in the config at export time. If you
           change your server's domain or IP, re-export and re-import the config. Existing queued
           responses will still sync to the old URL unless you update the server setting in the
@@ -590,7 +590,7 @@ export function DocsContent() {
           confirm what was received.
         </p>
 
-        <Callout>
+        <Callout type="tip">
           <strong>Tip:</strong> If you see a form stuck with a "pending" status after syncing,
           check that the server URL in the mobile app's settings matches your FieldKit instance.
           If the server was redeployed or the domain changed, update the URL and re-sync.
@@ -608,7 +608,7 @@ export function DocsContent() {
           not delete anything from the web platform.
         </p>
 
-        <Callout>
+        <Callout type="warning">
           <strong>Before deleting:</strong> Make sure any pending responses have been synced.
           Deleting a form before syncing permanently removes those submissions from the device.
           The web platform won't have any record of them.
