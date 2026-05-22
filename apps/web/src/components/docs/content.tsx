@@ -1,10 +1,13 @@
+'use client'
+
+import { useEffect } from 'react'
 import { CodeBlock } from './code-block'
 import { Callout } from './callout'
 
 function Step({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-5 flex max-w-[640px] gap-3.5">
-      <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface)] font-mono text-[12px] font-medium text-[var(--muted)]">
+    <div className="group mb-5 flex max-w-[640px] gap-3.5">
+      <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface)] font-mono text-[12px] font-medium text-[var(--muted)] transition-colors duration-150 group-hover:bg-[var(--border)]">
         {num}
       </span>
       <div>
@@ -23,12 +26,84 @@ function InlineC({ children }: { children: React.ReactNode }) {
   )
 }
 
+function useScrollReveal() {
+  useEffect(() => {
+    const sections = document.querySelectorAll<HTMLElement>('.section[data-reveal]')
+    if (sections.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed')
+            observer.unobserve(entry.target)
+          }
+        }
+      },
+      { rootMargin: '0px 0px -40px 0px' }
+    )
+
+    for (const s of sections) observer.observe(s)
+    return () => observer.disconnect()
+  }, [])
+}
+
+function useStickyH2Border() {
+  useEffect(() => {
+    const h2s = document.querySelectorAll<HTMLElement>('h2.sticky-observe')
+    if (h2s.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.intersectionRatio < 1) {
+            entry.target.classList.add('stuck')
+          } else {
+            entry.target.classList.remove('stuck')
+          }
+        }
+      },
+      { rootMargin: '-1px 0px 0px 0px', threshold: 1 }
+    )
+
+    for (const h of h2s) observer.observe(h)
+    return () => observer.disconnect()
+  }, [])
+}
+
 export function DocsContent() {
+  useScrollReveal()
+  useStickyH2Border()
+
   return (
     <>
+      <style>{`
+        .section[data-reveal] {
+          opacity: 0;
+          transform: translateY(8px);
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .section[data-reveal].revealed {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        h2.sticky-observe.stuck {
+          border-bottom-color: var(--border, #e5e5e5);
+        }
+      `}</style>
       {/* Introduction */}
-      <section className="section mb-12 scroll-mt-12" id="introduction">
-        <h1 className="mb-1 font-[var(--font-display)] text-[28px] font-semibold leading-tight tracking-[-0.02em] text-[var(--foreground)]">
+      <section className="section relative mb-16 scroll-mt-20" id="introduction" data-reveal>
+        <div
+          className="pointer-events-none absolute inset-0 -top-8 h-[300px] opacity-[0.3]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, var(--border, #e5e5e5) 1px, transparent 1px)',
+            backgroundSize: '18px 18px',
+            maskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+          }}
+          aria-hidden="true"
+        />
+        <h1 className="mb-2 font-[var(--font-display)] text-[30px] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
           Documentation
         </h1>
         <p className="mb-10 text-[14px] text-[var(--muted)]">
@@ -55,8 +130,8 @@ export function DocsContent() {
       </section>
 
       {/* Serverside platform */}
-      <section className="section mb-12 scroll-mt-12" id="serverside">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="serverside" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Serverside platform
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -64,20 +139,20 @@ export function DocsContent() {
           dashboard, where you can see all your forms, create new ones, and manage responses.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Authentication</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Authentication</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Login uses Google OAuth — no separate email and password to manage. Anyone with
           a Google account can sign in and start building forms immediately.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Dashboard</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Dashboard</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           The dashboard lists all your forms with live stats — response counts, submission sources,
           and status indicators. You can search across forms, create new ones with one click, and
           access the builder, responses, and sharing options per form.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Form lifecycle</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Form lifecycle</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           A form can be in three states: draft (only you can see it), published (respondents can
           submit), and closed (no new submissions accepted). Toggle between them from the form's
@@ -86,8 +161,8 @@ export function DocsContent() {
       </section>
 
       {/* Creating a form */}
-      <section className="section mb-12 scroll-mt-12" id="serverside-create">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="serverside-create" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Creating a form
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -95,7 +170,7 @@ export function DocsContent() {
           empty field list — you build it up from scratch.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Adding fields</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Adding fields</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Click the <strong>+ Add field</strong> button and pick a field type. FieldKit supports
           ten field types:
@@ -118,21 +193,21 @@ export function DocsContent() {
           block submission until filled.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Reordering fields</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Reordering fields</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Drag any field by its handle to reorder. The order you set in the builder is the order
           respondents see — on web, local server, and mobile. Field order is preserved in the exported
           config JSON.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Field settings</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Field settings</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Click any field in the builder to open its settings panel on the right. The panel shows
           type-specific options: text fields get length and pattern validators, choice fields get
           option lists, file fields get type and size limits. Changes save automatically.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Form settings</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Form settings</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Beyond individual fields, you can set a <strong>submit button label</strong>, a{' '}
           <strong>confirmation message</strong> shown after successful submission, and whether to{' '}
@@ -140,7 +215,7 @@ export function DocsContent() {
           description are editable inline at the top of the builder canvas.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Preview</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Preview</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Click <strong>Preview</strong> in the builder toolbar to see the form exactly as respondents
           will see it. The preview is interactive — you can fill fields and submit to verify
@@ -149,8 +224,8 @@ export function DocsContent() {
       </section>
 
       {/* Sharing & publishing */}
-      <section className="section mb-12 scroll-mt-12" id="serverside-share">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="serverside-share" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Sharing &amp; publishing
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -194,8 +269,8 @@ export function DocsContent() {
       </section>
 
       {/* Realtime responses table */}
-      <section className="section mb-12 scroll-mt-12" id="serverside-responses">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="serverside-responses" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Realtime responses table
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -204,7 +279,7 @@ export function DocsContent() {
           automatically. No refresh needed.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">How it works</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">How it works</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           FieldKit uses <strong>Server-Sent Events</strong> (SSE) backed by Postgres{' '}
           <InlineC>LISTEN/NOTIFY</InlineC>. When a response is inserted into the database, a trigger
@@ -213,7 +288,7 @@ export function DocsContent() {
           milliseconds of a submission.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Filtering by source</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Filtering by source</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Each response carries a <strong>source</strong> label — <strong>online</strong>,{' '}
           <strong>mobile</strong>, or <strong>localserver</strong>. Use the source filter above the
@@ -221,7 +296,7 @@ export function DocsContent() {
           verify data coming in from a particular field team or device.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Importing local data</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Importing local data</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           If you collected responses on a local server, export them from there first, then upload the
           file here. FieldKit deduplicates by <InlineC>(formId, submissionId)</InlineC>, so you
@@ -229,7 +304,7 @@ export function DocsContent() {
           duplicates and skipped.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Exporting response data</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Exporting response data</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Download responses as <strong>CSV</strong>, <strong>JSON</strong>, or <strong>XLSX</strong>.
           The export respects the current source filter, so you can export only mobile responses
@@ -245,8 +320,8 @@ export function DocsContent() {
       </section>
 
       {/* Exporting a form config */}
-      <section className="section mb-12 scroll-mt-12" id="serverside-export">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="serverside-export" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Exporting a form config
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -254,7 +329,7 @@ export function DocsContent() {
           contains everything needed to reproduce the form on another device.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">What's in the config</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">What's in the config</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           The config is a single <InlineC>.json</InlineC> file with the form's ID, title,
           description, version number, field definitions (type, label, validation rules, options),
@@ -264,21 +339,21 @@ export function DocsContent() {
           includes a <InlineC>_serverUrl</InlineC> so offline tools know where to sync back to.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Versioning</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Versioning</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Each time you save the form in the builder, the version number increments. When you export
           and re-import a config to the mobile app, the app compares versions to detect that you have
           the latest form definition.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Export to local server</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Export to local server</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Download the config JSON, then open the local server web UI in your browser, drag the file
           into the import area, and the form is live on your LAN. See the Localserver section below
           for the full workflow.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Export to mobile app</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Export to mobile app</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           In the mobile app, scan the QR code shown in the share modal, or manually select the
           downloaded config file. The app reads the server URL and secret from the config and
@@ -287,8 +362,8 @@ export function DocsContent() {
       </section>
 
       {/* Localserver overview */}
-      <section className="section mb-12 scroll-mt-12" id="localserver">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="localserver" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Localserver overview
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -297,7 +372,7 @@ export function DocsContent() {
           local Wi-Fi network so nearby devices can submit responses without any internet access.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">When to use it</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">When to use it</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Localserver is the right choice when you're in the field with a group of people who need
           to submit the same form — a community health screening, a workshop registration, a
@@ -306,7 +381,7 @@ export function DocsContent() {
           export them.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">What it doesn't do</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">What it doesn't do</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Localserver does not edit forms. You import a config, serve it, and collect responses.
           Form changes always happen on the web platform. Localserver also doesn't sync
@@ -323,8 +398,8 @@ export function DocsContent() {
       </section>
 
       {/* Installation */}
-      <section className="section mb-12 scroll-mt-12" id="localserver-install">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="localserver-install" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Installation
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -337,7 +412,7 @@ export function DocsContent() {
         </p>
         <CodeBlock lang="bash">fieldkit --version</CodeBlock>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Requirements</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Requirements</h3>
         <ul className="mb-4 max-w-[640px] list-disc pl-5 text-[14px] leading-[1.55] text-[var(--foreground)] [&_li]:mb-1">
           <li>Node.js 18 or later</li>
           <li>npm 9 or later (comes with Node.js)</li>
@@ -353,8 +428,8 @@ export function DocsContent() {
       </section>
 
       {/* Importing & serving */}
-      <section className="section mb-12 scroll-mt-12" id="localserver-import">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="localserver-import" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Importing a config &amp; serving
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -392,8 +467,8 @@ export function DocsContent() {
       </section>
 
       {/* Exporting data */}
-      <section className="section mb-12 scroll-mt-12" id="localserver-data">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="localserver-data" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Exporting collected data
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -418,8 +493,8 @@ export function DocsContent() {
       </section>
 
       {/* Network setup */}
-      <section className="section mb-12 scroll-mt-12" id="localserver-network">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="localserver-network" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Local network setup
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -450,8 +525,8 @@ export function DocsContent() {
       </section>
 
       {/* Mobile client overview */}
-      <section className="section mb-12 scroll-mt-12" id="mobile-overview">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="mobile-overview" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Mobile client overview
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -460,7 +535,7 @@ export function DocsContent() {
           platform, fill them anywhere, and sync responses when you're back online.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">How it works</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">How it works</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           You import a form config once (via QR scan or file). The form and all its field definitions
           are stored locally on the device. You can open, fill, and submit the form any number of
@@ -468,7 +543,7 @@ export function DocsContent() {
           to the web platform when connectivity returns.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Key capabilities</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Key capabilities</h3>
         <ul className="mb-4 max-w-[640px] list-disc pl-5 text-[14px] leading-[1.55] text-[var(--foreground)] [&_li]:mb-1">
           <li>Import forms via QR code scan or JSON file</li>
           <li>Offline form filling — all field types supported, including file uploads</li>
@@ -480,8 +555,8 @@ export function DocsContent() {
       </section>
 
       {/* Importing a form config */}
-      <section className="section mb-12 scroll-mt-12" id="mobile-import">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="mobile-import" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Importing a form config
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -501,7 +576,7 @@ export function DocsContent() {
           — for example, when you receive the config file via email or messaging app.
         </Step>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Server URL configuration</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Server URL configuration</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           The config file includes a <InlineC>_serverUrl</InlineC> field. This tells the app
           where to sync responses. It's set automatically when you export from the web platform.
@@ -518,8 +593,8 @@ export function DocsContent() {
       </section>
 
       {/* Collecting responses */}
-      <section className="section mb-12 scroll-mt-12" id="collecting">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="collecting" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Collecting responses
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -527,7 +602,7 @@ export function DocsContent() {
           to the local device immediately — you don't need a connection at any point.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Offline submission flow</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Offline submission flow</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           Each submission gets a unique <InlineC>submissionId</InlineC> (UUID) generated on the
           device. The response is stored in the local sync queue with its form ID, field data, and
@@ -535,7 +610,7 @@ export function DocsContent() {
           the app is closed before syncing.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">File uploads</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">File uploads</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           For file upload fields, tap to choose from the camera (take a photo) or gallery (select
           an existing image). Files are stored locally and uploaded to S3-compatible storage during
@@ -543,7 +618,7 @@ export function DocsContent() {
           them at selection time.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Multiple submissions</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Multiple submissions</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           If the form allows multiple submissions, you can submit it repeatedly — each submission
           is a separate entry with its own submission ID. If the form is set to single-submission
@@ -552,8 +627,8 @@ export function DocsContent() {
       </section>
 
       {/* Syncing responses */}
-      <section className="section mb-12 scroll-mt-12" id="syncing">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="syncing" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Syncing responses
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
@@ -561,7 +636,7 @@ export function DocsContent() {
           manually or let the background engine handle it.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Manual sync</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Manual sync</h3>
         <Step num={1} title="Sync one form">
           On the forms list, each form card with pending responses shows a sync icon. Tap it to
           sync that form's queued responses. The app sends a batch POST to{' '}
@@ -572,7 +647,7 @@ export function DocsContent() {
           response across all forms at once. Each form's batch is sent independently.
         </Step>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Background sync engine</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Background sync engine</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           The app includes a background sync engine that monitors connectivity via{' '}
           <InlineC>NetInfo</InlineC>. When connectivity is restored after being offline, the
@@ -581,7 +656,7 @@ export function DocsContent() {
           on the mobile side.
         </p>
 
-        <h3 className="mb-2 mt-5 text-[14px] font-semibold text-[var(--foreground)]">Deduplication</h3>
+        <h3 className="mb-2 mt-6 text-[15px] font-semibold text-[var(--foreground)]">Deduplication</h3>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
           The server deduplicates by <InlineC>(formId, submissionId)</InlineC> using a database-level
           unique constraint. If a response is synced twice (network glitch, retry), the server
@@ -598,8 +673,8 @@ export function DocsContent() {
       </section>
 
       {/* Deleting a form */}
-      <section className="section mb-12 scroll-mt-12" id="delete">
-        <h2 className="mb-3 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)]">
+      <section className="section mb-16 scroll-mt-20" id="delete" data-reveal>
+        <h2 className="sticky top-0 z-10 mb-3 border-b border-transparent bg-white/90 pb-2 font-[var(--font-display)] text-[22px] font-semibold text-[var(--foreground)] backdrop-blur-sm sticky-observe">
           Deleting a form
         </h2>
         <p className="mb-4 max-w-[640px] text-[14px] leading-[1.55] text-[var(--foreground)]">
