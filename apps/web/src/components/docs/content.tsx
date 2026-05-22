@@ -28,6 +28,9 @@ function InlineC({ children }: { children: React.ReactNode }) {
 
 function useScrollReveal() {
   useEffect(() => {
+    if (!('IntersectionObserver' in window)) return
+    document.documentElement.classList.add('docs-reveal-ready')
+
     const sections = document.querySelectorAll<HTMLElement>('.section[data-reveal]')
     if (sections.length === 0) return
 
@@ -78,12 +81,12 @@ export function DocsContent() {
   return (
     <>
       <style>{`
-        .section[data-reveal] {
+        .docs-reveal-ready .section[data-reveal] {
           opacity: 0;
           transform: translateY(8px);
           transition: opacity 0.5s ease, transform 0.5s ease;
         }
-        .section[data-reveal].revealed {
+        .docs-reveal-ready .section[data-reveal].revealed {
           opacity: 1;
           transform: translateY(0);
         }
