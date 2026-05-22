@@ -100,7 +100,7 @@ export function Sidebar() {
         type="button"
         aria-label="Toggle sidebar"
         onClick={() => setOpen((v) => !v)}
-        className="fixed left-3 top-3 z-50 hidden h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--background)] max-md:flex"
+        className="docs-menu-button fixed left-3 top-3 z-50 h-10 w-10 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--background)]"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-5 w-5">
           <path d="M3 6h18M3 12h18M3 18h18" />
@@ -109,7 +109,7 @@ export function Sidebar() {
 
       <div className={`fixed inset-0 z-40 bg-black/20 backdrop-blur-sm ${open ? 'block' : 'hidden'} md:hidden`} onClick={close} />
 
-      <aside className={`fixed top-0 left-0 bottom-0 z-40 flex w-[260px] flex-col overflow-hidden border-r border-[rgba(0,0,0,0.05)] bg-white/95 backdrop-blur-[2px] max-md:transition-transform max-md:duration-200 ${open ? 'pointer-events-auto max-md:translate-x-0' : 'pointer-events-none max-md:-translate-x-full md:pointer-events-auto'}`}>
+      <aside style={{ width: 260 }} className={`fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-hidden border-r border-[rgba(0,0,0,0.05)] bg-white/95 backdrop-blur-[2px] max-md:transition-transform max-md:duration-200 ${open ? 'pointer-events-auto max-md:translate-x-0' : 'pointer-events-none max-md:-translate-x-full md:pointer-events-auto'}`}>
         <div className="flex-shrink-0 px-5 pt-4">
           <a href="/" className="flex items-center gap-2.5 font-[var(--font-display)] text-[17px] font-medium text-[var(--foreground)] no-underline">
             <svg viewBox="0 0 120 120" fill="none" className="h-6 w-6 flex-shrink-0">
