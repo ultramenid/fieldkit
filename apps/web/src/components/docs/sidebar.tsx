@@ -109,7 +109,7 @@ export function Sidebar() {
 
       <div className={`fixed inset-0 z-40 bg-black/20 backdrop-blur-sm ${open ? 'block' : 'hidden'} md:hidden`} onClick={close} />
 
-      <aside className={`fixed top-0 left-0 bottom-0 z-40 flex w-[260px] flex-col overflow-hidden border-r border-[rgba(0,0,0,0.05)] bg-white/95 backdrop-blur-[2px] max-md:transition-transform max-md:duration-200 ${open ? 'max-md:translate-x-0' : 'max-md:-translate-x-full'}`}>
+      <aside className={`fixed top-0 left-0 bottom-0 z-40 flex w-[260px] flex-col overflow-hidden border-r border-[rgba(0,0,0,0.05)] bg-white/95 backdrop-blur-[2px] max-md:transition-transform max-md:duration-200 ${open ? 'max-md:translate-x-0 max-md:pointer-events-auto' : 'max-md:-translate-x-full max-md:pointer-events-none'}`}>
         <div className="flex-shrink-0 px-5 pt-4">
           <a href="/" className="flex items-center gap-2.5 font-[var(--font-display)] text-[17px] font-medium text-[var(--foreground)] no-underline">
             <svg viewBox="0 0 120 120" fill="none" className="h-6 w-6 flex-shrink-0">
