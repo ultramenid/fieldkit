@@ -11,6 +11,8 @@ type DocsSidebarProps = {
   sections: DocsSection[]
 }
 
+const HEADER_OFFSET = 96
+
 export function DocsSidebar({ sections }: DocsSidebarProps) {
   const [activeId, setActiveId] = useState(sections[0]?.id ?? '')
 
@@ -32,7 +34,7 @@ export function DocsSidebar({ sections }: DocsSidebarProps) {
         }
       },
       {
-        rootMargin: '-96px 0px -55% 0px',
+        rootMargin: `-${HEADER_OFFSET}px 0px -55% 0px`,
         threshold: [0, 0.15, 0.35],
       },
     )
@@ -47,7 +49,7 @@ export function DocsSidebar({ sections }: DocsSidebarProps) {
       <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
         On this page
       </p>
-      <nav className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+      <nav aria-label="Table of contents" className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
         {sections.map((section) => {
           const isActive = section.id === activeId
 
@@ -55,6 +57,7 @@ export function DocsSidebar({ sections }: DocsSidebarProps) {
             <a
               key={section.id}
               href={`#${section.id}`}
+              aria-current={isActive ? 'location' : undefined}
               className={[
                 'whitespace-nowrap rounded-full border px-3 py-2 text-sm transition-colors lg:whitespace-normal',
                 isActive
