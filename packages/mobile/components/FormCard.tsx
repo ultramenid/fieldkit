@@ -40,10 +40,14 @@ export function FormCard({
               onSync()
             } : undefined}
           />
-          <TouchableOpacity onPress={(event) => {
-            event.stopPropagation()
-            onDelete()
-          }} style={styles.deleteBtn}>
+          <TouchableOpacity
+            onPress={(event) => {
+              event.stopPropagation()
+              onDelete()
+            }}
+            style={styles.deleteBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <IconTrash size={18} color={TOKENS.colors.gray400} />
           </TouchableOpacity>
         </View>

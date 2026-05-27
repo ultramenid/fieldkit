@@ -14,16 +14,18 @@ export function SyncBar({ lastSynced, isSyncing, canSync, onSync }: Props) {
     <View style={styles.bar}>
       <Text style={styles.info}>Last synced {lastSynced}</Text>
       <TouchableOpacity
-        style={styles.btn}
+        style={[styles.btn, !canSync && styles.btnOffline]}
         onPress={onSync}
-        disabled={isSyncing || !canSync}
+        disabled={isSyncing}
       >
         {isSyncing ? (
           <ActivityIndicator color={TOKENS.colors.white} size="small" />
         ) : (
           <View style={styles.btnContent}>
-            <IconSync size={14} color={TOKENS.colors.white} />
-            <Text style={styles.btnText}>Sync All</Text>
+            <IconSync size={14} color={canSync ? TOKENS.colors.white : TOKENS.colors.amber500} />
+            <Text style={[styles.btnText, !canSync && styles.btnTextOffline]}>
+              Sync All
+            </Text>
           </View>
         )}
       </TouchableOpacity>
@@ -52,6 +54,9 @@ const styles = StyleSheet.create({
     borderRadius: TOKENS.radius.pill,
     backgroundColor: TOKENS.colors.black,
   },
+  btnOffline: {
+    backgroundColor: TOKENS.colors.amber50,
+  },
   btnContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -61,5 +66,8 @@ const styles = StyleSheet.create({
     fontSize: TOKENS.fontSize.small,
     fontWeight: TOKENS.type.weightMedium,
     color: TOKENS.colors.white,
+  },
+  btnTextOffline: {
+    color: TOKENS.colors.amber700,
   },
 })

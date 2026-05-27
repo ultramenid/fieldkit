@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Field {
@@ -11,7 +11,7 @@ interface Field {
 
 interface Response {
   id: string
-  submissionId: string | null
+  submissionId: string
   source: string
   submittedAt: string
   data: Record<string, unknown>
@@ -442,7 +442,7 @@ export function ResponsesTable({
             </div>
 
             <div className="space-y-3">
-              {((): JSX.Element[] => {
+              {((): ReactNode[] => {
                 const respAnswers = (selectedResponse.data as { answers?: { fieldId: string; value: unknown }[] })?.answers ?? []
                 return fields.map((f) => {
                   const answer = respAnswers.find((a) => a.fieldId === f.id)

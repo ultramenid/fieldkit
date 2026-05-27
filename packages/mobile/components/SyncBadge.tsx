@@ -36,7 +36,11 @@ export function SyncBadge({ status, pendingCount, onPress }: Props) {
   }
 
   if (onPress) {
-    return <TouchableOpacity onPress={onPress} activeOpacity={0.8}>{badge()}</TouchableOpacity>
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+        {badge()}
+      </TouchableOpacity>
+    )
   }
   return badge()
 }

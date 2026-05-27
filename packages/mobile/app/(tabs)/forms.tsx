@@ -1,6 +1,6 @@
 import { useCallback, useState, useRef } from 'react'
 import {
-  View, FlatList, StyleSheet, RefreshControl,
+  View, FlatList, StyleSheet, RefreshControl, Alert,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useStore } from '../../src/store'
@@ -59,6 +59,10 @@ export default function FormsList() {
   )
 
   const handleSync = async () => {
+    if (!isOnline) {
+      Alert.alert('Offline', 'Cannot sync while disconnected from the server.')
+      return
+    }
     setSyncing(true)
     try {
       const result = await syncAll()
@@ -72,7 +76,11 @@ export default function FormsList() {
   }
 
   const handleSyncForm = async (formId: string) => {
-    if (!isOnline || syncFormGuardRef.current || syncingFormIds.has(formId)) return
+    if (!isOnline) {
+      Alert.alert('Offline', 'Cannot sync while disconnected from the server.')
+      return
+    }
+    if (syncFormGuardRef.current || syncingFormIds.has(formId)) return
     syncFormGuardRef.current = true
     setSyncingFormIds((prev) => new Set(prev).add(formId))
     try {

@@ -1,19 +1,34 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { badRequest, notFound, unauthorized, withApiErrorHandling } from '@/lib/api-errors'
 
-export async function GET(
+const importedResponseSchema = z.object({
+  submissionId: z.string().min(1),
+  source: z.string().optional(),
+  data: z.unknown().optional(),
+  submittedAt: z.string().datetime().optional(),
+}).passthrough()
+
+const MAX_IMPORT_RESPONSES = 500
+
+const importResponsesPayloadSchema = z.object({
+  responses: z.array(importedResponseSchema).max(MAX_IMPORT_RESPONSES),
+})
+
+export const GET = withApiErrorHandling('responses:list', async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user?.id) throw unauthorized()
 
   const form = await db.form.findFirst({
     where: { id, userId: session.user.id },
   })
-  if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!form) throw notFound()
 
   const { searchParams } = new URL(_req.url)
   const parsedPage = Number(searchParams.get('page') ?? '1')
@@ -45,63 +60,52 @@ export async function GET(
       totalPages,
     },
   })
-}
+})
 
-export async function POST(
+export const POST = withApiErrorHandling('responses:import', async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user?.id) throw unauthorized()
 
   const form = await db.form.findFirst({
     where: { id, userId: session.user.id },
   })
-  if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!form) throw notFound()
 
-  const body = await req.json()
-  const { responses } = body
-
-  if (!Array.isArray(responses)) {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    throw badRequest('Invalid JSON')
   }
 
-  // Import with deduplication by submissionId
-  const result = await db.$transaction(async (tx) => {
-    const submissionIds = responses
-      .filter((r: { submissionId?: string }) => r.submissionId)
-      .map((r: { submissionId?: string }) => r.submissionId as string)
+  const parsedBody = importResponsesPayloadSchema.safeParse(body)
+  if (!parsedBody.success) {
+    throw badRequest('Invalid payload')
+  }
 
-    const existing = await tx.response.findMany({
-      where: { submissionId: { in: submissionIds } },
-      select: { submissionId: true },
-    })
+  const validResponses = parsedBody.data.responses.map((r) => ({
+    submissionId: r.submissionId,
+    source: r.source ?? 'local',
+    data: r.data ?? r,
+    submittedAt: r.submittedAt,
+  }))
 
-    const existingIds = new Set(
-      existing
-        .filter((e): e is { submissionId: string } => e.submissionId !== null)
-        .map((e) => e.submissionId)
-    )
-
-    const toCreate = responses.filter(
-      (r: { submissionId?: string }) => !r.submissionId || !existingIds.has(r.submissionId)
-    )
-
-    if (toCreate.length > 0) {
-      await tx.response.createMany({
-        data: toCreate.map((r: { submissionId?: string; source?: string; data?: unknown; submittedAt?: string }) => ({
-          formId: id,
-          submissionId: r.submissionId ?? null,
-          source: r.source ?? 'local',
-          data: r.data ?? r,
-          submittedAt: r.submittedAt ? new Date(r.submittedAt) : new Date(),
-        })),
-      })
-    }
-
-    return { imported: toCreate.length }
+  const result = await db.response.createMany({
+    data: validResponses.map((r) => ({
+      formId: id,
+      submissionId: r.submissionId,
+      source: r.source,
+      data: r.data,
+      submittedAt: r.submittedAt ? new Date(r.submittedAt) : new Date(),
+    })),
+    skipDuplicates: true,
   })
 
-  return NextResponse.json({ imported: result.imported })
-}
+  const duplicates = validResponses.length - result.count
+
+  return NextResponse.json({ imported: result.count, duplicates })
+})

@@ -44,7 +44,7 @@ export default async function ResponsesPage({
 
   const serializedResponses = responses.map((r: (typeof responses)[number]) => ({
     id: r.id,
-    submissionId: r.submissionId,
+    submissionId: r.submissionId ?? r.id,
     source: r.source,
     submittedAt: r.submittedAt.toISOString(),
     data: r.data as Record<string, unknown>,

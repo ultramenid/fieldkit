@@ -1,6 +1,8 @@
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { Client } from 'pg'
+import { handleApiError, notFound, unauthorized } from '@/lib/api-errors'
+import { createSseStream } from '@/lib/sse-stream'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,70 +10,45 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const session = await auth()
-  if (!session?.user?.id) {
-    return new Response('Unauthorized', { status: 401 })
+  let id: string
+  const pgClient = new Client({ connectionString: process.env.DATABASE_URL })
+
+  try {
+    ;({ id } = await params)
+    const session = await auth()
+    if (!session?.user?.id) throw unauthorized()
+
+    const form = await db.form.findFirst({
+      where: { id: id, userId: session.user.id },
+    })
+    if (!form) throw notFound()
+
+    await pgClient.connect()
+    await pgClient.query('LISTEN new_response')
+  } catch (error) {
+    await pgClient.end().catch(() => {})
+    return handleApiError(error, 'forms:responses-stream')
   }
 
-  const form = await db.form.findFirst({
-    where: { id: id, userId: session.user.id },
-  })
-  if (!form) return new Response('Not found', { status: 404 })
-
-  const encoder = new TextEncoder()
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      function send(data: unknown) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
-      }
-
-      async function fetchAndSend() {
-        const responses = await db.response.findMany({
-          where: { formId: id },
-          orderBy: { submittedAt: 'desc' },
-        })
-        send({
-          type: 'update',
-          responses: responses.map((r: (typeof responses)[number]) => ({
-            id: r.id,
-            submissionId: r.submissionId,
-            source: r.source,
-            submittedAt: r.submittedAt.toISOString(),
-            data: r.data,
-          })),
-        })
-      }
-
-      // Send current responses immediately on connect
-      await fetchAndSend()
-
-      // Set up Postgres LISTEN — only queries when a new response is inserted
-      const pgClient = new Client({ connectionString: process.env.DATABASE_URL })
-      await pgClient.connect()
-      await pgClient.query('LISTEN new_response')
-
-      pgClient.on('notification', async (msg) => {
-        try {
-          const payload = JSON.parse(msg.payload ?? '{}')
-          // Only push if notification is for this form
-          if (payload.formId === id) {
-            await fetchAndSend()
-          }
-        } catch {
-          // ignore parse errors
-        }
+  const stream = createSseStream({
+    pgClient,
+    request: req,
+    context: 'forms:responses-stream',
+    shouldRefresh: (_channel, payload) => payload.formId === id,
+    async fetchAndSend(send) {
+      const responses = await db.response.findMany({
+        where: { formId: id },
+        orderBy: { submittedAt: 'desc' },
       })
-
-      pgClient.on('error', () => {
-        controller.close()
-      })
-
-      // Clean up when client disconnects
-      req.signal.addEventListener('abort', async () => {
-        await pgClient.end().catch(() => {})
-        controller.close()
+      send({
+        type: 'update',
+        responses: responses.map((r: (typeof responses)[number]) => ({
+          id: r.id,
+          submissionId: r.submissionId,
+          source: r.source,
+          submittedAt: r.submittedAt.toISOString(),
+          data: r.data,
+        })),
       })
     },
   })
@@ -81,6 +58,7 @@ export async function GET(
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
     },
   })
 }

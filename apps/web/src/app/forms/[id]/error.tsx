@@ -3,7 +3,6 @@
 import Link from 'next/link'
 
 export default function FormError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string }
@@ -14,7 +13,7 @@ export default function FormError({
       <div className="text-center">
         <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">Error</p>
         <h1 className="mb-3 font-sans text-[28px] font-medium text-[var(--fg)]">Something went wrong</h1>
-        <p className="mb-6 text-[15px] text-[var(--muted)]">{error.message ?? 'Failed to load this form.'}</p>
+        <p className="mb-6 text-[15px] text-[var(--muted)]">Failed to load this form. Please try again.</p>
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}

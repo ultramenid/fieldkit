@@ -150,7 +150,7 @@ export function DescriptionRichEditor({
 
       activeEditor.chain().focus().setImage({ src: meta.fileUrl, alt: file.name }).run()
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed')
+      setUploadError('Upload failed')
     } finally {
       setUploadingImage(false)
     }

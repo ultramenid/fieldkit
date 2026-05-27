@@ -3,7 +3,9 @@ import { networkInterfaces } from 'os'
 import dgram from 'dgram'
 import { NextResponse } from 'next/server'
 import { lookup } from 'node:dns/promises'
+import { exportedFormConfigSchema, formConfigSchema } from '@fieldkit/form-schema'
 import { auth } from '@/lib/auth'
+import { ApiError, notFound, unauthorized, withApiErrorHandling } from '@/lib/api-errors'
 import { db } from '@/lib/db'
 
 const IMG_SRC_RE = /<img\s+[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi
@@ -257,26 +259,33 @@ async function inlineImages(html: string): Promise<string> {
   })
 }
 
-export async function GET(
+export const GET = withApiErrorHandling('forms:export', async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user?.id) throw unauthorized()
 
-  const form = await db.form.findFirst({
+  let form = await db.form.findFirst({
     where: { id: id, userId: session.user.id },
   })
-  if (!form) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!form) throw notFound()
 
   let secret = form.mobileSecret
   if (!secret) {
-    secret = randomBytes(24).toString('base64url')
-    await db.form.update({
-      where: { id: form.id },
-      data: { mobileSecret: secret },
+    const generatedSecret = randomBytes(24).toString('base64url')
+    const result = await db.form.updateMany({
+      where: { id: form.id, userId: session.user.id, mobileSecret: null },
+      data: { mobileSecret: generatedSecret },
     })
+
+    form = await db.form.findFirst({
+      where: { id: form.id, userId: session.user.id },
+    })
+    if (!form) throw notFound()
+    if (!form.mobileSecret) throw new ApiError('Failed to generate mobile secret', 500, false)
+    secret = result.count === 1 ? generatedSecret : form.mobileSecret
   }
 
   const description = await inlineImages(form.description ?? '')
@@ -289,18 +298,26 @@ export async function GET(
 
   const serverUrl = await resolveServerUrl(hostHeader, forwardedHost, forwardedProto, defaultProto, requestUrl.host)
 
-  const schema = form.schema as Record<string, unknown>
-  const config = {
+  const parsedSchema = formConfigSchema.pick({ fields: true, settings: true }).partial().safeParse(form.schema)
+  const config = exportedFormConfigSchema.parse({
     formId: form.id,
-    ...(schema.fields !== undefined ? { fields: schema.fields } : {}),
-    ...(schema.settings !== undefined ? { settings: schema.settings } : {}),
+    fields: parsedSchema.success ? parsedSchema.data.fields ?? [] : [],
+    settings: parsedSchema.success ? parsedSchema.data.settings ?? {
+      submitButtonText: 'Submit',
+      confirmationMessage: 'Thank you for your response.',
+      allowMultipleSubmissions: false,
+    } : {
+      submitButtonText: 'Submit',
+      confirmationMessage: 'Thank you for your response.',
+      allowMultipleSubmissions: false,
+    },
     title: form.title,
     description,
     version: form.version,
     secret,
     exportedAt: new Date().toISOString(),
     _serverUrl: serverUrl,
-  }
+  })
 
   return NextResponse.json(config)
-}
+})

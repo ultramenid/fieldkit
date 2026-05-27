@@ -6,6 +6,7 @@ import {
   updateResponseData,
   getForm,
 } from '../db/database'
+import { getSafeErrorMessage } from '../api/errors'
 import { syncResponses, uploadFile, isFileUri } from '../api/server'
 import { ResponseRecord } from '../types'
 
@@ -24,8 +25,8 @@ async function uploadFilesInAnswers(
         uploaded++
         return { ...a, value: result.fileUrl }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        errs.push(`${a.fieldId}: ${msg}`)
+        console.error('[sync] upload failed for field:', a.fieldId, e)
+        errs.push(`${a.fieldId}: ${getSafeErrorMessage(e, 'upload_failed')}`)
         // Do NOT send local path — server can't use it
         return { ...a, value: null }
       }
@@ -33,6 +34,8 @@ async function uploadFilesInAnswers(
   )
   return { answers: updated, uploaded, errors: errs }
 }
+
+const BATCH_SIZE = 20
 
 async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Promise<{ synced: number; errors: number }> {
   if (responses.length === 0) return { synced: 0, errors: 0 }
@@ -43,49 +46,60 @@ async function syncBatchForForm(formId: string, responses: ResponseRecord[]): Pr
     return { synced: 0, errors: responses.length }
   }
 
-  const batch = responses.slice(0, 20)
+  let syncedCount = 0
+  let errorCount = 0
 
-  try {
-    // Step 1: Upload any files and replace local URIs with server URLs
-    const uploadErrors: string[] = []
+  for (let offset = 0; offset < responses.length; offset += BATCH_SIZE) {
+    const batch = responses.slice(offset, offset + BATCH_SIZE)
 
-    const processed = await Promise.all(
-      batch.map(async (r) => {
-        const data = JSON.parse(r.dataJson)
-        const { answers, uploaded, errors } = await uploadFilesInAnswers(data.answers ?? [])
-        uploadErrors.push(...errors)
+    try {
+      // Step 1: Upload any files and replace local URIs with server URLs
+      const uploadErrors: string[] = []
 
-        if (uploaded > 0 || errors.length > 0) {
-          const newData = { ...data, answers }
-          await updateResponseData(r.id, JSON.stringify(newData))
-        }
-        return {
-          submissionId: r.submissionId,
-          submittedAt: new Date(r.submittedAt).toISOString(),
-          answers,
-        }
-      })
-    )
+      const processed = await Promise.all(
+        batch.map(async (r) => {
+          const data = JSON.parse(r.dataJson)
+          const { answers, uploaded, errors } = await uploadFilesInAnswers(data.answers ?? [])
+          uploadErrors.push(...errors)
 
-    if (uploadErrors.length > 0) {
-      console.warn('[sync] some uploads failed, those file values set to null:', uploadErrors)
+          if (uploaded > 0 || errors.length > 0) {
+            const newData = { ...data, answers }
+            await updateResponseData(r.id, JSON.stringify(newData))
+          }
+          return {
+            submissionId: r.submissionId,
+            submittedAt: new Date(r.submittedAt).toISOString(),
+            answers,
+          }
+        })
+      )
+
+      if (uploadErrors.length > 0) {
+        console.warn('[sync] some uploads failed, those file values set to null:', uploadErrors)
+      }
+
+      // Step 2: Sync to server
+      const result = await syncResponses(formId, form.secret, processed)
+
+      if (!result.ok) {
+        console.error('[sync] server returned not ok:', result)
+        errorCount += batch.length
+        break
+      }
+
+      await markResponsesSynced(batch.map((r) => r.id))
+      syncedCount += batch.length
+    } catch (e) {
+      console.error('[sync] error:', e)
+      errorCount += batch.length
+      break
     }
-
-    // Step 2: Sync to server
-    const result = await syncResponses(formId, form.secret, processed)
-
-    if (!result.ok) {
-      console.error('[sync] server returned not ok:', result)
-      return { synced: 0, errors: batch.length }
-    }
-
-    await markResponsesSynced(batch.map((r) => r.id))
-    await updateFormLastSynced(formId, Date.now())
-    return { synced: batch.length, errors: 0 }
-  } catch (e) {
-    console.error('[sync] error:', e)
-    return { synced: 0, errors: batch.length }
   }
+
+  if (syncedCount > 0) {
+    await updateFormLastSynced(formId, Date.now())
+  }
+  return { synced: syncedCount, errors: errorCount }
 }
 
 export async function syncAll(): Promise<{ synced: number; errors: number }> {

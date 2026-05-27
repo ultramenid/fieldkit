@@ -1,7 +1,6 @@
 'use client'
 
 export default function Error({
-  error,
   reset,
 }: {
   error: Error & { digest?: string }
@@ -12,7 +11,7 @@ export default function Error({
       <div className="text-center">
         <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">Error</p>
         <h1 className="mb-3 font-sans text-[28px] font-medium text-[var(--fg)]">Something went wrong</h1>
-        <p className="mb-6 text-[15px] text-[var(--muted)]">{error.message ?? 'An unexpected error occurred.'}</p>
+        <p className="mb-6 text-[15px] text-[var(--muted)]">An unexpected error occurred. Please try again.</p>
         <button
           onClick={reset}
           className="rounded-full border border-[var(--fg)] bg-[var(--fg)] px-5 py-2.5 text-[14px] font-medium text-[var(--bg)] transition-opacity hover:opacity-80"

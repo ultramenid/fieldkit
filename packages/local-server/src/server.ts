@@ -3,6 +3,7 @@ import path from 'path'
 import os from 'os'
 import fs from 'fs'
 import multer from 'multer'
+import { badRequest, errorMiddleware, notFound } from './http-errors'
 import { db, initDb } from './db'
 import type { FormConfig } from './types'
 
@@ -24,6 +25,14 @@ function getLanIp(): string {
   return 'localhost'
 }
 
+function getParam(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? value[0] ?? '' : value ?? ''
+}
+
+function formId(req: express.Request): string {
+  return getParam(req.params.id)
+}
+
 export function createServer(dataDir: string, port: number) {
   initDb(dataDir)
 
@@ -35,9 +44,14 @@ export function createServer(dataDir: string, port: number) {
     if (!clients) return
     const responses = db.getResponses(formId)
     const data = JSON.stringify({ type: 'update', responses })
-    clients.forEach(({ res }) => {
-      res.write(`data: ${data}\n\n`)
+    clients.forEach((client) => {
+      try {
+        client.res.write(`data: ${data}\n\n`)
+      } catch {
+        clients.delete(client)
+      }
     })
+    if (clients.size === 0) sseClients.delete(formId)
   }
 
   const uploadsDir = path.join(dataDir, 'uploads')
@@ -58,7 +72,7 @@ export function createServer(dataDir: string, port: number) {
       if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
         cb(null, true)
       } else {
-        cb(new Error('File type not allowed'))
+        cb(badRequest('File type not allowed'))
       }
     },
   })
@@ -75,16 +89,26 @@ export function createServer(dataDir: string, port: number) {
     next()
   })
 
+  app.param('id', (req, _res, next, value) => {
+    const id = getParam(value)
+    if (!id || id.includes('/') || id.includes('..')) return next(badRequest('Invalid form ID'))
+    req.params.id = id
+    next()
+  })
+
   app.use(express.json({ limit: '10mb' }))
   // Serve uploads as forced downloads with safe content type — prevents stored XSS
-  app.get('/uploads/:filename', (req, res) => {
-    const filename = path.basename(req.params.filename)
-    if (!filename || filename.includes('..')) return res.status(400).send('Invalid')
+  app.get('/uploads/:filename', (req, res, next) => {
+    const filename = path.basename(getParam(req.params.filename))
+    if (!filename || filename.includes('..')) return next(badRequest('Invalid file'))
     const filePath = path.join(uploadsDir, filename)
-    if (!fs.existsSync(filePath)) return res.status(404).send('Not found')
     res.setHeader('Content-Type', 'application/octet-stream')
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-    res.sendFile(filePath)
+    res.sendFile(filePath, (error) => {
+      if (!error) return
+      if ('status' in error && error.status === 404) return next(notFound())
+      next(error)
+    })
   })
   app.use(express.static(path.join(__dirname, 'public')))
 
@@ -105,11 +129,14 @@ export function createServer(dataDir: string, port: number) {
 
   app.get('/api/forms', (_req, res) => {
     const forms = db.getForms()
-    const result = forms.map(f => ({
-      ...f,
-      responseCount: db.getResponses(f.id).length,
-      pendingSync: db.getResponses(f.id).filter(r => !r.synced).length,
-    }))
+    const result = forms.map(f => {
+      const responses = db.getResponses(f.id)
+      return {
+        ...f,
+        responseCount: responses.length,
+        pendingSync: responses.filter(r => !r.synced).length,
+      }
+    })
     res.json(result)
   })
 
@@ -117,33 +144,30 @@ export function createServer(dataDir: string, port: number) {
     const config = req.body as FormConfig & { formId?: string; id?: string }
     const id = config.formId ?? (config as { id?: string }).id
     if (!id || typeof id !== 'string' || !config.title || typeof config.title !== 'string') {
-      return res.status(400).json({ error: 'Invalid config: missing formId or title' })
+      throw badRequest('Invalid config: missing formId or title')
     }
     if (id.length > 128 || config.title.length > 500) {
-      return res.status(400).json({ error: 'Invalid config: fields too long' })
+      throw badRequest('Invalid config: fields too long')
     }
     const result = db.upsertForm(config as unknown as Record<string, unknown> & { title: string })
     res.json({ ok: true, ...result })
   })
 
   app.delete('/api/forms/:id', (req, res) => {
-    const id = req.params.id
-    if (!id || id.includes('/') || id.includes('..')) return res.status(400).json({ error: 'Invalid form ID' })
+    const id = formId(req)
     db.deleteForm(id)
     res.json({ ok: true })
   })
 
   app.get('/api/forms/:id/responses', (req, res) => {
-    const id = req.params.id
-    if (!id || id.includes('/') || id.includes('..')) return res.status(400).json({ error: 'Invalid form ID' })
+    const id = formId(req)
     res.json(db.getResponses(id))
   })
 
   app.get('/api/forms/:id/export', (req, res) => {
-    const id = req.params.id
-    if (!id || id.includes('/') || id.includes('..')) return res.status(400).json({ error: 'Invalid form ID' })
+    const id = formId(req)
     const form = db.getForm(id)
-    if (!form) return res.status(404).json({ error: 'Form not found' })
+    if (!form) throw notFound('Form not found')
 
     const responses = db.getResponses(id)
     // WARNING: must remain synchronous — adding await here introduces a read-then-write race
@@ -201,19 +225,17 @@ export function createServer(dataDir: string, port: number) {
   // ── Public form API ────────────────────────────────────────
 
   app.get('/api/form/:id', (req, res) => {
-    const id = req.params.id
-    if (!id || id.includes('/') || id.includes('..')) return res.status(400).json({ error: 'Invalid form ID' })
+    const id = formId(req)
     const form = db.getForm(id)
-    if (!form) return res.status(404).json({ error: 'Form not found' })
+    if (!form) throw notFound('Form not found')
     res.json(form)
   })
 
   app.post('/api/form/:id/submit', (req, res) => {
-    const id = req.params.id
-    if (!id || id.includes('/') || id.includes('..')) return res.status(400).json({ error: 'Invalid form ID' })
+    const id = formId(req)
     const form = db.getForm(id)
-    if (!form) return res.status(404).json({ error: 'Form not found' })
-    if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Invalid submission' })
+    if (!form) throw notFound('Form not found')
+    if (!req.body || typeof req.body !== 'object') throw badRequest('Invalid submission')
     const submissionId = db.addResponse(id, req.body, (req.body as { submissionId?: string }).submissionId)
     notifyClients(id)
     res.json({ ok: true, submissionId })
@@ -222,8 +244,7 @@ export function createServer(dataDir: string, port: number) {
   // ── SSE for real-time responses ────────────────────────────
 
   app.get('/api/forms/:id/stream', (req, res) => {
-    const id = req.params.id
-    if (!id || id.includes('/') || id.includes('..')) return res.status(400).end()
+    const id = formId(req)
 
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
@@ -241,21 +262,23 @@ export function createServer(dataDir: string, port: number) {
 
     // Clean up on disconnect
     req.on('close', () => {
-      sseClients.get(id)?.delete(client)
+      const clients = sseClients.get(id)
+      clients?.delete(client)
+      if (clients?.size === 0) sseClients.delete(id)
     })
   })
 
   // ── File upload ─────────────────────────────────────────
 
-  app.post('/api/upload', (req, res) => {
+  app.post('/api/upload', (req, res, next) => {
     upload.single('file')(req, res, (err) => {
       if (err) {
-        const message = err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
-          ? 'File too large (max 10MB)'
-          : err.message || 'Upload failed'
-        return res.status(400).json({ error: message })
+        if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+          return next(badRequest('File too large (max 10MB)'))
+        }
+        return next(err)
       }
-      if (!req.file) return res.status(400).json({ error: 'No file provided' })
+      if (!req.file) return next(badRequest('No file provided'))
       const fileUrl = `/uploads/${req.file.filename}`
       // Sanitize originalname before returning — prevent stored XSS
       const safeOriginalName = req.file.originalname
@@ -267,17 +290,19 @@ export function createServer(dataDir: string, port: number) {
 
   // ── Page routes ────────────────────────────────────────────
 
-  app.get('/form/:id', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'form.html'))
+  app.get('/form/:id', (_req, res, next) => {
+    res.sendFile(path.join(__dirname, 'public', 'form.html'), next)
   })
 
-  app.get('/responses/:id', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'responses.html'))
+  app.get('/responses/:id', (_req, res, next) => {
+    res.sendFile(path.join(__dirname, 'public', 'responses.html'), next)
   })
 
-  app.get('*path', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'))
+  app.get('*path', (_req, res, next) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'), next)
   })
+
+  app.use(errorMiddleware)
 
   return app
 }

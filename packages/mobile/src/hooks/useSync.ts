@@ -33,7 +33,9 @@ export function useSync() {
       if (result.synced > 0) {
         setLastSynced(Date.now())
       }
-    } catch {} finally {
+    } catch {
+      // Server unreachable or timeout — expected in the field
+    } finally {
       setSyncing(false)
     }
   }

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { unauthorized, withApiErrorHandling } from '@/lib/api-errors'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export const GET = withApiErrorHandling('dashboard:stats', async function GET() {
   const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user?.id) throw unauthorized()
 
   const forms = await db.form.findMany({
     where: { userId: session.user.id },
@@ -21,4 +22,4 @@ export async function GET() {
   forms.forEach((f: FormWithCount) => { formResponseCounts[f.id] = f._count.responses })
 
   return NextResponse.json({ totalForms, totalResponses, publishedCount, formResponseCounts })
-}
+})

@@ -386,7 +386,7 @@ export function FormView({
       }
       setSubmitted(true)
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Submit failed. Please try again.')
+      setSubmitError('Submit failed. Please try again.')
     } finally {
       setSubmitting(false)
     }

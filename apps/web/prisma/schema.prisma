@@ -76,7 +76,7 @@ model Form {
 
 model Response {
   id           String   @id @default(cuid())
-  submissionId String?  @unique
+  submissionId String
   formId       String
   source       String   @default("online")
   data         Json
@@ -84,6 +84,7 @@ model Response {
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
+  @@unique([formId, submissionId])
   @@index([formId])
   @@index([formId, source])
 }

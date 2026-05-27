@@ -1,45 +1,46 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { randomUUID } from 'crypto'
+import { z } from 'zod'
 
-export async function POST(
+import { badRequest, notFound, withApiErrorHandling } from '@/lib/api-errors'
+
+const submittedAnswerSchema = z.object({
+  fieldId: z.string().optional(),
+  value: z.unknown().optional(),
+}).passthrough()
+
+const submitPayloadSchema = z.object({
+  answers: z.array(submittedAnswerSchema).max(200),
+})
+
+export const POST = withApiErrorHandling('published-form:submit', async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   if (!id || id.length > 128) {
-    return NextResponse.json({ error: 'Invalid form ID' }, { status: 400 })
+    throw badRequest('Invalid form ID')
   }
 
   const form = await db.form.findFirst({
     where: { id, published: true, closed: false },
   })
-  if (!form) return NextResponse.json({ error: 'Form not available' }, { status: 404 })
+  if (!form) throw notFound('Form not available')
 
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    throw badRequest('Invalid JSON')
   }
 
-  if (!body || typeof body !== 'object') {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+  const parsedBody = submitPayloadSchema.safeParse(body)
+  if (!parsedBody.success) {
+    throw badRequest('Invalid payload')
   }
 
-  const { answers } = body as { answers?: unknown }
-  if (!Array.isArray(answers)) {
-    return NextResponse.json({ error: 'answers must be an array' }, { status: 400 })
-  }
-
-  if (answers.length > 200) {
-    return NextResponse.json({ error: 'Too many answers' }, { status: 400 })
-  }
-
-  const sanitizedAnswers = answers.map((a: unknown) => {
-    if (!a || typeof a !== 'object') return { fieldId: '', value: null }
-    const { fieldId, value } = a as { fieldId?: unknown; value?: unknown }
-    // Enforce max value size to prevent large payload storage
+  const sanitizedAnswers = parsedBody.data.answers.map(({ fieldId, value }) => {
     let sanitizedValue = value ?? null
     if (typeof sanitizedValue === 'string' && sanitizedValue.length > 65536) {
       sanitizedValue = sanitizedValue.slice(0, 65536)
@@ -66,4 +67,4 @@ export async function POST(
   })
 
   return NextResponse.json({ ok: true })
-}
+})

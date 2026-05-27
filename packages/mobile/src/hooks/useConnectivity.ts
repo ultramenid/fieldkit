@@ -1,62 +1,77 @@
 import { useEffect } from 'react'
+import { AppState } from 'react-native'
 import NetInfo from '@react-native-community/netinfo'
 import { useStore } from '../store'
+import { getServerUrl } from '../api/server'
 
-const PROBE_URL = 'https://www.gstatic.com/generate_204'
 const PROBE_TIMEOUT_MS = 5000
 
-async function hasInternetAccess(): Promise<boolean> {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
-
+async function ping(url: string, signal?: AbortSignal): Promise<boolean> {
   try {
-    const res = await fetch(PROBE_URL, {
-      method: 'GET',
-      cache: 'no-store',
-      signal: controller.signal,
-    })
-
-    return res.ok
+    await fetch(url, { method: 'GET', cache: 'no-store', signal })
+    return true
   } catch {
     return false
-  } finally {
-    clearTimeout(timeout)
   }
 }
 
 export function useConnectivity() {
   const setOnline = useStore((s) => s.setOnline)
+  const isSyncing = useStore((s) => s.isSyncing)
 
   useEffect(() => {
     let active = true
-    let seq = 0
 
-    const unsub = NetInfo.addEventListener((state) => {
-      seq += 1
-      const currentSeq = seq
+    const check = async () => {
+      // Don't probe while sync is running — avoids AbortController
+      // races in the whatwg-fetch polyfill.
+      if (isSyncing) return
 
-      // No link means definitely offline.
+      const state = await NetInfo.fetch()
       if (!state.isConnected) {
         setOnline(false)
         return
       }
 
-      // OS-level reachability can short-circuit dead/captive connections.
-      if (state.isInternetReachable === false) {
+      const serverUrl = await getServerUrl()
+      if (!serverUrl) {
         setOnline(false)
         return
       }
 
-      void (async () => {
-        const online = await hasInternetAccess()
-        if (!active || currentSeq !== seq) return
-        setOnline(online)
-      })()
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
+
+      try {
+        const ok = await ping(serverUrl, controller.signal)
+        if (active) setOnline(ok)
+      } catch {
+        if (active) setOnline(false)
+      } finally {
+        clearTimeout(timeout)
+      }
+    }
+
+    check()
+
+    const unsub = NetInfo.addEventListener((state) => {
+      if (state.isConnected) {
+        check()
+      } else {
+        setOnline(false)
+      }
+    })
+
+    const appStateSub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        check()
+      }
     })
 
     return () => {
       active = false
       unsub()
+      appStateSub.remove()
     }
-  }, [setOnline])
+  }, [setOnline, isSyncing])
 }

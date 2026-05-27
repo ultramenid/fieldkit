@@ -1,8 +1,55 @@
+import { exportedFormConfigSchema } from '@fieldkit/form-schema'
 import { FormConfig, SyncResult } from '../types'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as FileSystem from 'expo-file-system/legacy'
+import { createMobileApiError } from './errors'
 
 const SERVER_URL_KEY = 'fieldkit_server_url'
+const LOG_PREVIEW_LIMIT = 500
+
+function logPreview(value: string): string {
+  return value.length > LOG_PREVIEW_LIMIT ? `${value.slice(0, LOG_PREVIEW_LIMIT)}…` : value
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object'
+}
+
+function parseUploadResult(value: unknown): UploadResult {
+  if (
+    !isRecord(value) ||
+    typeof value.fileUrl !== 'string' ||
+    typeof value.key !== 'string' ||
+    typeof value.size !== 'number' ||
+    !Number.isFinite(value.size)
+  ) {
+    throw createMobileApiError('upload_failed')
+  }
+
+  return { fileUrl: value.fileUrl, key: value.key, size: value.size }
+}
+
+function parseSyncResult(value: unknown): SyncResult {
+  if (!isRecord(value) || typeof value.ok !== 'boolean') {
+    throw createMobileApiError('sync_failed')
+  }
+  if ('imported' in value && (typeof value.imported !== 'number' || !Number.isFinite(value.imported))) {
+    throw createMobileApiError('sync_failed')
+  }
+  if ('duplicates' in value && (typeof value.duplicates !== 'number' || !Number.isFinite(value.duplicates))) {
+    throw createMobileApiError('sync_failed')
+  }
+  if ('error' in value && typeof value.error !== 'string') {
+    throw createMobileApiError('sync_failed')
+  }
+
+  return {
+    ok: value.ok,
+    imported: typeof value.imported === 'number' ? value.imported : undefined,
+    duplicates: typeof value.duplicates === 'number' ? value.duplicates : undefined,
+    error: typeof value.error === 'string' ? value.error : undefined,
+  }
+}
 
 function normalizeUrl(raw: string): string {
   return raw.trim().replace(/\/+$/, '')
@@ -72,8 +119,26 @@ export async function fetchFormConfig(formId: string, serverUrl?: string): Promi
   const base = validateServerUrl(serverUrl ?? await getServerUrl())
 
   const res = await fetch(`${base}/api/forms/${formId}/export`)
-  if (!res.ok) throw new Error(`Config fetch failed: ${res.status}`)
-  return res.json()
+  let json: unknown
+  try {
+    json = await res.json()
+  } catch (error) {
+    console.error('[mobile-api] config response JSON parse failed:', error)
+    throw createMobileApiError('config_fetch_failed', res.status)
+  }
+
+  if (!res.ok) {
+    console.error('[mobile-api] config fetch failed with status/body:', res.status, json)
+    throw createMobileApiError('config_fetch_failed', res.status)
+  }
+
+  const parsed = exportedFormConfigSchema.safeParse(json)
+  if (!parsed.success) {
+    console.error('[mobile-api] config response validation failed:', parsed.error.issues)
+    throw createMobileApiError('config_fetch_failed', res.status)
+  }
+
+  return parsed.data
 }
 
 const FILE_URI_RE = /^(file:\/\/|\/var\/|\/private\/|\/tmp\/|\/storage\/|content:\/\/)/i
@@ -101,7 +166,8 @@ export async function uploadFile(
   // Check file exists
   const info = await FileSystem.getInfoAsync(localUri)
   if (!info.exists) {
-    throw new Error('File not found: ' + localUri)
+    console.error('[mobile-api] upload file not found:', localUri)
+    throw createMobileApiError('upload_failed')
   }
 
   const filename = localUri.split('/').pop() ?? 'upload.jpg'
@@ -115,11 +181,18 @@ export async function uploadFile(
   })
 
   if (result.status < 200 || result.status >= 300) {
-    throw new Error(`Upload failed: ${result.status} ${result.body}`)
+    console.error('[mobile-api] upload failed with status/body:', result.status, logPreview(result.body))
+    throw createMobileApiError('upload_failed', result.status)
   }
 
-  const json = JSON.parse(result.body)
-  return json as UploadResult
+  let json: unknown
+  try {
+    json = JSON.parse(result.body)
+  } catch (error) {
+    console.error('[mobile-api] upload response JSON parse failed:', error)
+    throw createMobileApiError('upload_failed', result.status)
+  }
+  return parseUploadResult(json)
 }
 
 export async function syncResponses(
@@ -136,11 +209,19 @@ export async function syncResponses(
     body: JSON.stringify({ formId, secret, responses }),
   })
 
-  const json = await res.json()
-  if (!res.ok) {
-    throw new Error(`Sync failed: ${res.status} ${JSON.stringify(json)}`)
+  let json: unknown
+  try {
+    json = await res.json()
+  } catch (error) {
+    console.error('[mobile-api] sync response JSON parse failed:', error)
+    throw createMobileApiError('sync_failed', res.status)
   }
 
-  return json as SyncResult
+  if (!res.ok) {
+    console.error('[mobile-api] sync failed with status/body:', res.status, json)
+    throw createMobileApiError('sync_failed', res.status)
+  }
+
+  return parseSyncResult(json)
 }
 
