@@ -9,6 +9,7 @@ export type FieldType =
   | 'date'
   | 'file'
   | 'rating'
+  | 'richtext'
 
 export interface FieldValidation {
   minLength?: number
@@ -30,6 +31,9 @@ export interface Field {
   label: string
   placeholder?: string
   helpText?: string
+  /** Legacy — respondent answers are submitted separately. */
+  content?: string
+  editorFeatures?: Record<string, boolean>
   required: boolean
   options?: string[]
   validation?: FieldValidation

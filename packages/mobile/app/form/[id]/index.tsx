@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { FormRenderer } from '../../src/renderer/FormRenderer'
-import { getForm, insertResponse } from '../../src/db/database'
-import { FormConfig } from '../../src/types'
-import { TOKENS } from '../../src/theme/tokens'
+import { FormRenderer } from '../../../src/renderer/FormRenderer'
+import { getForm, insertResponse } from '../../../src/db/database'
+import { FormConfig } from '../../../src/types'
+import { TOKENS } from '../../../src/theme/tokens'
 
 export default function FormFillScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -27,7 +27,7 @@ export default function FormFillScreen() {
       setConfirmMsg(parsed.settings?.confirmationMessage ?? 'Thank you for your response.')
       setAllowMultiple(parsed.settings?.allowMultipleSubmissions ?? false)
     })
-  }, [id])
+  }, [id, router])
 
   const handleSubmit = async (answers: { fieldId: string; value: unknown }[]) => {
     if (!config) return
@@ -40,7 +40,7 @@ export default function FormFillScreen() {
       config.formId,
       submissionId,
       JSON.stringify({ answers, source: 'mobile' }),
-      now
+      now,
     )
 
     setSubmitted(true)
@@ -77,46 +77,64 @@ export default function FormFillScreen() {
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    const r = (Math.random() * 16) | 0
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
   })
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: TOKENS.colors.white },
   centered: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: TOKENS.colors.white, padding: 40,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: TOKENS.colors.white,
+    padding: 40,
   },
   checkIcon: {
-    fontSize: 48, color: TOKENS.colors.green500, marginBottom: 16,
-    width: 64, height: 64, lineHeight: 64, textAlign: 'center',
-    borderWidth: 2, borderColor: TOKENS.colors.green500, borderRadius: 32,
+    fontSize: 48,
+    color: TOKENS.colors.green500,
+    marginBottom: 16,
+    width: 64,
+    height: 64,
+    lineHeight: 64,
+    textAlign: 'center',
+    borderWidth: 2,
+    borderColor: TOKENS.colors.green500,
+    borderRadius: 32,
     overflow: 'hidden',
   },
   confirmTitle: {
-    fontSize: 22, fontWeight: TOKENS.type.weightSemibold,
-    color: TOKENS.colors.black, marginBottom: 8,
+    fontSize: 22,
+    fontWeight: TOKENS.type.weightSemibold,
+    color: TOKENS.colors.black,
+    marginBottom: 8,
   },
   confirmMsg: {
-    fontSize: TOKENS.fontSize.body, color: TOKENS.colors.gray500,
-    marginBottom: 24, textAlign: 'center',
+    fontSize: TOKENS.fontSize.body,
+    color: TOKENS.colors.gray500,
+    marginBottom: 24,
+    textAlign: 'center',
   },
   submitBtn: {
     backgroundColor: TOKENS.colors.black,
     borderRadius: TOKENS.radius.pill,
-    paddingVertical: 14, paddingHorizontal: 28,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
     marginBottom: 12,
   },
   submitText: {
-    fontSize: TOKENS.fontSize.body, fontWeight: TOKENS.type.weightSemibold,
+    fontSize: TOKENS.fontSize.body,
+    fontWeight: TOKENS.type.weightSemibold,
     color: TOKENS.colors.white,
   },
   backBtn: {
-    paddingVertical: 14, paddingHorizontal: 28,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
   },
   backText: {
-    fontSize: TOKENS.fontSize.body, fontWeight: TOKENS.type.weightMedium,
+    fontSize: TOKENS.fontSize.body,
+    fontWeight: TOKENS.type.weightMedium,
     color: TOKENS.colors.black,
   },
 })

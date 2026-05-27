@@ -1,5 +1,6 @@
 'use client'
 
+import { RICH_TEXT_FEATURE_OPTIONS, resolveRichTextFeatures } from '@fieldkit/form-schema'
 import { useBuilder } from '@/lib/builder-context'
 import { Toggle } from './toggle'
 import type { BuilderField } from '@/lib/builder-types'
@@ -61,7 +62,8 @@ export function SettingsPanel() {
     dispatch({ type: 'UPDATE_FIELD', id: field!.id, patch })
   }
 
-  const hasPlaceholder = ['text', 'email', 'number', 'textarea'].includes(field.type)
+  const isRichtext = field.type === 'richtext'
+  const hasPlaceholder = ['text', 'email', 'number', 'textarea', 'richtext'].includes(field.type)
   const hasValidation = ['text', 'email', 'number', 'textarea'].includes(field.type)
   const hasOptions = ['select', 'radio', 'checkbox'].includes(field.type)
   const options = field.options ?? []
@@ -115,6 +117,36 @@ export function SettingsPanel() {
           className={inputClass}
         />
       </SettingRow>
+
+      {isRichtext && (
+        <>
+          <SectionLabel>Formatting</SectionLabel>
+          <p className="mb-3 text-[12px] leading-relaxed text-[var(--muted)]">
+            Enabled options appear in the rich text toolbar for respondents.
+          </p>
+          <div className="mb-4 flex flex-col gap-2">
+            {RICH_TEXT_FEATURE_OPTIONS.map(({ key, label }) => {
+              const resolved = resolveRichTextFeatures(field.editorFeatures)
+              return (
+                <div key={key} className="flex items-center justify-between py-1">
+                  <span className="text-[13px] text-[var(--foreground)]">{label}</span>
+                  <Toggle
+                    checked={resolved[key]}
+                    onChange={(enabled) =>
+                      update({
+                        editorFeatures: {
+                          ...resolved,
+                          [key]: enabled,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {/* Behavior */}
       <SectionLabel>Behavior</SectionLabel>

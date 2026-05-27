@@ -11,6 +11,7 @@ interface Props {
   syncStatus: 'synced' | 'pending' | 'new'
   pendingCount: number
   onPress: () => void
+  onViewResponses?: () => void
   onSync?: () => void
   onDelete: () => void
 }
@@ -22,6 +23,7 @@ export function FormCard({
   syncStatus,
   pendingCount,
   onPress,
+  onViewResponses,
   onSync,
   onDelete,
 }: Props) {
@@ -53,10 +55,24 @@ export function FormCard({
         </View>
       </View>
       <View style={styles.cardMeta}>
-        <View style={styles.metaItem}>
-          <IconGrid size={14} color={TOKENS.colors.gray400} />
-          <Text style={styles.metaText}>{responses} responses</Text>
-        </View>
+        {responses > 0 && onViewResponses ? (
+          <TouchableOpacity
+            style={styles.metaItem}
+            onPress={(event) => {
+              event.stopPropagation()
+              onViewResponses()
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <IconGrid size={14} color={TOKENS.colors.gray400} />
+            <Text style={[styles.metaText, styles.metaLink]}>{responses} responses</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.metaItem}>
+            <IconGrid size={14} color={TOKENS.colors.gray400} />
+            <Text style={styles.metaText}>{responses} responses</Text>
+          </View>
+        )}
       </View>
       <FieldTags types={fields} />
     </TouchableOpacity>
@@ -112,5 +128,9 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: TOKENS.fontSize.small,
     color: TOKENS.colors.gray500,
+  },
+  metaLink: {
+    color: TOKENS.colors.black,
+    textDecorationLine: 'underline',
   },
 })

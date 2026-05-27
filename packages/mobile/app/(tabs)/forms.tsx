@@ -173,6 +173,11 @@ export default function FormsList() {
               syncStatus={getSyncStatus(item, unsyncedCounts[item.id] ?? 0)}
               pendingCount={unsyncedCounts[item.id] ?? 0}
               onPress={() => router.push(`/form/${item.id}`)}
+              onViewResponses={
+                (responseCounts[item.id] ?? 0) > 0
+                  ? () => router.push(`/form/${item.id}/responses`)
+                  : undefined
+              }
               onSync={syncingFormIds.has(item.id) ? undefined : () => handleSyncForm(item.id)}
               onDelete={() => handleDeleteForm(item)}
             />

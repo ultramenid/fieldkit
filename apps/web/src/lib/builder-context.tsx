@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useReducer, useEffect, useRef, useCallback } from 'react'
+import { DEFAULT_FIELD_RICH_TEXT_FEATURES } from '@fieldkit/form-schema'
 import type { BuilderState, BuilderAction, BuilderField } from './builder-types'
 import { DEFAULT_LABELS, DEFAULT_OPTIONS } from './builder-types'
 import { sanitizeRichTextHtml, normalizePlainDescriptionToHtml } from './sanitize-rich-text'
@@ -9,11 +10,18 @@ function reducer(state: BuilderState, action: BuilderAction): BuilderState {
   switch (action.type) {
     case 'ADD_FIELD': {
       const hasOptions = ['select', 'radio', 'checkbox'].includes(action.fieldType)
+      const isRichtext = action.fieldType === 'richtext'
       const newField: BuilderField = {
         id: crypto.randomUUID(),
         type: action.fieldType,
         label: DEFAULT_LABELS[action.fieldType],
         required: false,
+        ...(isRichtext
+          ? {
+              placeholder: 'Write your answer…',
+              editorFeatures: { ...DEFAULT_FIELD_RICH_TEXT_FEATURES },
+            }
+          : {}),
         ...(hasOptions ? { options: [...DEFAULT_OPTIONS] } : {}),
       }
       return {
@@ -96,6 +104,7 @@ export function BuilderProvider({
     const descriptionHtml = s.description.trim().startsWith('<')
       ? sanitizeRichTextHtml(s.description)
       : sanitizeRichTextHtml(normalizePlainDescriptionToHtml(s.description))
+    const fields = s.fields
     dispatch({ type: 'SET_SAVING', isSaving: true })
     try {
       const response = await fetch(`/api/forms/${s.formId}`, {
@@ -104,7 +113,7 @@ export function BuilderProvider({
         body: JSON.stringify({
           title: s.title,
           description: descriptionHtml,
-          fields: s.fields,
+          fields,
           settings: {
             submitButtonText: 'Submit',
             confirmationMessage: 'Thank you for your response.',

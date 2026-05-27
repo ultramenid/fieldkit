@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { BuilderField } from '@/lib/builder-types'
-import { sanitizeRichTextHtml, normalizePlainDescriptionToHtml } from '@/lib/sanitize-rich-text'
+import { isAnswerableField } from '@/lib/builder-types'
+import { RichTextDisplay } from '@/components/builder/rich-text-display'
+import { DescriptionRichEditor } from '@/components/builder/description-rich-editor'
+import { DEFAULT_FIELD_RICH_TEXT_FEATURES } from '@fieldkit/form-schema'
+import { isRichTextHtmlEmptyDom } from '@/lib/sanitize-rich-text-dom'
 
 interface FormViewProps {
   formId: string
@@ -238,6 +242,17 @@ function FieldInput({ field, value, onChange }: {
           className="w-full rounded-[12px] border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-[15px] text-[var(--fg)] transition-colors focus:border-[var(--fg)] focus:outline-none min-h-[100px] resize-vertical"
         />
       )
+    case 'richtext':
+      return (
+        <DescriptionRichEditor
+          value={(value as string) ?? ''}
+          onChange={(html) => onChange(html)}
+          placeholder={field.placeholder ?? 'Write your answer…'}
+          features={field.editorFeatures}
+          featuresBase={DEFAULT_FIELD_RICH_TEXT_FEATURES}
+          toolbarMode="always"
+        />
+      )
     case 'select':
       return (
         <select
@@ -348,32 +363,55 @@ export function FormView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const filledCount = fields.filter((f) => {
+  const answerableFields = fields.filter(isAnswerableField)
+
+  const filledCount = answerableFields.filter((f) => {
     const v = values[f.id]
+    if (f.type === 'richtext') {
+      return typeof v === 'string' && !isRichTextHtmlEmptyDom(v)
+    }
     if (Array.isArray(v)) return v.length > 0
     return v !== null && v !== undefined && v !== ''
   }).length
 
-  const progress = fields.length > 0 ? Math.round((filledCount / fields.length) * 100) : 0
+  const progress =
+    answerableFields.length > 0
+      ? Math.round((filledCount / answerableFields.length) * 100)
+      : 0
 
-  const descriptionHtml = useMemo(() => {
-    const raw = (description ?? '').trim()
-    if (!raw) return ''
-    const hasHtmlElements = /<\s*\/?[a-z][^>]*>/i.test(raw)
-    const source = hasHtmlElements ? raw : normalizePlainDescriptionToHtml(raw)
-    return sanitizeRichTextHtml(source)
-  }, [description])
-
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  const hasDescription = Boolean((description ?? '').trim())
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (isPreview) { setSubmitted(true); return }
+
+    for (const f of answerableFields) {
+      if (!f.required) continue
+      const v = values[f.id]
+      if (f.type === 'richtext') {
+        if (typeof v !== 'string' || isRichTextHtmlEmptyDom(v)) {
+          setSubmitError(`Please complete "${f.label}"`)
+          return
+        }
+        continue
+      }
+      if (v === null || v === undefined || v === '') {
+        setSubmitError(`Please complete "${f.label}"`)
+        return
+      }
+      if (Array.isArray(v) && v.length === 0) {
+        setSubmitError(`Please complete "${f.label}"`)
+        return
+      }
+    }
+
     setSubmitError(null)
     setSubmitting(true)
     try {
-      const answers = fields.map((f) => ({ fieldId: f.id, value: values[f.id] ?? null }))
+      const answers = answerableFields.map((f) => ({
+        fieldId: f.id,
+        value: values[f.id] ?? null,
+      }))
       const res = await fetch(`/api/f/${formId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -434,13 +472,9 @@ export function FormView({
       {/* Progress: percentage + thin bar */}
       {fields.length > 0 && (
         <div className="mb-6">
-          {descriptionHtml && (
-            <div className="mb-3 text-[15px] leading-relaxed text-[var(--muted)] [&_p]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--border)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:overflow-x-auto [&_pre]:rounded-[8px] [&_pre]:bg-[var(--surface)] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_code]:rounded-[4px] [&_code]:bg-[var(--surface)] [&_code]:px-1 [&_code]:font-mono [&_code]:text-[13px] [&_mark]:bg-[color:rgba(139,69,19,0.18)] [&_sup]:align-super [&_sup]:text-[11px] [&_sub]:align-sub [&_sub]:text-[11px] [&_a]:underline [&_a]:underline-offset-2 [&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[10px]">
-              {mounted ? (
-                <span dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
-              ) : (
-                <span>{descriptionHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()}</span>
-              )}
+          {hasDescription && (
+            <div className="mb-3">
+              <RichTextDisplay html={description ?? ''} />
             </div>
           )}
           <div className="mb-1.5 flex items-center justify-end">
@@ -451,13 +485,9 @@ export function FormView({
           </div>
         </div>
       )}
-      {!fields.length && descriptionHtml && (
-        <div className="mb-9 text-[15px] leading-relaxed text-[var(--muted)] [&_p]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:my-1 [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--border)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_pre]:overflow-x-auto [&_pre]:rounded-[8px] [&_pre]:bg-[var(--surface)] [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[13px] [&_code]:rounded-[4px] [&_code]:bg-[var(--surface)] [&_code]:px-1 [&_code]:font-mono [&_code]:text-[13px] [&_mark]:bg-[color:rgba(139,69,19,0.18)] [&_sup]:align-super [&_sup]:text-[11px] [&_sub]:align-sub [&_sub]:text-[11px] [&_a]:underline [&_a]:underline-offset-2 [&_img]:my-2 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[10px]">
-          {mounted ? (
-            <span dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
-          ) : (
-            <span>{descriptionHtml.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()}</span>
-          )}
+      {!fields.length && hasDescription && (
+        <div className="mb-9">
+          <RichTextDisplay html={description ?? ''} />
         </div>
       )}
 

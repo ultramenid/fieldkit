@@ -1,7 +1,13 @@
 {
   "name": "@malichamdan/fieldkit-local-server",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "FieldKit local server for offline form collection",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
   "main": "dist/index.js",
   "bin": {
     "fieldkit": "dist/cli.js"

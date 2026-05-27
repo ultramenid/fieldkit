@@ -6,19 +6,21 @@ interface ScreenCardProps {
   title: string
   description: string
   tag: string
-  tagVariant: 'server' | 'local'
+  tagVariant: 'server' | 'local' | 'mobile'
 }
 
 export function ScreenCard({ href, icon, title, description, tag, tagVariant }: ScreenCardProps) {
   const tagClass =
     tagVariant === 'server'
       ? 'text-[#16a34a] border-[#16a34a]/30'
-      : 'text-[#b45309] border-[#f59e0b]/30'
+      : tagVariant === 'local'
+        ? 'text-[#b45309] border-[#f59e0b]/30'
+        : 'text-[#2563eb] border-[#2563eb]/30'
 
   return (
     <Link
       href={href}
-      className="flex flex-col gap-3 rounded-[12px] border border-[var(--border)] p-6 text-[var(--foreground)] no-underline transition-colors hover:border-[var(--foreground)]"
+      className="flex flex-col gap-3 rounded-[12px] border border-[var(--border)] p-6 text-[var(--foreground)] no-underline transition-colors hover:border-[var(--foreground)] hover:bg-[var(--surface)]"
     >
       <div className="grid h-10 w-10 place-items-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)]">
         <span className="text-[var(--muted)] [&>svg]:h-5 [&>svg]:w-5">{icon}</span>

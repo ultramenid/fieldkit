@@ -1,0 +1,249 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - link "FieldKit Docs" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: FieldKit Docs
+      - navigation [ref=e7]:
+        - generic [ref=e8]:
+          - paragraph [ref=e9]: Overview
+          - list [ref=e10]:
+            - listitem [ref=e11]:
+              - button "Introduction" [ref=e12]
+        - generic [ref=e13]:
+          - paragraph [ref=e14]: Serverside
+          - list [ref=e15]:
+            - listitem [ref=e16]:
+              - button "Platform overview" [ref=e17]
+            - listitem [ref=e18]:
+              - button "Creating a form" [ref=e19]
+            - listitem [ref=e20]:
+              - button "Sharing & publishing" [ref=e21]
+            - listitem [ref=e22]:
+              - button "Responses" [ref=e23]
+            - listitem [ref=e24]:
+              - button "Exporting config" [ref=e25]
+        - generic [ref=e26]:
+          - paragraph [ref=e27]: Local Server
+          - list [ref=e28]:
+            - listitem [ref=e29]:
+              - button "Overview" [ref=e30]
+            - listitem [ref=e31]:
+              - button "Installation" [active] [ref=e32]
+            - listitem [ref=e33]:
+              - button "Importing & serving" [ref=e34]
+            - listitem [ref=e35]:
+              - button "Exporting data" [ref=e36]
+            - listitem [ref=e37]:
+              - button "Network setup" [ref=e38]
+        - generic [ref=e39]:
+          - paragraph [ref=e40]: Mobile
+          - list [ref=e41]:
+            - listitem [ref=e42]:
+              - button "Overview" [ref=e43]
+            - listitem [ref=e44]:
+              - button "Importing a form" [ref=e45]
+            - listitem [ref=e46]:
+              - button "Collecting responses" [ref=e47]
+            - listitem [ref=e48]:
+              - button "Syncing responses" [ref=e49]
+            - listitem [ref=e50]:
+              - button "Deleting a form" [ref=e51]
+      - generic [ref=e52]:
+        - link "Home" [ref=e53] [cursor=pointer]:
+          - /url: /
+        - link "GitHub" [ref=e54] [cursor=pointer]:
+          - /url: https://github.com/ultramenid/fieldkit
+    - main [ref=e55]:
+      - generic [ref=e56]:
+        - heading "Documentation" [level=1] [ref=e57]
+        - paragraph [ref=e58]: Build forms online, distribute them offline, collect responses in the field.
+      - generic [ref=e59]:
+        - separator [ref=e60]
+        - heading "Serverside platform" [level=2] [ref=e61]
+        - paragraph [ref=e63]: The serverside web app is where you create and manage forms, view live responses, and export config files for offline use. Sign in with Google to get started.
+      - generic [ref=e64]:
+        - separator [ref=e65]
+        - heading "Creating a form" [level=2] [ref=e66]
+        - generic [ref=e67]:
+          - paragraph [ref=e68]:
+            - text: From the dashboard, click
+            - strong [ref=e69]: New Form
+            - text: . The builder opens with a drag-and-drop canvas.
+          - generic [ref=e70]:
+            - generic [ref=e71]: "1"
+            - generic [ref=e72]:
+              - paragraph [ref=e73]: Add fields
+              - paragraph [ref=e74]: Pick a field type from the left panel. Drag fields to reorder them on the canvas.
+          - generic [ref=e75]:
+            - generic [ref=e76]: "2"
+            - generic [ref=e77]:
+              - paragraph [ref=e78]: Configure each field
+              - paragraph [ref=e79]: Click a field to open its settings — label, placeholder, help text, required toggle, and validation rules.
+          - generic [ref=e80]:
+            - generic [ref=e81]: "3"
+            - generic [ref=e82]:
+              - paragraph [ref=e83]: Save
+              - paragraph [ref=e84]: Changes save automatically. The form version increments on each save and is reflected in any exported configs.
+          - paragraph [ref=e85]: The same form config works identically on web, local server, and mobile.
+      - generic [ref=e86]:
+        - separator [ref=e87]
+        - heading "Sharing & publishing" [level=2] [ref=e88]
+        - generic [ref=e89]:
+          - paragraph [ref=e90]:
+            - text: Open a form and click
+            - strong [ref=e91]: Share
+            - text: to access all distribution options.
+          - generic [ref=e92]:
+            - generic [ref=e93]: "1"
+            - generic [ref=e94]:
+              - paragraph [ref=e95]: Copy link
+              - paragraph [ref=e96]: Send the public URL to respondents. They fill the form in any browser — no account needed.
+          - generic [ref=e97]:
+            - generic [ref=e98]: "2"
+            - generic [ref=e99]:
+              - paragraph [ref=e100]: Embed
+              - paragraph [ref=e101]: Paste the embed snippet into any webpage to show the form inline.
+          - generic [ref=e102]:
+            - generic [ref=e103]: "3"
+            - generic [ref=e104]:
+              - paragraph [ref=e105]: QR code
+              - paragraph [ref=e106]: Display the QR code on screen — mobile users scan it to import the form directly to their device.
+      - generic [ref=e107]:
+        - separator [ref=e108]
+        - heading "Responses" [level=2] [ref=e109]
+        - generic [ref=e110]:
+          - paragraph [ref=e111]: The responses table updates in real time — new submissions appear instantly via server-sent events, no refresh needed.
+          - paragraph [ref=e112]: Filter by source (online / mobile / local server), import a JSON export from a local server, or download the full dataset as CSV or JSON.
+          - paragraph [ref=e113]:
+            - text: Duplicate submissions (e.g. from retried syncs) are automatically deduplicated by
+            - code [ref=e114]: submissionId
+            - text: .
+      - generic [ref=e115]:
+        - separator [ref=e116]
+        - heading "Exporting a form config" [level=2] [ref=e117]
+        - generic [ref=e118]:
+          - paragraph [ref=e119]: The config JSON is the bridge to the offline world. It bundles the full form definition with a unique secret that authenticates synced responses.
+          - generic [ref=e120]:
+            - generic [ref=e121]: "1"
+            - generic [ref=e122]:
+              - paragraph [ref=e123]: Open Share
+              - paragraph [ref=e124]: From the form page, click Share.
+          - generic [ref=e125]:
+            - generic [ref=e126]: "2"
+            - generic [ref=e127]:
+              - paragraph [ref=e128]: Download config
+              - paragraph [ref=e129]: Click "Download config" — a .json file saves to your device.
+          - generic [ref=e130]:
+            - generic [ref=e131]: "3"
+            - generic [ref=e132]:
+              - paragraph [ref=e133]: Distribute
+              - paragraph [ref=e134]: Import the file into the local server admin UI, or use the QR code to import directly into the mobile app.
+      - generic [ref=e135]:
+        - separator [ref=e136]
+        - heading "Local server overview" [level=2] [ref=e137]
+        - paragraph [ref=e139]: The local server runs on any laptop or field machine. It hosts your form over Wi-Fi so anyone on the same network can submit responses without internet. Collected data is exported and merged into the serverside when connectivity is available.
+      - generic [ref=e140]:
+        - separator [ref=e141]
+        - heading "Installation" [level=2] [ref=e142]
+        - generic [ref=e143]:
+          - paragraph [ref=e144]: "Requires Node.js 18+. Install once globally:"
+          - generic [ref=e145]: npm install -g @malichamdan/fieldkit-local-server
+          - paragraph [ref=e146]: "Confirm it's working:"
+          - generic [ref=e147]: fieldkit --version
+      - generic [ref=e148]:
+        - separator [ref=e149]
+        - heading "Importing & serving" [level=2] [ref=e150]
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - generic [ref=e153]: "1"
+            - generic [ref=e154]:
+              - paragraph [ref=e155]: Start the server
+              - paragraph [ref=e156]: Run fieldkit in your terminal. The admin UI opens at http://localhost:3000.
+          - generic [ref=e157]: fieldkit
+          - generic [ref=e158]:
+            - generic [ref=e159]: "2"
+            - generic [ref=e160]:
+              - paragraph [ref=e161]: Open the admin panel
+              - paragraph [ref=e162]: Navigate to the local URL. On other devices, replace localhost with the machine's IP (e.g. http://192.168.1.5:3000).
+          - generic [ref=e163]:
+            - generic [ref=e164]: "3"
+            - generic [ref=e165]:
+              - paragraph [ref=e166]: Import config
+              - paragraph [ref=e167]: Drag the .json config file into the "Import Config" area, or click to browse your files.
+          - generic [ref=e168]:
+            - generic [ref=e169]: "4"
+            - generic [ref=e170]:
+              - paragraph [ref=e171]: Form is live
+              - paragraph [ref=e172]: Any device on the same Wi-Fi can open the form and submit a response.
+      - generic [ref=e173]:
+        - separator [ref=e174]
+        - heading "Exporting collected data" [level=2] [ref=e175]
+        - generic [ref=e176]:
+          - paragraph [ref=e177]:
+            - text: In the admin UI, go to
+            - strong [ref=e178]: Responses
+            - text: and click
+            - strong [ref=e179]: Export
+            - text: . Choose CSV or JSON.
+          - paragraph [ref=e180]:
+            - text: To merge local responses with the serverside table, open the responses page on the serverside and use
+            - strong [ref=e181]: Import
+            - text: to upload the exported JSON file.
+      - generic [ref=e182]:
+        - separator [ref=e183]
+        - heading "Network setup" [level=2] [ref=e184]
+        - generic [ref=e185]:
+          - paragraph [ref=e186]: The local server binds to all interfaces by default, so other devices on the same Wi-Fi automatically have access.
+          - paragraph [ref=e187]: If your OS prompts for a firewall exception, allow it. On corporate networks with client isolation, use a personal hotspot instead.
+      - generic [ref=e188]:
+        - separator [ref=e189]
+        - heading "Mobile app overview" [level=2] [ref=e190]
+        - paragraph [ref=e192]: The FieldKit mobile app lets you scan a form config, collect responses completely offline, and sync them back to the serverside when you have internet. Available for iOS and Android.
+      - generic [ref=e193]:
+        - separator [ref=e194]
+        - heading "Importing a form" [level=2] [ref=e195]
+        - generic [ref=e196]:
+          - paragraph [ref=e197]: "Two ways to add a form to the mobile app:"
+          - generic [ref=e198]:
+            - generic [ref=e199]: "1"
+            - generic [ref=e200]:
+              - paragraph [ref=e201]: Scan QR code
+              - paragraph [ref=e202]: In the serverside Share modal, display the QR code. In the app, tap the scan button and point your camera at it.
+          - generic [ref=e203]:
+            - generic [ref=e204]: "2"
+            - generic [ref=e205]:
+              - paragraph [ref=e206]: Enter config URL
+              - paragraph [ref=e207]: Tap Add Form, choose Enter URL, and paste the config URL from the Share modal.
+      - generic [ref=e208]:
+        - separator [ref=e209]
+        - heading "Collecting responses" [level=2] [ref=e210]
+        - generic [ref=e211]:
+          - paragraph [ref=e212]: Open a form from your list, fill in the fields, and tap Submit. The response saves to the phone immediately — no internet required.
+          - paragraph [ref=e213]: Multiple responses from different people can be collected on the same device. Each submission receives a unique ID for deduplication on sync.
+      - generic [ref=e214]:
+        - separator [ref=e215]
+        - heading "Syncing responses" [level=2] [ref=e216]
+        - generic [ref=e217]:
+          - paragraph [ref=e218]: "Responses sync automatically when the device comes online. Manual sync options:"
+          - generic [ref=e219]:
+            - generic [ref=e220]: "1"
+            - generic [ref=e221]:
+              - paragraph [ref=e222]: Sync one form
+              - paragraph [ref=e223]: Tap the sync icon on a form card to push its pending responses.
+          - generic [ref=e224]:
+            - generic [ref=e225]: "2"
+            - generic [ref=e226]:
+              - paragraph [ref=e227]: Sync all
+              - paragraph [ref=e228]: Tap "Sync All" at the top of the forms list to upload everything at once.
+          - paragraph [ref=e229]: Synced responses appear in the serverside table instantly.
+      - generic [ref=e230]:
+        - separator [ref=e231]
+        - heading "Deleting a form" [level=2] [ref=e232]
+        - paragraph [ref=e234]:
+          - text: Tap and hold a form card, then tap
+          - strong [ref=e235]: Delete
+          - text: . This removes the form and all its unsynced local responses from the device. Responses already synced to the serverside are unaffected.
+  - button "Open Next.js Dev Tools" [ref=e241] [cursor=pointer]:
+    - img [ref=e242]
+  - alert [ref=e245]

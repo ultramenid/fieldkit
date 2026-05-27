@@ -1,0 +1,268 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - paragraph [ref=e3]: We use analytics cookies to understand product usage and improve the experience.
+    - paragraph [ref=e4]: You can change this choice later in browser storage settings.
+    - generic [ref=e5]:
+      - button "Decline" [ref=e6] [cursor=pointer]
+      - button "Accept analytics" [ref=e7] [cursor=pointer]
+  - generic [ref=e8]:
+    - link "Skip to main content" [ref=e9] [cursor=pointer]:
+      - /url: "#main-content"
+    - region "BridgeSpace V3 Product Hunt launch announcement" [ref=e10]:
+      - generic [ref=e11]:
+        - link "BridgeSpace V3 is live — take 50% off today BridgeSpace 3 - The agent development environment to ship faster | Product Hunt" [ref=e12] [cursor=pointer]:
+          - /url: https://www.producthunt.com/products/bridgespace-3?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-bridgespace-3
+          - generic [ref=e13]:
+            - generic [ref=e14]: BridgeSpace V3 is live
+            - generic [ref=e15]: — take 50% off today
+          - img "BridgeSpace 3 - The agent development environment to ship faster | Product Hunt" [ref=e16]
+        - button "Dismiss Product Hunt launch banner" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+    - banner [ref=e21]:
+      - generic [ref=e22]:
+        - link "BridgeMind" [ref=e23] [cursor=pointer]:
+          - /url: /
+          - img "BridgeMind" [ref=e25]
+        - navigation [ref=e26]:
+          - link "Pricing" [ref=e27] [cursor=pointer]:
+            - /url: /pricing
+          - button "Ecosystem" [ref=e28] [cursor=pointer]:
+            - text: Ecosystem
+            - img [ref=e29]
+          - button "Community" [ref=e31] [cursor=pointer]:
+            - text: Community
+            - img [ref=e32]
+          - button "Company" [ref=e34] [cursor=pointer]:
+            - text: Company
+            - img [ref=e35]
+        - generic [ref=e37]:
+          - link "Log In" [ref=e38] [cursor=pointer]:
+            - /url: /login
+          - link "Get Started" [ref=e39] [cursor=pointer]:
+            - /url: /signup
+    - main [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e44]:
+          - heading "Vibe Coding for Builders." [level=1] [ref=e45]:
+            - generic [ref=e46]: Vibe Coding
+            - generic [ref=e47]: for Builders.
+          - paragraph [ref=e48]: The vibe coding platform for builders who ship software at the speed of thought.
+          - generic [ref=e49]:
+            - link "Start Shipping" [ref=e50] [cursor=pointer]:
+              - /url: /pricing
+              - generic [ref=e51]:
+                - text: Start Shipping
+                - img [ref=e52]
+            - link "Join Discord" [ref=e54] [cursor=pointer]:
+              - /url: /discord
+              - img [ref=e55]
+              - text: Join Discord
+          - link "Now Live on Product Hunt Support the launch BridgeSpace 3 BridgeSpace 3 The agent development environment to ship faster. See the launch and upvote on Product Hunt. Check it out" [ref=e57] [cursor=pointer]:
+            - /url: https://www.producthunt.com/products/bridgespace-3?embed=true&utm_source=embed&utm_medium=homepage_hero
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - generic [ref=e60]: Now Live on Product Hunt
+                - generic [ref=e61]: Support the launch
+              - generic [ref=e62]:
+                - img "BridgeSpace 3" [ref=e64]
+                - generic [ref=e65]:
+                  - heading "BridgeSpace 3" [level=2] [ref=e66]
+                  - paragraph [ref=e67]: The agent development environment to ship faster.
+              - generic [ref=e68]:
+                - generic [ref=e69]: See the launch and upvote on Product Hunt.
+                - generic [ref=e70]:
+                  - text: Check it out
+                  - img [ref=e71]
+          - generic [ref=e75]:
+            - link "Discord — 10,000+" [ref=e77] [cursor=pointer]:
+              - /url: https://discord.gg/bridgemind
+              - img [ref=e79]
+              - generic [ref=e81]: 10,000+
+            - link "YouTube — 74,000+" [ref=e84] [cursor=pointer]:
+              - /url: https://www.youtube.com/@bridgemindai
+              - img [ref=e86]
+              - generic [ref=e89]: 74,000+
+            - link "X — 31,000+" [ref=e92] [cursor=pointer]:
+              - /url: https://x.com/bridgemindai
+              - img [ref=e94]
+              - generic [ref=e96]: 31,000+
+        - generic [ref=e100]:
+          - generic [ref=e105]: Trusted by builders worldwide
+          - generic [ref=e106]:
+            - generic [ref=e108]:
+              - img [ref=e110]
+              - generic [ref=e113]: 0+
+              - generic [ref=e114]: Discord members
+            - generic [ref=e118]:
+              - img [ref=e120]
+              - generic [ref=e124]: 0+
+              - generic [ref=e125]: YouTube subscribers
+            - generic [ref=e129]:
+              - img [ref=e131]
+              - generic [ref=e134]: 0+
+              - generic [ref=e135]: X followers
+      - generic [ref=e291]:
+        - heading "The Vibe Coding Platform for Builders Who Ship" [level=2] [ref=e292]
+        - generic [ref=e293]:
+          - paragraph [ref=e294]: BridgeMind is the vibe coding platform built for a new era of software development. Instead of writing code manually, builders describe their intent in natural language and AI coding agents handle the implementation. This agentic coding approach lets you focus on planning and review while coding agents do the heavy lifting — writing code, debugging issues, and shipping features across your entire codebase.
+          - paragraph [ref=e295]:
+            - text: At the core of BridgeMind is
+            - link "BridgeSpace" [ref=e296] [cursor=pointer]:
+              - /url: /products/bridgespace
+            - text: — the agentic development environment with a built-in vibe kanban board, multi-pane terminal workspaces, and AI agent orchestration. Manage tasks visually with drag and drop, launch coding agents directly from your task board, and watch AI generated code appear in real time across up to 16 parallel terminal sessions.
+          - paragraph [ref=e297]:
+            - link "BridgeMCP" [ref=e298] [cursor=pointer]:
+              - /url: /bridgemcp
+            - text: is our Model Context Protocol (MCP) server — the shared context layer that connects your AI code editor to the BridgeMind platform. Whether you use Cursor, Claude Code, Windsurf, or OpenAI Codex, BridgeMCP gives your AI agent access to shared tasks, project knowledge, and coordinated workflows. It turns any MCP-compatible tool into a connected teammate.
+          - paragraph [ref=e299]:
+            - link "BridgeVoice" [ref=e300] [cursor=pointer]:
+              - /url: /products/bridgevoice
+            - text: brings voice coding to every app on your desktop. Powered by the Whisper model for local transcription and cloud mode for 99+ languages, BridgeVoice lets you dictate commit messages, documentation, and Slack messages without touching the keyboard. Process audio files locally for complete privacy or use cloud transcription for maximum accuracy.
+          - paragraph [ref=e301]:
+            - link "BridgeCode" [ref=e302] [cursor=pointer]:
+              - /url: /products/bridgecode
+            - text: is our AI coding CLI — a command line tool that turns natural language into multi-step code changes. Express your intent from the terminal and let AI agents scaffold projects, add features, and fix bugs across your codebase. No IDE required.
+          - paragraph [ref=e303]: Join 10,000+ Discord members, 74,000+ YouTube subscribers, and 31,000+ X followers who are already building the future of software development with BridgeMind. Whether you are exploring the vibe coding movement for the first time or scaling an agentic coding workflow in production, BridgeMind provides the tools, community, and infrastructure to help you ship faster.
+        - generic [ref=e304]:
+          - link "What is vibe coding?" [ref=e305] [cursor=pointer]:
+            - /url: /learn/vibe-coding
+          - link "What is agentic coding?" [ref=e306] [cursor=pointer]:
+            - /url: /learn/agentic-coding
+          - link "What is AI coding?" [ref=e307] [cursor=pointer]:
+            - /url: /learn/ai-coding
+          - link "Set up MCP" [ref=e308] [cursor=pointer]:
+            - /url: /mcp
+          - link "View pricing" [ref=e309] [cursor=pointer]:
+            - /url: /pricing
+    - contentinfo [ref=e310]:
+      - generic [ref=e311]:
+        - generic [ref=e312]:
+          - generic [ref=e313]:
+            - link "BridgeMind" [ref=e314] [cursor=pointer]:
+              - /url: /
+              - img "BridgeMind" [ref=e315]
+            - paragraph [ref=e316]: The hub of the vibe coding space. Ship software at the speed of thought alongside autonomous AI teammates.
+            - generic [ref=e317]:
+              - link "X" [ref=e318] [cursor=pointer]:
+                - /url: https://x.com/bridgemindai
+                - img [ref=e320]
+              - link "YouTube" [ref=e322] [cursor=pointer]:
+                - /url: https://www.youtube.com/@bridgemindai
+                - img [ref=e324]
+              - link "Instagram" [ref=e327] [cursor=pointer]:
+                - /url: https://www.instagram.com/bridgemindai/
+                - img [ref=e329]
+              - link "TikTok" [ref=e332] [cursor=pointer]:
+                - /url: https://www.tiktok.com/@bridgemindai
+                - img [ref=e334]
+              - link "Discord" [ref=e336] [cursor=pointer]:
+                - /url: https://discord.gg/bridgemind
+                - img [ref=e338]
+            - generic [ref=e340]:
+              - heading "Subscribe & Get 50% Off" [level=3] [ref=e341]
+              - paragraph [ref=e342]: Join the newsletter and get a unique 50% off code for your first 3 months on Basic or Pro.
+              - generic [ref=e344]:
+                - generic [ref=e345]: Email address
+                - textbox "Email address" [ref=e346]:
+                  - /placeholder: Enter your email
+                - button "Subscribe to newsletter" [ref=e347] [cursor=pointer]:
+                  - img [ref=e348]
+          - generic [ref=e350]:
+            - heading "Ecosystem" [level=3] [ref=e351]
+            - list [ref=e352]:
+              - listitem [ref=e353]:
+                - link "BridgeMCP" [ref=e354] [cursor=pointer]:
+                  - /url: /bridgemcp
+              - listitem [ref=e355]:
+                - link "BridgeCode" [ref=e356] [cursor=pointer]:
+                  - /url: /products/bridgecode
+              - listitem [ref=e357]:
+                - link "BridgeSpace" [ref=e358] [cursor=pointer]:
+                  - /url: /products/bridgespace
+              - listitem [ref=e359]:
+                - link "BridgeVoice" [ref=e360] [cursor=pointer]:
+                  - /url: /products/bridgevoice
+          - generic [ref=e361]:
+            - heading "Explore" [level=3] [ref=e362]
+            - list [ref=e363]:
+              - listitem [ref=e364]:
+                - link "Docs" [ref=e365] [cursor=pointer]:
+                  - /url: https://docs.bridgemind.ai/docs
+                  - text: Docs
+                  - img [ref=e366]
+              - listitem [ref=e370]:
+                - link "Open Source" [ref=e371] [cursor=pointer]:
+                  - /url: /opensource
+              - listitem [ref=e372]:
+                - link "Blog" [ref=e373] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=e374]:
+                - link "Careers" [ref=e375] [cursor=pointer]:
+                  - /url: /jobs
+              - listitem [ref=e376]:
+                - link "Merch" [ref=e377] [cursor=pointer]:
+                  - /url: /merch
+          - generic [ref=e378]:
+            - heading "Learn" [level=3] [ref=e379]
+            - list [ref=e380]:
+              - listitem [ref=e381]:
+                - link "What is Vibe Coding?" [ref=e382] [cursor=pointer]:
+                  - /url: /learn/vibe-coding
+              - listitem [ref=e383]:
+                - link "What is Agentic Coding?" [ref=e384] [cursor=pointer]:
+                  - /url: /learn/agentic-coding
+              - listitem [ref=e385]:
+                - link "What is AI Coding?" [ref=e386] [cursor=pointer]:
+                  - /url: /learn/ai-coding
+              - listitem [ref=e387]:
+                - link "Pricing" [ref=e388] [cursor=pointer]:
+                  - /url: /pricing
+          - generic [ref=e389]:
+            - heading "Company" [level=3] [ref=e390]
+            - list [ref=e391]:
+              - listitem [ref=e392]:
+                - link "About Us" [ref=e393] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e394]:
+                - link "Changelog" [ref=e395] [cursor=pointer]:
+                  - /url: /changelog
+              - listitem [ref=e396]:
+                - link "Roadmap" [ref=e397] [cursor=pointer]:
+                  - /url: /roadmap
+              - listitem [ref=e398]:
+                - link "Media Assets" [ref=e399] [cursor=pointer]:
+                  - /url: /media
+              - listitem [ref=e400]:
+                - link "Contact Us" [ref=e401] [cursor=pointer]:
+                  - /url: /contact
+              - listitem [ref=e402]:
+                - link "Affiliate Program" [ref=e403] [cursor=pointer]:
+                  - /url: /affiliates
+              - listitem [ref=e404]:
+                - link "Bug Bounty" [ref=e405] [cursor=pointer]:
+                  - /url: /bug-bounty
+              - listitem [ref=e406]:
+                - link "Sitemap" [ref=e407] [cursor=pointer]:
+                  - /url: /sitemap
+          - generic [ref=e408]:
+            - heading "Community" [level=3] [ref=e409]
+            - list [ref=e410]:
+              - listitem [ref=e411]:
+                - link "Discord" [ref=e412] [cursor=pointer]:
+                  - /url: /discord
+              - listitem [ref=e413]:
+                - link "Events" [ref=e414] [cursor=pointer]:
+                  - /url: /events
+              - listitem [ref=e415]:
+                - link "ViewCreator" [ref=e416] [cursor=pointer]:
+                  - /url: https://viewcreator.ai
+                  - text: ViewCreator
+                  - img [ref=e417]
+        - generic [ref=e422]:
+          - paragraph [ref=e423]: © 2026 BridgeMind AI. All rights reserved.
+          - generic [ref=e424]:
+            - link "Privacy Policy" [ref=e425] [cursor=pointer]:
+              - /url: /privacy-policy
+            - link "Terms of Service" [ref=e426] [cursor=pointer]:
+              - /url: /terms-of-service
+  - alert [ref=e427]

@@ -43,6 +43,11 @@ export const DEFAULT_LABELS: Record<FieldType, string> = {
   date: 'Date',
   file: 'Image upload',
   rating: 'Rating',
+  richtext: 'Rich text',
+}
+
+export function isAnswerableField(_field: BuilderField): boolean {
+  return true
 }
 
 export const DEFAULT_OPTIONS = ['Option 1', 'Option 2', 'Option 3']

@@ -1,7 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  formatAnswerDetail,
+  formatAnswerExportText,
+  formatAnswerSearchText,
+  formatAnswerTableCell,
+} from '@/lib/response-answer-display'
 
 interface Field {
   id: string
@@ -158,7 +164,7 @@ export function ResponsesTable({
       ...fields.map((f) => {
         const answers = (r.data as { answers?: { fieldId: string; value: unknown }[] })?.answers ?? []
         const answer = answers.find((a) => a.fieldId === f.id)
-        return String(answer?.value ?? '')
+        return formatAnswerExportText(f.type, answer?.value)
       }),
       r.source,
       new Date(r.submittedAt).toLocaleString(),
@@ -180,8 +186,14 @@ export function ResponsesTable({
       (sourceFilter === 'local' && r.source !== 'online')
     if (!matchesSource) return false
     if (!search) return true
-    const answers = (r.data as { answers?: { value: unknown }[] })?.answers ?? []
-    const text = answers.map((a) => String(a.value ?? '')).join(' ').toLowerCase()
+    const answers = (r.data as { answers?: { fieldId: string; value: unknown }[] })?.answers ?? []
+    const text = answers
+      .map((a) => {
+        const field = fields.find((f) => f.id === a.fieldId)
+        return formatAnswerSearchText(field?.type ?? '', a.value)
+      })
+      .join(' ')
+      .toLowerCase()
     return text.includes(search.toLowerCase())
   })
 
@@ -379,10 +391,9 @@ export function ResponsesTable({
                     </td>
                     {fields.map((f) => {
                       const answer = answers.find((a) => a.fieldId === f.id)
-                      const val = answer?.value
                       return (
                         <td key={f.id} className="overflow-hidden text-ellipsis whitespace-nowrap border-b border-[var(--border)] px-[14px] py-[12px] text-[var(--foreground)]">
-                          {Array.isArray(val) ? val.join(', ') : String(val ?? '—')}
+                          {formatAnswerTableCell(f.type, answer?.value)}
                         </td>
                       )
                     })}
@@ -442,19 +453,24 @@ export function ResponsesTable({
             </div>
 
             <div className="space-y-3">
-              {((): ReactNode[] => {
+              {(() => {
                 const respAnswers = (selectedResponse.data as { answers?: { fieldId: string; value: unknown }[] })?.answers ?? []
                 return fields.map((f) => {
                   const answer = respAnswers.find((a) => a.fieldId === f.id)
-                  const val = answer?.value
+                  const content = formatAnswerDetail(f.type, answer?.value)
+                  const isRichText = f.type === 'richtext'
                   return (
                     <div key={f.id} className="rounded-[12px] border border-[var(--border)] px-4 py-3">
                       <p className="mb-0.5 font-mono text-[11px] uppercase tracking-[0.04em] text-[var(--muted)] break-words">
                         {f.label}
                       </p>
-                      <p className="text-[14px] text-[var(--foreground)] break-words whitespace-normal">
-                        {val == null || val === '' ? '—' : Array.isArray(val) ? val.join(', ') : String(val)}
-                      </p>
+                      {isRichText ? (
+                        <div className="break-words whitespace-normal">{content}</div>
+                      ) : (
+                        <p className="text-[14px] text-[var(--foreground)] break-words whitespace-normal">
+                          {content}
+                        </p>
+                      )}
                     </div>
                   )
                 })

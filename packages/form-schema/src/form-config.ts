@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { richTextFeaturesSchema } from './rich-text-features'
 
 export const fieldTypeSchema = z.enum([
   'text',
@@ -11,6 +12,7 @@ export const fieldTypeSchema = z.enum([
   'date',
   'file',
   'rating',
+  'richtext',
 ])
 
 export const fieldValidationSchema = z.object({
@@ -33,6 +35,10 @@ export const fieldSchema = z.object({
   label: z.string().min(1).max(500),
   placeholder: z.string().max(500).optional(),
   helpText: z.string().max(1000).optional(),
+  /** Legacy / unused — respondent answers are submitted separately. */
+  content: z.string().max(20000).optional(),
+  /** Toolbar capabilities for respondent `richtext` editors (merged with defaults at render). */
+  editorFeatures: richTextFeaturesSchema.partial().optional(),
   required: z.boolean(),
   options: z.array(z.string().max(500)).max(200).optional(),
   validation: fieldValidationSchema.optional(),

@@ -42,7 +42,31 @@
     table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
     thead th { background: var(--surface); padding: 10px 14px; text-align: left; font-weight: 500; font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    tbody tr { cursor: pointer; }
     tbody tr:hover { background: var(--surface); }
+    .rich-text-prose { font-size: 14px; line-height: 1.5; color: var(--fg); white-space: normal; word-break: break-word; }
+    .rich-text-prose p { margin: 4px 0; min-height: 1.5em; }
+    .rich-text-prose ul, .rich-text-prose ol { margin: 8px 0; padding-left: 24px; }
+    .rich-text-prose li { margin: 4px 0; }
+    .rich-text-prose blockquote { border-left: 2px solid var(--border); padding-left: 12px; margin: 8px 0; font-style: italic; color: var(--muted); }
+    .rich-text-prose pre { background: var(--surface); padding: 12px; border-radius: 8px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; margin: 8px 0; }
+    .rich-text-prose code { font-family: var(--font-mono); font-size: 13px; background: var(--surface); padding: 0 4px; border-radius: 4px; }
+    .rich-text-prose mark { background: rgba(139, 69, 19, 0.18); }
+    .rich-text-prose img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+    .rich-text-prose a { color: var(--accent); text-decoration: underline; }
+    .detail-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.2); }
+    .detail-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; max-height: 85dvh; overflow-y: auto; margin: 0 auto; max-width: 540px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px 12px 0 0; padding: 24px; }
+    @media (min-width: 768px) {
+      .detail-sheet { top: 50%; bottom: auto; transform: translateY(-50%); border-radius: var(--radius-container); max-height: 80dvh; }
+    }
+    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .detail-header h2 { font-family: var(--font-display); font-size: 18px; font-weight: 500; margin: 0 0 4px; }
+    .detail-header p { font-size: 13px; color: var(--muted); margin: 0; }
+    .detail-close { width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; flex-shrink: 0; }
+    .detail-close:hover { border-color: var(--fg); color: var(--fg); }
+    .detail-field { border: 1px solid var(--border); border-radius: var(--radius-container); padding: 12px 16px; margin-bottom: 12px; }
+    .detail-field-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 4px; word-break: break-word; }
+    .detail-field-value { font-size: 14px; color: var(--fg); word-break: break-word; white-space: normal; }
     .row-num { font-family: var(--font-mono); color: var(--muted); font-size: 12px; }
     .timestamp { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .empty-state { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 14px; }
@@ -114,6 +138,19 @@
     </div>
   </main>
 
+  <div id="detailOverlay" class="detail-overlay" style="display:none" onclick="closeDetail()"></div>
+  <div id="detailSheet" class="detail-sheet" style="display:none" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="detail-header">
+      <div>
+        <h2 id="detailTitle">Response</h2>
+        <p id="detailSubtitle"></p>
+      </div>
+      <button type="button" class="detail-close" onclick="closeDetail()" aria-label="Close">×</button>
+    </div>
+    <div id="detailFields"></div>
+  </div>
+
+  <script src="/rich-text-answers.js"></script>
   <script>
     const formId = location.pathname.split('/')[2]
     let formData = null
@@ -123,6 +160,8 @@
     let currentPage = 1
     let pageSize = 25
     let es = null
+    let selectedResponseId = null
+    const RT = window.FieldKitRichTextAnswers
 
     async function loadForm() {
       const res = await fetch('/api/form/' + formId)
@@ -176,7 +215,11 @@
       filteredResponses = allResponses.filter((response) => {
         if (!q) return true
         const answers = getAnswers(response)
-        const text = answers.map((answer) => String(answer?.value ?? '')).join(' ').toLowerCase()
+        const fields = formData?.schema?.fields || []
+        const text = answers.map((answer) => {
+          const field = fields.find((f) => f.id === answer?.fieldId)
+          return RT.formatSearchText(field?.type ?? '', answer?.value)
+        }).join(' ').toLowerCase()
         return text.includes(q)
       })
     }
@@ -206,13 +249,13 @@
         const fields = formData?.schema?.fields || []
         tbody.innerHTML = pageRows.map((response, i) => {
           const answers = getAnswers(response)
-          return `<tr>
+          const rid = escAttr(response.id ?? response.submissionId ?? String(start + i))
+          return `<tr data-response-id="${rid}" onclick="openDetail('${rid}')">
             <td class="row-num">${total - (start + i)}</td>
             ${fields.map(f => {
               const ans = answers.find(a => a.fieldId === f.id)
-              const val = ans?.value
-              const display = Array.isArray(val) ? val.join(', ') : (val ?? '—')
-              return `<td>${esc(String(display))}</td>`
+              const display = RT.formatTableCell(f.type, ans?.value)
+              return `<td title="${escAttr(display)}">${esc(display)}</td>`
             }).join('')}
             <td class="timestamp">${new Date(response.submittedAt).toLocaleString()}</td>
           </tr>`
@@ -318,6 +361,68 @@
       d.textContent = str ?? ''
       return d.innerHTML
     }
+
+    function escAttr(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+    }
+
+    function findResponseById(id) {
+      return allResponses.find((r) => (r.id ?? r.submissionId) === id)
+    }
+
+    function formatDetailValue(fieldType, value) {
+      if (value == null || value === '') return RT.EMPTY_ANSWER
+      if (Array.isArray(value)) return value.length ? esc(value.join(', ')) : RT.EMPTY_ANSWER
+      if (fieldType === 'richtext' && typeof value === 'string') {
+        const safe = RT.prepareRichTextHtmlForDisplay(value)
+        if (!safe) return RT.EMPTY_ANSWER
+        return `<div class="rich-text-prose">${safe}</div>`
+      }
+      return esc(String(value))
+    }
+
+    function openDetail(responseId) {
+      const response = findResponseById(responseId)
+      if (!response || !formData) return
+      selectedResponseId = responseId
+      const fields = formData.schema?.fields || []
+      const answers = getAnswers(response)
+      const submitted = new Date(response.submittedAt)
+
+      document.getElementById('detailSubtitle').textContent = submitted.toLocaleString(undefined, {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+
+      document.getElementById('detailFields').innerHTML = fields.map((f) => {
+        const ans = answers.find((a) => a.fieldId === f.id)
+        const inner = formatDetailValue(f.type, ans?.value)
+        return `<div class="detail-field">
+          <p class="detail-field-label">${esc(f.label)}</p>
+          <div class="detail-field-value">${inner}</div>
+        </div>`
+      }).join('')
+
+      document.getElementById('detailOverlay').style.display = 'block'
+      document.getElementById('detailSheet').style.display = 'block'
+      document.body.style.overflow = 'hidden'
+    }
+
+    function closeDetail() {
+      selectedResponseId = null
+      document.getElementById('detailOverlay').style.display = 'none'
+      document.getElementById('detailSheet').style.display = 'none'
+      document.body.style.overflow = ''
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && selectedResponseId) closeDetail()
+    })
 
     loadForm()
   </script>

@@ -1,0 +1,92 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e115] [cursor=pointer]:
+    - img [ref=e116]
+  - alert [ref=e119]: FieldKit
+  - generic [ref=e120]:
+    - banner [ref=e121]:
+      - generic [ref=e122]:
+        - link "FieldKit FieldKit" [ref=e123] [cursor=pointer]:
+          - /url: /
+          - img "FieldKit" [ref=e124]
+          - text: FieldKit
+        - navigation [ref=e125]:
+          - link "Docs" [ref=e126] [cursor=pointer]:
+            - /url: /docs
+          - link "Sign in" [ref=e127] [cursor=pointer]:
+            - /url: /auth/signin
+    - generic [ref=e128]:
+      - heading "Build forms online, collect data anywhere" [level=1] [ref=e129]
+      - paragraph [ref=e130]: Create rich forms in the cloud, deploy them to local networks for offline data collection. Built for NGOs and field teams.
+      - link "Get started" [ref=e132] [cursor=pointer]:
+        - /url: /auth/signin
+    - main [ref=e133]:
+      - paragraph [ref=e134]: Serverside
+      - generic [ref=e135]:
+        - link "Dashboard View all forms, stats, share links, and export configurations Serverside" [ref=e136] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e139]
+          - heading "Dashboard" [level=3] [ref=e144]
+          - paragraph [ref=e145]: View all forms, stats, share links, and export configurations
+          - generic [ref=e146]: Serverside
+        - link "Form Builder Drag-and-drop editor with field types, validation, and settings Serverside" [ref=e147] [cursor=pointer]:
+          - /url: /forms/new
+          - img [ref=e150]
+          - heading "Form Builder" [level=3] [ref=e153]
+          - paragraph [ref=e154]: Drag-and-drop editor with field types, validation, and settings
+          - generic [ref=e155]: Serverside
+        - link "Live Responses Real-time table with filtering, import from local servers, and CSV export Serverside" [ref=e156] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e159]
+          - heading "Live Responses" [level=3] [ref=e162]
+          - paragraph [ref=e163]: Real-time table with filtering, import from local servers, and CSV export
+          - generic [ref=e164]: Serverside
+      - separator [ref=e165]
+      - paragraph [ref=e166]: Localserver
+      - generic [ref=e167]:
+        - link "Local Server Admin Manage imported forms, start/stop server, monitor connected devices, and export collected data Localserver" [ref=e168] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e171]
+          - heading "Local Server Admin" [level=3] [ref=e174]
+          - paragraph [ref=e175]: Manage imported forms, start/stop server, monitor connected devices, and export collected data
+          - generic [ref=e176]: Localserver
+        - link "Installation Guide Install via npm on Windows, macOS, or Linux. Docker image also available. Localserver" [ref=e177] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e180]
+          - heading "Installation Guide" [level=3] [ref=e184]
+          - paragraph [ref=e185]: Install via npm on Windows, macOS, or Linux. Docker image also available.
+          - generic [ref=e186]: Localserver
+        - link "Response Data Sync Export collected responses from local server and import into serverside to compile into one table. Localserver" [ref=e187] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e190]
+          - heading "Response Data Sync" [level=3] [ref=e195]
+          - paragraph [ref=e196]: Export collected responses from local server and import into serverside to compile into one table.
+          - generic [ref=e197]: Localserver
+      - separator [ref=e198]
+      - paragraph [ref=e199]: How it works
+      - generic [ref=e201]:
+        - generic [ref=e202]:
+          - generic [ref=e203]: Build form online
+          - generic [ref=e204]: ↓
+          - generic [ref=e205]: Export config
+          - generic [ref=e206]: ↓
+          - generic [ref=e207]:
+            - generic [ref=e208]: Choose import path
+            - generic [ref=e209]:
+              - generic [ref=e210]: Local server package
+              - generic [ref=e211]: Scan QR on mobile
+          - generic [ref=e212]: ↓
+          - generic [ref=e213]: Collect offline
+          - generic [ref=e214]: ↓
+          - generic [ref=e215]: Sync responses
+        - paragraph [ref=e216]: "Single pipeline: build online, pick one import path, collect offline, then sync when internet is available."
+      - separator [ref=e217]
+      - paragraph [ref=e218]: Quick Start
+      - generic [ref=e219]:
+        - generic [ref=e220]:
+          - paragraph [ref=e221]: Install local server
+          - code [ref=e222]: npm install -g @malichamdan/fieldkit-local-server
+        - generic [ref=e223]:
+          - paragraph [ref=e224]: Start serving
+          - code [ref=e225]: fieldkit
+          - paragraph [ref=e226]: Then import configs via admin panel or scan QR with mobile client
+    - contentinfo [ref=e227]: FieldKit · Built for field teams

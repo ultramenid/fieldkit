@@ -1,9 +1,11 @@
 import { useState, useCallback } from 'react'
-import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { Keyboard, ScrollView, View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet } from 'react-native'
 import { TextField } from './fields/TextField'
 import { EmailField } from './fields/EmailField'
 import { NumberField } from './fields/NumberField'
 import { LongTextField } from './fields/LongTextField'
+import { RichTextField } from './fields/RichTextField'
+import { isRichTextHtmlEmpty, richTextPlainText } from '../lib/rich-text-plain'
 import { DropdownField } from './fields/DropdownField'
 import { SingleChoiceField } from './fields/SingleChoiceField'
 import { MultiChoiceField } from './fields/MultiChoiceField'
@@ -25,6 +27,13 @@ export function FormRenderer({ config, onSubmit }: Props) {
   const [values, setValues] = useState<Record<string, FieldValue>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [dismissSignal, setDismissSignal] = useState(0)
+  const answerableFields = config.fields
+
+  const dismissKeyboard = useCallback(() => {
+    Keyboard.dismiss()
+    setDismissSignal((prev) => prev + 1)
+  }, [])
 
   const handleChange = useCallback((fieldId: string, value: FieldValue) => {
     setValues((prev) => ({ ...prev, [fieldId]: value }))
@@ -51,7 +60,7 @@ export function FormRenderer({ config, onSubmit }: Props) {
 
   const validateAll = (): boolean => {
     const newErrors: Record<string, string> = {}
-    for (const field of config.fields) {
+    for (const field of answerableFields) {
       const err = validateField(field, values[field.id] ?? '')
       if (err) newErrors[field.id] = err
     }
@@ -68,14 +77,17 @@ export function FormRenderer({ config, onSubmit }: Props) {
     if (!validateAll()) return
 
     const answers = config.fields.map((f) => ({
-      fieldId: f.id,
-      value: values[f.id] ?? '',
-    }))
+        fieldId: f.id,
+        value: values[f.id] ?? '',
+      }))
     onSubmit(answers)
   }
 
-  const completed = config.fields.filter((f) => {
+  const completed = answerableFields.filter((f) => {
     const v = values[f.id]
+    if (f.type === 'richtext') {
+      return typeof v === 'string' && !isRichTextHtmlEmpty(v)
+    }
     if (v === undefined || v === '') return false
     if (Array.isArray(v) && v.length === 0) return false
     return true
@@ -91,6 +103,15 @@ export function FormRenderer({ config, onSubmit }: Props) {
     }
 
     switch (field.type) {
+      case 'richtext':
+        return (
+          <RichTextField
+            key={field.id}
+            {...props}
+            value={values[field.id] as string ?? ''}
+            dismissSignal={dismissSignal}
+          />
+        )
       case 'text': return <TextField key={field.id} {...props} value={values[field.id] as string ?? ''} />
       case 'email': return <EmailField key={field.id} {...props} value={values[field.id] as string ?? ''} />
       case 'number': return <NumberField key={field.id} {...props} value={values[field.id] as string ?? ''} />
@@ -106,35 +127,46 @@ export function FormRenderer({ config, onSubmit }: Props) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{config.title}</Text>
-      <Description html={config.description} />
-      {config.fields.map(renderField)}
-      <View style={styles.progressWrap}>
-        <ProgressBar completed={completed} total={config.fields.length} />
-        <Text style={styles.progressText}>{completed}/{config.fields.length}</Text>
-      </View>
-      <TouchableOpacity style={styles.submit} onPress={handleSubmit}>
-        <Text style={styles.submitText}>
-          {config.settings?.submitButtonText ?? 'Submit'}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+    <TouchableWithoutFeedback onPress={dismissKeyboard} accessible={false}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>{config.title}</Text>
+        <Description html={config.description} />
+        {config.fields.map(renderField)}
+        <View style={styles.progressWrap}>
+          <ProgressBar completed={completed} total={answerableFields.length} />
+          <Text style={styles.progressText}>{completed}/{answerableFields.length}</Text>
+        </View>
+        <TouchableOpacity style={styles.submit} onPress={handleSubmit}>
+          <Text style={styles.submitText}>
+            {config.settings?.submitButtonText ?? 'Submit'}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   )
 }
 
 function validateField(field: FieldConfig, value: FieldValue): string | null {
   if (field.required) {
+    if (field.type === 'richtext' && typeof value === 'string') {
+      if (isRichTextHtmlEmpty(value)) return 'This field is required'
+    }
     if (value === '' || value === undefined || value === null) return 'This field is required'
     if (Array.isArray(value) && value.length === 0) return 'This field is required'
     if (typeof value === 'number' && value === 0) return 'This field is required'
   }
 
   if (typeof value === 'string' && value !== '') {
-    if (field.validation?.minLength && value.length < field.validation.minLength) {
+    const textForLength =
+      field.type === 'richtext' ? richTextPlainText(value) : value
+    if (field.validation?.minLength && textForLength.length < field.validation.minLength) {
       return `Minimum ${field.validation.minLength} characters`
     }
-    if (field.validation?.maxLength && value.length > field.validation.maxLength) {
+    if (field.validation?.maxLength && textForLength.length > field.validation.maxLength) {
       return `Maximum ${field.validation.maxLength} characters`
     }
     if (field.validation?.pattern) {

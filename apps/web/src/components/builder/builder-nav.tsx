@@ -50,9 +50,12 @@ export function BuilderNav() {
         >
           Responses
         </Link>
-        <Link
-          href={`/forms/${state.formId}/preview`}
-          target="_blank"
+        <button
+          type="button"
+          onClick={async () => {
+            if (state.isDirty) await save()
+            window.open(`/forms/${state.formId}/preview`, '_blank', 'noopener,noreferrer')
+          }}
           className="inline-flex items-center gap-1.5 rounded-full border-none bg-transparent px-2.5 py-1.5 text-[13px] font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -60,7 +63,7 @@ export function BuilderNav() {
             <circle cx="12" cy="12" r="3" />
           </svg>
           Preview
-        </Link>
+        </button>
         <button
           onClick={handleSave}
           disabled={state.isSaving}

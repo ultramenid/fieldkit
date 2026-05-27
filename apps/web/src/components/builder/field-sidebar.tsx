@@ -97,6 +97,16 @@ const FIELD_TYPES: { type: FieldType; label: string; icon: React.ReactNode }[] =
       </svg>
     ),
   },
+  {
+    type: 'richtext',
+    label: 'Rich text',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M4 6h16M4 12h10M4 18h14" />
+        <path d="M15 10l5 2-5 2v-4z" />
+      </svg>
+    ),
+  },
 ]
 
 export function FieldSidebar() {

@@ -36,6 +36,10 @@
     .form-description blockquote { border-left: 2px solid var(--border); padding-left: 12px; margin: 8px 0; font-style: italic; color: var(--muted); }
     .form-description pre { background: var(--surface); padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 13px; }
     .form-description img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+    .form-description mark { background: rgba(139, 69, 19, 0.18); }
+    .form-description code { font-family: monospace; font-size: 13px; background: var(--surface); padding: 0 4px; border-radius: 4px; }
+    .form-description s { text-decoration: line-through; }
+    .form-description sup, .form-description sub { font-size: 11px; }
     .progress-wrap { margin-bottom: 32px; }
     .progress-meta { display: flex; justify-content: flex-end; margin-bottom: 6px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
@@ -63,6 +67,20 @@
     .rating-group button.active { color: var(--accent); }
     .file-upload { border: 2px dashed var(--border); border-radius: var(--radius-container); padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
     .file-upload:hover { border-color: var(--muted); background: var(--surface); }
+    .richtext-wrap { border: 1px solid var(--border); border-radius: var(--radius-container); overflow: hidden; background: var(--bg); }
+    .richtext-toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .richtext-toolbar button { border: 1px solid var(--border); background: var(--bg); border-radius: 9999px; min-width: 28px; height: 28px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--fg); padding: 0 8px; }
+    .richtext-toolbar select { border: 1px solid var(--border); background: var(--bg); border-radius: 9999px; height: 28px; font-size: 11px; color: var(--fg); padding: 0 24px 0 10px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+    .richtext-toolbar button:hover { border-color: var(--fg); }
+    .richtext-input { min-height: 100px; padding: 12px 16px; font-size: 15px; line-height: 1.5; color: var(--fg); outline: none; }
+    .richtext-input p { margin: 0 0 0.5em; min-height: 1.5em; }
+    .richtext-input div { margin: 0 0 0.5em; min-height: 1.5em; }
+    .richtext-input:empty:before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
+    .richtext-input ul, .richtext-input ol { margin: 8px 0; padding-left: 24px; }
+    .richtext-input blockquote { border-left: 2px solid var(--border); padding-left: 12px; margin: 8px 0; font-style: italic; color: var(--muted); }
+    .richtext-input pre { background: var(--surface); padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 13px; margin: 8px 0; }
+    .richtext-input img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+    .richtext-input mark { background: rgba(139, 69, 19, 0.18); }
     .form-submit { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 12px 28px; border-radius: var(--radius); border: 1px solid transparent; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
     .btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
@@ -160,6 +178,49 @@
       return d.innerHTML
     }
 
+    const DEFAULT_FIELD_RICH_TEXT_FEATURES = {
+      lists: true, blockquote: true, codeBlock: false,
+      bold: true, italic: true, underline: true,
+      highlight: false, link: true, align: true, image: true,
+    }
+
+    function resolveRichTextFeatures(partial) {
+      return { ...DEFAULT_FIELD_RICH_TEXT_FEATURES, ...(partial || {}) }
+    }
+
+    function buildRichtextToolbar(fieldId, features) {
+      const fid = esc(fieldId)
+      const mk = (cmd, label, extraAttrs = '') =>
+        `<button type="button" data-field="${fid}" data-cmd="${cmd}"${extraAttrs}>${label}</button>`
+      const mkSelect = (type) => {
+        if (type === 'list') {
+          return `<select data-field="${fid}" data-select="list">
+            <option value="">List</option>
+            <option value="bullet">• List</option>
+            <option value="ordered">1. List</option>
+          </select>`
+        }
+        return `<select data-field="${fid}" data-select="align">
+          <option value="">Align</option>
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>`
+      }
+      const parts = []
+      if (features.bold) parts.push(mk('bold', 'B'))
+      if (features.italic) parts.push(mk('italic', 'I'))
+      if (features.underline) parts.push(mk('underline', 'U'))
+      if (features.highlight) parts.push(mk('hiliteColor', 'H', ' data-arg="#fef08a"'))
+      if (features.lists) parts.push(mkSelect('list'))
+      if (features.blockquote) parts.push(mk('formatBlock', '❝', ' data-arg="blockquote"'))
+      if (features.codeBlock) parts.push(mk('formatBlock', '&lt;/&gt;', ' data-arg="pre"'))
+      if (features.link) parts.push(mk('link', 'Link'))
+      if (features.align) parts.push(mkSelect('align'))
+      if (features.image) parts.push(mk('image', 'Img'))
+      return parts.join('')
+    }
+
     async function loadForm() {
       const res = await fetch('/api/form/' + encodeURIComponent(formId))
       if (!res.ok) { document.getElementById('loadingState').textContent = 'Form not found.'; return }
@@ -185,6 +246,7 @@
           const input = document.getElementById('file-' + f.id)
           if (input) input.addEventListener('change', (e) => handleFileSelect(f.id, e))
         }
+        if (f.type === 'richtext') initRichtextField(f.id)
       })
 
       document.getElementById('loadingState').style.display = 'none'
@@ -214,6 +276,16 @@
         input = `<div class="rating-group" id="rating-${esc(f.id)}">${stars}</div>`
       } else if (f.type === 'file') {
         input = `<div class="file-upload" id="file-drop-${esc(f.id)}" onclick="document.getElementById('file-${esc(f.id)}').click()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;color:var(--muted)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><p style="margin:0;font-size:14px;color:var(--muted)">Drop image here or click to upload</p><span style="font-size:12px;color:var(--border)">JPG, PNG, WebP, GIF up to 10MB</span></div><input type="file" id="file-${esc(f.id)}" accept=".jpg,.jpeg,.png,.webp,.gif" style="display:none">`
+      } else if (f.type === 'richtext') {
+        const fid = esc(f.id)
+        const ph = esc(f.placeholder || 'Write your answer…')
+        const features = resolveRichTextFeatures(f.editorFeatures)
+        const toolbar = buildRichtextToolbar(f.id, features)
+        input = `<div class="richtext-wrap" id="richtext-wrap-${fid}">
+          <div class="richtext-toolbar">${toolbar}</div>
+          <div class="richtext-input" contenteditable="true" id="richtext-ed-${fid}" data-field-id="${fid}" data-placeholder="${ph}"></div>
+          <input type="hidden" name="${fid}" id="richtext-val-${fid}" value="">
+        </div>`
       }
       return `<div class="field-group"><label>${esc(f.label)}${req}</label>${help}${input}</div>`
     }
@@ -259,6 +331,71 @@
       updateProgress()
     }
 
+    function richtextHasContent(html) {
+      const tmp = document.createElement('div')
+      tmp.innerHTML = html || ''
+      return Boolean((tmp.textContent || '').trim()) || Boolean(tmp.querySelector('img'))
+    }
+
+    function normalizeRichtextHtml(html) {
+      return (html || '')
+        .replace(/<div(\s[^>]*)>/gi, '<p$1>')
+        .replace(/<\/div>/gi, '</p>')
+        .replace(/<p([^>]*)>\s*<\/p>/gi, '<p$1><br></p>')
+    }
+
+    function syncRichtextValue(fieldId) {
+      const ed = document.getElementById('richtext-ed-' + fieldId)
+      const hidden = document.getElementById('richtext-val-' + fieldId)
+      if (!ed || !hidden) return
+      hidden.value = normalizeRichtextHtml(ed.innerHTML)
+    }
+
+    function initRichtextField(fieldId) {
+      const ed = document.getElementById('richtext-ed-' + fieldId)
+      if (!ed) return
+      syncRichtextValue(fieldId)
+      ed.addEventListener('input', () => { syncRichtextValue(fieldId); updateProgress() })
+      document.querySelectorAll(`[data-field="${fieldId}"][data-cmd]`).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault()
+          ed.focus()
+          const cmd = btn.dataset.cmd
+          if (cmd === 'link') {
+            const url = prompt('Enter link URL')
+            if (url) document.execCommand('createLink', false, url)
+          } else if (cmd === 'image') {
+            const url = prompt('Enter image URL')
+            if (url) document.execCommand('insertImage', false, url)
+          } else if (cmd === 'formatBlock') {
+            document.execCommand('formatBlock', false, btn.dataset.arg || 'blockquote')
+          } else if (cmd === 'hiliteColor') {
+            document.execCommand('hiliteColor', false, btn.dataset.arg || '#fef08a')
+          } else {
+            document.execCommand(cmd, false)
+          }
+          syncRichtextValue(fieldId)
+          updateProgress()
+        })
+      })
+      document.querySelectorAll(`[data-field="${fieldId}"][data-select]`).forEach(select => {
+        select.addEventListener('change', () => {
+          ed.focus()
+          if (select.dataset.select === 'list') {
+            if (select.value === 'bullet') document.execCommand('insertUnorderedList', false)
+            else if (select.value === 'ordered') document.execCommand('insertOrderedList', false)
+          } else if (select.dataset.select === 'align') {
+            if (select.value === 'left') document.execCommand('justifyLeft', false)
+            else if (select.value === 'center') document.execCommand('justifyCenter', false)
+            else if (select.value === 'right') document.execCommand('justifyRight', false)
+          }
+          select.value = ''
+          syncRichtextValue(fieldId)
+          updateProgress()
+        })
+      })
+    }
+
     function setRating(fieldId, value, max) {
       ratings[fieldId] = value
       const group = document.getElementById('rating-' + fieldId)
@@ -271,14 +408,19 @@
       const fields = formData.schema.fields || []
       const form = document.getElementById('formFields')
       let filled = 0
-      fields.forEach(f => {
+      const answerable = fields
+      answerable.forEach(f => {
         if (f.type === 'radio') { if (form.querySelector(`input[name="${f.id}"]:checked`)) filled++ }
         else if (f.type === 'checkbox') { if (form.querySelector(`input[name="${f.id}"]:checked`)) filled++ }
         else if (f.type === 'rating') { if (ratings[f.id]) filled++ }
         else if (f.type === 'file') { if (fileUploads[f.id]) filled++ }
+        else if (f.type === 'richtext') {
+          const hidden = document.getElementById('richtext-val-' + f.id)
+          if (hidden && richtextHasContent(hidden.value)) filled++
+        }
         else { const el = form.querySelector(`[name="${f.id}"]`); if (el && el.value.trim()) filled++ }
       })
-      const pct = fields.length ? Math.round(filled / fields.length * 100) : 0
+      const pct = answerable.length ? Math.round(filled / answerable.length * 100) : 0
       document.getElementById('progressPct').textContent = pct + '%'
       document.getElementById('progressFill').style.width = pct + '%'
     }
@@ -286,10 +428,25 @@
     async function submitForm(e) {
       e.preventDefault()
       const fields = formData.schema.fields || []
+      for (const f of fields) {
+        if (!f.required) continue
+        if (f.type === 'richtext') {
+          syncRichtextValue(f.id)
+          const hidden = document.getElementById('richtext-val-' + f.id)
+          if (!hidden || !richtextHasContent(hidden.value)) {
+            alert('Please complete "' + f.label + '"')
+            return
+          }
+        }
+      }
       const form = document.getElementById('formFields')
       const answers = fields.map(f => {
         let value = null
-        if (f.type === 'checkbox') {
+        if (f.type === 'richtext') {
+          syncRichtextValue(f.id)
+          const hidden = document.getElementById('richtext-val-' + f.id)
+          value = hidden ? hidden.value : null
+        } else if (f.type === 'checkbox') {
           value = [...form.querySelectorAll(`input[name="${f.id}"]:checked`)].map(el => el.value)
         } else if (f.type === 'radio') {
           const el = form.querySelector(`input[name="${f.id}"]:checked`)
@@ -322,6 +479,8 @@
 
     function clearForm() {
       document.getElementById('formFields').reset()
+      document.querySelectorAll('.richtext-input').forEach(el => { el.innerHTML = '' })
+      document.querySelectorAll('[id^="richtext-val-"]').forEach(el => { el.value = '' })
       ratings = {}
       fileUploads = {}
       document.querySelectorAll('.rating-group button').forEach(b => b.classList.remove('active'))

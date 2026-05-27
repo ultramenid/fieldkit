@@ -11,10 +11,20 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
-          name="form/[id]"
+          name="form/[id]/index"
           options={{
             headerShown: true,
             headerTitle: '',
+            headerBackTitle: 'Back',
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: '#ffffff' },
+          }}
+        />
+        <Stack.Screen
+          name="form/[id]/responses"
+          options={{
+            headerShown: true,
+            headerTitle: 'Responses',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
             headerStyle: { backgroundColor: '#ffffff' },

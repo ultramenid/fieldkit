@@ -1,15 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Highlight from '@tiptap/extension-highlight'
-import Image from '@tiptap/extension-image'
-import Link from '@tiptap/extension-link'
-import Placeholder from '@tiptap/extension-placeholder'
-import TextAlign from '@tiptap/extension-text-align'
-import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import { sanitizeRichTextHtml } from '@/lib/sanitize-rich-text'
+import {
+  FORM_DESCRIPTION_RICH_TEXT_FEATURES,
+  resolveRichTextFeatures,
+  type RichTextFeatures,
+} from '@fieldkit/form-schema'
+import { buildRichTextExtensions } from '@/lib/rich-text-editor-extensions'
+import { sanitizeRichTextHtmlDom } from '@/lib/sanitize-rich-text-dom'
 
 type TipTapEditor = NonNullable<ReturnType<typeof useEditor>>
 
@@ -17,6 +16,11 @@ interface DescriptionRichEditorProps {
   value: string
   onChange: (html: string) => void
   placeholder?: string
+  /** Merged with defaults; omit for full form-description toolbar. */
+  features?: Partial<RichTextFeatures>
+  featuresBase?: RichTextFeatures
+  /** `always` keeps the formatting toolbar visible (field settings panel). */
+  toolbarMode?: 'focus' | 'always'
 }
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024
@@ -28,63 +32,73 @@ export function DescriptionRichEditor({
   value,
   onChange,
   placeholder = 'Add a form description…',
+  features: featuresPartial,
+  featuresBase = FORM_DESCRIPTION_RICH_TEXT_FEATURES,
+  toolbarMode = 'focus',
 }: DescriptionRichEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const mountedRef = useRef(false)
   const instanceKey = useRef(`tiptap-${++instanceIdCounter}`)
 
-  const extensions = useMemo(() => [
-    StarterKit.configure({
-      heading: false,
-      horizontalRule: false,
-    }),
-    Link.configure({
-      openOnClick: false,
-      autolink: false,
-      HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
-    }),
-    Underline,
-    Highlight,
-    Image.configure({ inline: false }),
-    Placeholder.configure({
-      placeholder,
-    }),
-    TextAlign.configure({ types: ['paragraph', 'heading'] }),
-  ], [placeholder])
+  const features = useMemo(
+    () => resolveRichTextFeatures(featuresPartial, featuresBase),
+    [featuresPartial, featuresBase],
+  )
+  const featuresKey = useMemo(() => JSON.stringify(features), [features])
+
+  const extensions = useMemo(
+    () => buildRichTextExtensions(features, placeholder),
+    [features, placeholder],
+  )
 
   const editor = useEditor(
     {
       immediatelyRender: false,
       extensions,
-      content: value.trim() ? sanitizeRichTextHtml(value) : '<p></p>',
+      content: value.trim() ? sanitizeRichTextHtmlDom(value) : '<p></p>',
       onUpdate: ({ editor }: { editor: TipTapEditor }) => {
-        onChange(sanitizeRichTextHtml(editor.getHTML()))
-      },
-      onCreate: () => {
-        mountedRef.current = true
-      },
-      onDestroy: () => {
-        mountedRef.current = false
+        onChange(sanitizeRichTextHtmlDom(editor.getHTML()))
       },
     },
-    [instanceKey.current]
+    [featuresKey, placeholder],
   )
 
   useEffect(() => {
     if (!editor) return
 
-    const next = value.trim() ? sanitizeRichTextHtml(value) : '<p></p>'
-    const current = sanitizeRichTextHtml(editor.getHTML()) || '<p></p>'
+    const next = value.trim() ? sanitizeRichTextHtmlDom(value) : '<p></p>'
+    const current = sanitizeRichTextHtmlDom(editor.getHTML()) || '<p></p>'
 
     if (!editor.isFocused && current !== next) {
       editor.commands.setContent(next)
     }
   }, [editor, value])
 
+  useEffect(() => {
+    if (!editor) return
+    return () => {
+      const html = sanitizeRichTextHtmlDom(editor.getHTML())
+      if (html && html !== '<p></p>') onChangeRef.current(html)
+    }
+  }, [editor])
+
   if (!editor) return null
   const activeEditor = editor
+
+  const hasToolbar =
+    features.lists ||
+    features.blockquote ||
+    features.codeBlock ||
+    features.bold ||
+    features.italic ||
+    features.underline ||
+    features.highlight ||
+    features.link ||
+    features.align ||
+    features.image
 
   async function uploadAndInsertImage(file: File) {
     setUploadError(null)
@@ -149,7 +163,7 @@ export function DescriptionRichEditor({
       }
 
       activeEditor.chain().focus().setImage({ src: meta.fileUrl, alt: file.name }).run()
-    } catch (err) {
+    } catch {
       setUploadError('Upload failed')
     } finally {
       setUploadingImage(false)
@@ -220,96 +234,124 @@ export function DescriptionRichEditor({
         ? 'justify'
         : 'left'
 
-  const buttonClass = 'inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border)] text-[var(--foreground)] transition-colors hover:border-[var(--foreground)] disabled:opacity-40 disabled:hover:border-[var(--border)]'
+  const buttonClass =
+    'inline-flex h-7 min-w-[28px] items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-2 text-[var(--foreground)] transition-colors hover:border-[var(--foreground)] disabled:opacity-40 disabled:hover:border-[var(--border)]'
+  const activeButtonClass = 'border-[var(--foreground)] bg-[var(--surface)]'
 
   return (
-    <div
-      className="group relative -ml-2 rounded-[6px] border border-transparent px-2 py-1 transition-colors hover:border-[var(--border)] hover:bg-[var(--background)] focus-within:border-[var(--foreground)] focus-within:bg-[var(--background)]"
-    >
-      <div className="mb-2 hidden flex-wrap items-center gap-1 group-focus-within:flex">
-        <div className="relative">
-          <select
-            aria-label="List type"
-            className="h-6 rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 pr-6 text-[11px] text-[var(--foreground)] appearance-none"
-            value={listValue}
-            onChange={(e) => onListChange(e.target.value)}
-          >
-            <option value="">List</option>
-            <option value="bullet">• List</option>
-            <option value="ordered">1. List</option>
-          </select>
-          <svg className="pointer-events-none absolute right-1.5 top-1/2 -mt-1.5 h-3 w-3 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
-        </div>
-
-        <button type="button" aria-label="Blockquote" title="Blockquote" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleBlockquote().run() }} className={buttonClass}>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 7H6a2 2 0 0 0-2 2v4h4v4H4m16-10h-4a2 2 0 0 0-2 2v4h4v4h-4" /></svg>
-        </button>
-        <button type="button" aria-label="Code block" title="Code block" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleCodeBlock().run() }} className={buttonClass}>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="m8 18-6-6 6-6M16 6l6 6-6 6" /></svg>
-        </button>
-        <button type="button" aria-label="Bold" title="Bold" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleBold().run() }} className={buttonClass}>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 5h6a4 4 0 0 1 0 8H7z" /><path d="M7 13h7a4 4 0 0 1 0 8H7z" /></svg>
-        </button>
-        <button type="button" aria-label="Italic" title="Italic" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleItalic().run() }} className={buttonClass}>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 4h-6" /><path d="M10 20h6" /><path d="M14 4L10 20" /></svg>
-        </button>
-        <button type="button" aria-label="Underline" title="Underline" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleUnderline().run() }} className={buttonClass}>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 4v6a6 6 0 0 0 12 0V4" /><path d="M4 20h16" /></svg>
-        </button>
-        <button type="button" aria-label="Highlight" title="Highlight" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleHighlight().run() }} className={buttonClass}>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 11 6 6" /><path d="m14 6 4 4-9 9H5v-4z" /></svg>
-        </button>
-        <button type="button" aria-label="Link" title="Link" onMouseDown={(e) => { e.preventDefault(); addLink() }} className={buttonClass}>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 1 0-7.07-7.07L10 5" /><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.41a5 5 0 1 0 7.07 7.07L14 19" /></svg>
-        </button>
-
-        <div className="relative">
-          <select
-            aria-label="Text alignment"
-            className="h-6 rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 pr-6 text-[11px] text-[var(--foreground)] appearance-none"
-            value={alignValue}
-            onChange={(e) => onAlignChange(e.target.value)}
-          >
-            <option value="left">Align</option>
-            <option value="center">Center</option>
-            <option value="right">Right</option>
-            <option value="justify">Justify</option>
-          </select>
-          <svg className="pointer-events-none absolute right-1.5 top-1/2 -mt-1.5 h-3 w-3 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
-        </div>
-
-        <button
-          type="button"
-          aria-label="Insert image"
-          title="Insert image"
-          className={buttonClass}
-          disabled={uploadingImage}
-          onMouseDown={(e) => {
-            e.preventDefault()
-            activeEditor.chain().focus().run()
-            fileInputRef.current?.click()
-          }}
+    <div className="group relative -ml-2 rounded-[6px] border border-transparent px-2 py-1 transition-colors hover:border-[var(--border)] hover:bg-[var(--background)] focus-within:border-[var(--foreground)] focus-within:bg-[var(--background)]">
+      {hasToolbar && (
+        <div
+          className={`mb-2 flex flex-wrap items-center gap-1 ${
+            toolbarMode === 'always' ? '' : 'hidden group-focus-within:flex'
+          }`}
         >
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
-        </button>
-      </div>
+          {features.lists && (
+            <div className="relative">
+              <select
+                aria-label="List type"
+                className="h-7 appearance-none rounded-full border border-[var(--border)] bg-[var(--background)] px-2.5 pr-7 text-[11px] text-[var(--foreground)]"
+                value={listValue}
+                onChange={(e) => onListChange(e.target.value)}
+              >
+                <option value="">List</option>
+                <option value="bullet">• List</option>
+                <option value="ordered">1. List</option>
+              </select>
+              <svg className="pointer-events-none absolute right-2 top-1/2 -mt-1.5 h-3 w-3 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+            </div>
+          )}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) void uploadAndInsertImage(file)
-          e.currentTarget.value = ''
-        }}
-      />
+          {features.blockquote && (
+            <button type="button" aria-label="Blockquote" title="Blockquote" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleBlockquote().run() }} className={`${buttonClass} ${activeEditor.isActive('blockquote') ? activeButtonClass : ''}`}>
+              <span className="text-[12px] leading-none">❝</span>
+            </button>
+          )}
+          {features.codeBlock && (
+            <button type="button" aria-label="Code block" title="Code block" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleCodeBlock().run() }} className={`${buttonClass} ${activeEditor.isActive('codeBlock') ? activeButtonClass : ''}`}>
+              <span className="text-[9px] leading-none">{'</>'}</span>
+            </button>
+          )}
+          {features.bold && (
+            <button type="button" aria-label="Bold" title="Bold" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleBold().run() }} className={`${buttonClass} ${activeEditor.isActive('bold') ? activeButtonClass : ''}`}>
+              <span className="text-[11px] font-semibold leading-none">B</span>
+            </button>
+          )}
+          {features.italic && (
+            <button type="button" aria-label="Italic" title="Italic" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleItalic().run() }} className={`${buttonClass} ${activeEditor.isActive('italic') ? activeButtonClass : ''}`}>
+              <span className="text-[11px] italic leading-none">I</span>
+            </button>
+          )}
+          {features.underline && (
+            <button type="button" aria-label="Underline" title="Underline" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleUnderline().run() }} className={`${buttonClass} ${activeEditor.isActive('underline') ? activeButtonClass : ''}`}>
+              <span className="text-[11px] underline leading-none">U</span>
+            </button>
+          )}
+          {features.highlight && (
+            <button type="button" aria-label="Highlight" title="Highlight" onMouseDown={(e) => { e.preventDefault(); activeEditor.chain().focus().toggleHighlight().run() }} className={`${buttonClass} ${activeEditor.isActive('highlight') ? activeButtonClass : ''}`}>
+              <span className="text-[11px] leading-none">H</span>
+            </button>
+          )}
+          {features.link && (
+            <button type="button" aria-label="Link" title="Link" onMouseDown={(e) => { e.preventDefault(); addLink() }} className={`${buttonClass} ${activeEditor.isActive('link') ? activeButtonClass : ''}`}>
+              <span className="text-[10px] leading-none">Link</span>
+            </button>
+          )}
 
-      <div key={instanceKey.current}>
+          {features.align && (
+            <div className="relative">
+              <select
+                aria-label="Text alignment"
+                className="h-7 appearance-none rounded-full border border-[var(--border)] bg-[var(--background)] px-2.5 pr-7 text-[11px] text-[var(--foreground)]"
+                value={alignValue}
+                onChange={(e) => onAlignChange(e.target.value)}
+              >
+                <option value="left">Align</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+                <option value="justify">Justify</option>
+              </select>
+              <svg className="pointer-events-none absolute right-2 top-1/2 -mt-1.5 h-3 w-3 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+            </div>
+          )}
+
+          {features.image && (
+            <button
+              type="button"
+              aria-label="Insert image"
+              title="Insert image"
+              className={buttonClass}
+              disabled={uploadingImage}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                activeEditor.chain().focus().run()
+                fileInputRef.current?.click()
+              }}
+            >
+              <span className="text-[10px] leading-none">Img</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {features.image && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) void uploadAndInsertImage(file)
+            e.currentTarget.value = ''
+          }}
+        />
+      )}
+
+      <div key={`${instanceKey.current}-${featuresKey}`}>
         <EditorContent
           editor={activeEditor}
-          className="min-h-[42px] cursor-text text-[14px] text-[var(--muted)] [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child]:before:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child]:before:float-left [&_.ProseMirror_p.is-editor-empty:first-child]:before:h-0 [&_.ProseMirror_p.is-editor-empty:first-child]:before:text-[var(--muted)] [&_.ProseMirror_p.is-editor-empty:first-child]:before:opacity-60 [&_.ProseMirror_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)] [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ul]:pl-5 [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_li]:my-1 [&_.ProseMirror_a]:underline [&_.ProseMirror_a]:underline-offset-2 [&_.ProseMirror_blockquote]:border-l-2 [&_.ProseMirror_blockquote]:border-[var(--border)] [&_.ProseMirror_blockquote]:pl-3 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_pre]:overflow-x-auto [&_.ProseMirror_pre]:rounded-[8px] [&_.ProseMirror_pre]:bg-[var(--surface)] [&_.ProseMirror_pre]:p-3 [&_.ProseMirror_pre]:font-mono [&_.ProseMirror_pre]:text-[13px] [&_.ProseMirror_code]:rounded-[4px] [&_.ProseMirror_code]:bg-[var(--surface)] [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:font-mono [&_.ProseMirror_code]:text-[13px] [&_.ProseMirror_mark]:bg-[color:rgba(139,69,19,0.18)] [&_.ProseMirror_img]:my-2 [&_.ProseMirror_img]:h-auto [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-[10px]"
+          className="min-h-[42px] cursor-text text-[14px] text-[var(--muted)] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:min-h-[1.5em] [&_.ProseMirror_p.is-editor-empty:first-child]:before:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child]:before:float-left [&_.ProseMirror_p.is-editor-empty:first-child]:before:h-0 [&_.ProseMirror_p.is-editor-empty:first-child]:before:text-[var(--muted)] [&_.ProseMirror_p.is-editor-empty:first-child]:before:opacity-60 [&_.ProseMirror_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)] [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ul]:pl-5 [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_li]:my-1 [&_.ProseMirror_a]:underline [&_.ProseMirror_a]:underline-offset-2 [&_.ProseMirror_blockquote]:border-l-2 [&_.ProseMirror_blockquote]:border-[var(--border)] [&_.ProseMirror_blockquote]:pl-3 [&_.ProseMirror_blockquote]:italic [&_.ProseMirror_pre]:overflow-x-auto [&_.ProseMirror_pre]:rounded-[8px] [&_.ProseMirror_pre]:bg-[var(--surface)] [&_.ProseMirror_pre]:p-3 [&_.ProseMirror_pre]:font-mono [&_.ProseMirror_pre]:text-[13px] [&_.ProseMirror_code]:rounded-[4px] [&_.ProseMirror_code]:bg-[var(--surface)] [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:font-mono [&_.ProseMirror_code]:text-[13px] [&_.ProseMirror_mark]:bg-[color:rgba(139,69,19,0.18)] [&_.ProseMirror_img]:my-2 [&_.ProseMirror_img]:h-auto [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-[10px]"
           onClick={() => activeEditor.chain().focus().run()}
         />
       </div>

@@ -15,10 +15,12 @@ export interface FieldValidation {
 export interface FieldConfig {
   id: string
   type: 'text' | 'email' | 'number' | 'textarea' | 'select' |
-        'radio' | 'checkbox' | 'date' | 'file' | 'rating'
+        'radio' | 'checkbox' | 'date' | 'file' | 'rating' | 'richtext'
   label: string
   placeholder?: string
   helpText?: string
+  content?: string
+  editorFeatures?: Record<string, boolean>
   required: boolean
   options?: string[]
   validation?: FieldValidation

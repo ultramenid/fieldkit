@@ -1,0 +1,10 @@
+# Keep upload small; EAS reinstalls dependencies on the builder.
+# Include packages/mobile and packages/form-schema (file: dependency).
+**/node_modules
+**/.expo
+**/.next
+apps/web
+packages/local-server
+prototype
+.git
+.cursor
