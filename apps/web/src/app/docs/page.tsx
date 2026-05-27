@@ -48,23 +48,23 @@ export default function DocsPage() {
   return (
     <div className="min-h-dvh bg-[var(--background)]">
       <Nav />
-      <main className="mx-auto grid w-full max-w-[960px] gap-10 px-6 py-12 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-14 lg:py-16">
+      <main className="mx-auto grid w-full max-w-[1100px] gap-8 px-4 py-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12 lg:px-6 lg:py-12">
         <DocsSidebar sections={sections} />
 
         <article className="min-w-0">
-          <header className="mb-12 max-w-[620px]">
-            <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+          <header className="mb-10 max-w-[640px] lg:mb-14">
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--muted)]">
               FieldKit Documentation
             </p>
-            <h1 className="mb-5 font-sans text-[44px] font-semibold leading-[0.98] tracking-[-0.05em] text-[var(--foreground)] sm:text-[58px]">
+            <h1 className="mb-4 font-sans text-[36px] font-semibold leading-[1.1] tracking-tight text-[var(--foreground)] sm:text-[44px] lg:text-[52px]">
               Collect data anywhere, sync when ready.
             </h1>
-            <p className="max-w-[540px] text-[16px] leading-7 text-[var(--muted)]">
+            <p className="max-w-[560px] text-[15px] leading-relaxed text-[var(--muted)] lg:text-[16px]">
               FieldKit combines a hosted web app, mobile offline collection, and a LAN local server for field teams working with unreliable connectivity.
             </p>
           </header>
 
-          <div className="space-y-14">
+          <div className="space-y-12 lg:space-y-16">
             <Section id="overview" title="Overview">
               <p>
                 FieldKit is built around one source of truth: the web app. Teams design and publish forms on the server, then export configurations to offline clients for collection in the field.
@@ -72,7 +72,7 @@ export default function DocsPage() {
               <p>
                 Data flow is intentionally one-way. Form configurations move from the web app to mobile devices or local servers. Responses move back from offline clients to the web app through sync or import workflows.
               </p>
-              <div className="rounded-[12px] border border-[var(--border)] p-5 text-[14px] text-[var(--foreground)]">
+              <div className="rounded-[var(--radius-container)] border border-[var(--border)] bg-[var(--surface)] p-4 font-mono text-[13px] text-[var(--foreground)] lg:p-5">
                 Web app → form config → mobile app / local server → collected responses → web app
               </div>
             </Section>
@@ -119,6 +119,8 @@ npm --prefix apps/web run dev`}</CodeBlock>
               <p>
                 Field teams can collect multiple forms without relying on a live connection. File uploads use the mobile upload endpoint when the sync engine can reach the server.
               </p>
+              <CodeBlock>{`GET /api/forms/[id]/export  # Download form config
+POST /api/mobile/upload    # Upload files when online`}</CodeBlock>
             </Section>
 
             <Section id="sync-import" title="Sync and import">

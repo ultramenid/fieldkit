@@ -45,11 +45,11 @@ export function DocsSidebar({ sections }: DocsSidebarProps) {
   }, [sections])
 
   return (
-    <aside className="lg:sticky lg:top-6 lg:self-start">
-      <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+    <aside className="lg:sticky lg:top-8 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <p className="mb-4 hidden font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--muted)] lg:block">
         On this page
       </p>
-      <nav aria-label="Table of contents" className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+      <nav aria-label="Table of contents" className="flex gap-1.5 overflow-x-auto border-b border-[var(--border)] pb-4 lg:flex-col lg:border-b-0 lg:pb-0">
         {sections.map((section) => {
           const isActive = section.id === activeId
 
@@ -59,10 +59,10 @@ export function DocsSidebar({ sections }: DocsSidebarProps) {
               href={`#${section.id}`}
               aria-current={isActive ? 'location' : undefined}
               className={[
-                'whitespace-nowrap rounded-full border px-3 py-2 text-sm transition-colors lg:whitespace-normal',
+                'whitespace-nowrap rounded-[var(--radius)] px-3 py-1.5 text-[13px] transition-colors lg:whitespace-normal lg:rounded-[var(--radius-container)] lg:border lg:border-transparent lg:px-3 lg:py-2 lg:text-sm',
                 isActive
-                  ? 'border-[var(--foreground)] text-[var(--foreground)]'
-                  : 'border-transparent text-[var(--muted)] hover:border-[var(--border)] hover:text-[var(--foreground)]',
+                  ? 'bg-[var(--fg)] text-[var(--bg)] lg:bg-[var(--surface)] lg:text-[var(--foreground)] lg:border-[var(--border)]'
+                  : 'text-[var(--muted)] hover:text-[var(--foreground)] lg:hover:bg-[var(--surface)] lg:hover:border-[var(--border)]',
               ].join(' ')}
             >
               {section.title}
