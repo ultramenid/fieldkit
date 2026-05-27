@@ -106,7 +106,16 @@ export default function DocsPage() {
       const el = document.getElementById(id)
       if (el) observer.observe(el)
     })
-    return () => observer.disconnect()
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
 
   function go(id: string) {
@@ -127,7 +136,8 @@ export default function DocsPage() {
       {/* Mobile menu button */}
       <button
         onClick={() => setOpen(true)}
-        aria-label="Open menu"
+        aria-label="Open navigation menu"
+        aria-expanded={open}
         className="fixed left-3 top-3 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--background)] md:hidden"
       >
         <svg
@@ -148,7 +158,7 @@ export default function DocsPage() {
           open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
-        <div className="flex-shrink-0 px-5 pt-5">
+        <div className="relative flex-shrink-0 px-5 pt-5">
           <Link
             href="/"
             className="flex items-center gap-2.5 no-underline text-[var(--foreground)]"
@@ -156,6 +166,17 @@ export default function DocsPage() {
             <img src="/logo.png" alt="" className="h-6 w-6" />
             <span className="text-[15px] font-semibold">FieldKit Docs</span>
           </Link>
+
+          {/* Close button - mobile only */}
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close navigation menu"
+            className="absolute right-3 top-5 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)] md:hidden"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-4 w-4">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-5">
