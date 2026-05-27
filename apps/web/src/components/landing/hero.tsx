@@ -16,12 +16,6 @@ export function Hero() {
         >
           Get started
         </Link>
-        <Link
-          href="/docs"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-[15px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--foreground)]"
-        >
-          Documentation
-        </Link>
       </div>
     </section>
   )

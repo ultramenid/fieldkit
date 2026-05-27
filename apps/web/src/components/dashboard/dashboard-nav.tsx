@@ -20,9 +20,6 @@ export function DashboardNav({ userInitials, userImage, userName, userEmail }: D
           <Link href="/dashboard" className="text-[14px] text-[var(--muted)] no-underline hover:text-[var(--foreground)]">
             Forms
           </Link>
-          <Link href="/docs" className="text-[14px] text-[var(--muted)] no-underline hover:text-[var(--foreground)]">
-            Docs
-          </Link>
           <UserMenu
             userInitials={userInitials}
             userImage={userImage}

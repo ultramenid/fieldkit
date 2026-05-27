@@ -50,7 +50,7 @@ const serverCards = [
 
 const localCards = [
   {
-    href: '/docs#local-server',
+    href: '/dashboard',
     title: 'Local Server Admin',
     description: 'Manage imported forms, start/stop server, monitor connected devices, and export collected data',
     tag: 'Localserver',
@@ -63,7 +63,7 @@ const localCards = [
     ),
   },
   {
-    href: '/docs#install',
+    href: '/dashboard',
     title: 'Installation Guide',
     description: 'Install via npm on Windows, macOS, or Linux. Docker image also available.',
     tag: 'Localserver',
@@ -77,7 +77,7 @@ const localCards = [
     ),
   },
   {
-    href: '/docs#sync',
+    href: '/dashboard',
     title: 'Response Data Sync',
     description: 'Export collected responses from local server and import into serverside to compile into one table.',
     tag: 'Localserver',

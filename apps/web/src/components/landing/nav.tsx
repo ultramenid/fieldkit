@@ -13,12 +13,6 @@ export async function Nav() {
           FieldKit
         </Link>
         <nav className="flex gap-5">
-          <Link
-            href="/docs"
-            className="rounded-full border border-[var(--border)] px-[14px] py-1.5 text-sm text-[var(--muted)] transition-colors hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
-          >
-            Docs
-          </Link>
           {isLoggedIn ? (
             <Link
               href="/dashboard"
