@@ -12,7 +12,13 @@ export async function Nav() {
           <img src="/logo.png" alt="FieldKit" className="h-7 w-7" />
           FieldKit
         </Link>
-        <nav className="flex gap-5">
+        <nav className="flex items-center gap-5">
+          <Link
+            href="/docs"
+            className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+          >
+            Docs
+          </Link>
           {isLoggedIn ? (
             <Link
               href="/dashboard"
