@@ -34,5 +34,7 @@ npm-debug.log*
 .claude/
 CLAUDE.md
 prototype/
+.agents/
+superpowers/
 docs/
 .superpowers/
