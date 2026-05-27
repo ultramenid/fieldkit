@@ -1,12 +1,5 @@
-import nextra from 'nextra'
-
-const withNextra = nextra({
-  search: true,
-  contentDirBasePath: '/docs',
-})
-
 /** @type {import('next').NextConfig} */
-const nextConfig = withNextra({
+const nextConfig = {
   transpilePackages: ['@fieldkit/form-schema'],
   images: {
     remotePatterns: [
@@ -14,6 +7,6 @@ const nextConfig = withNextra({
       { protocol: 'https', hostname: '*.googleusercontent.com' },
     ],
   },
-})
+}
 
 export default nextConfig
