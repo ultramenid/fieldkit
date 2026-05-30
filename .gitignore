@@ -38,4 +38,5 @@ prototype/
 superpowers/
 /docs/
 .superpowers/
-.playwright-mcp
+.playwright-mcp/
+.playwright/

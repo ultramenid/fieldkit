@@ -138,7 +138,7 @@ export default function DocsPage() {
         onClick={() => setOpen(true)}
         aria-label="Open navigation menu"
         aria-expanded={open}
-        className="fixed left-3 top-3 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--background)] md:hidden"
+        className="fixed left-3 top-3 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] md:hidden"
       >
         <svg
           viewBox="0 0 24 24"
@@ -171,7 +171,7 @@ export default function DocsPage() {
           <button
             onClick={() => setOpen(false)}
             aria-label="Close navigation menu"
-            className="absolute right-3 top-5 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)] md:hidden"
+            className="absolute right-3 top-5 flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] md:hidden"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-4 w-4">
               <path d="M18 6 6 18M6 6l12 12" />
@@ -190,7 +190,7 @@ export default function DocsPage() {
                   <li key={item.id}>
                     <button
                       onClick={() => go(item.id)}
-                      className={`w-full rounded-lg border-l-2 px-2 py-1.5 text-left text-[13px] transition-colors ${
+                      className={`w-full rounded-lg border-l-2 px-2 py-1.5 text-left text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] ${
                         activeId === item.id
                           ? 'border-l-[var(--accent)] bg-[var(--accent-soft)] font-medium text-[var(--accent)]'
                           : 'border-l-transparent text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--foreground)]'
@@ -224,7 +224,8 @@ export default function DocsPage() {
       </aside>
 
       {/* Main content */}
-      <main className="px-6 pb-24 pt-12 md:ml-[260px] md:px-14 max-w-[860px]">
+      <main className="md:pl-[260px]">
+        <div className="mx-auto max-w-[860px] px-6 pb-24 pt-12 md:px-14">
         {/* Introduction */}
         <section id="introduction" className="mb-14 scroll-mt-12">
           <h1 className="m-0 mb-2 text-[32px] font-bold tracking-tight">Documentation</h1>
@@ -454,6 +455,7 @@ export default function DocsPage() {
             serverside are unaffected.
           </p>
         </Sec>
+        </div>
       </main>
     </div>
   )

@@ -3,6 +3,7 @@ import { Hero } from '@/components/landing/hero'
 import { ScreenCard } from '@/components/landing/screen-card'
 import { WorkflowStrip } from '@/components/landing/workflow-strip'
 import { InstallSnippet } from '@/components/landing/install-snippet'
+import { Reveal } from '@/components/landing/reveal'
 import Link from 'next/link'
 
 const serverCards = [
@@ -155,55 +156,63 @@ export default function Home() {
 
         {/* Serverside */}
         <section className="py-10">
-          <SectionHeader
-            title="The platform"
-            subtitle="Build forms, share links, and watch responses come in live"
-          />
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+          <Reveal>
+            <SectionHeader
+              title="The platform"
+              subtitle="Build forms, share links, and watch responses come in live"
+            />
+          </Reveal>
+          <Reveal as="div" className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
             {serverCards.map((card) => (
               <ScreenCard key={card.title} {...card} />
             ))}
-          </div>
+          </Reveal>
         </section>
 
         <div className="border-t border-[var(--border)]" />
 
         {/* Local server */}
         <section className="py-10">
-          <SectionHeader
-            title="Local server"
-            subtitle="Run on any machine on your LAN — no internet required to collect data"
-          />
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+          <Reveal>
+            <SectionHeader
+              title="Local server"
+              subtitle="Run on any machine on your LAN — no internet required to collect data"
+            />
+          </Reveal>
+          <Reveal as="div" className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
             {localCards.map((card) => (
               <ScreenCard key={card.title} {...card} />
             ))}
-          </div>
+          </Reveal>
         </section>
 
         <div className="border-t border-[var(--border)]" />
 
         {/* Mobile */}
         <section className="py-10">
-          <SectionHeader
-            title="Mobile app"
-            subtitle="Download forms, collect offline, sync when back online"
-          />
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+          <Reveal>
+            <SectionHeader
+              title="Mobile app"
+              subtitle="Download forms, collect offline, sync when back online"
+            />
+          </Reveal>
+          <Reveal as="div" className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
             {mobileCards.map((card) => (
               <ScreenCard key={card.title} {...card} />
             ))}
-          </div>
+          </Reveal>
         </section>
 
         <div className="border-t border-[var(--border)]" />
 
         {/* How it works */}
         <section className="py-10">
-          <SectionHeader
-            title="How it works"
-            subtitle="Single pipeline — build online, pick an import path, collect offline, sync when ready"
-          />
+          <Reveal>
+            <SectionHeader
+              title="How it works"
+              subtitle="Single pipeline — build online, pick an import path, collect offline, sync when ready"
+            />
+          </Reveal>
           <WorkflowStrip />
         </section>
 
@@ -211,10 +220,12 @@ export default function Home() {
 
         {/* Quick start */}
         <section className="py-10">
-          <SectionHeader
-            title="Quick start"
-            subtitle="Up and running in two commands"
-          />
+          <Reveal>
+            <SectionHeader
+              title="Quick start"
+              subtitle="Up and running in two commands"
+            />
+          </Reveal>
           <InstallSnippet />
         </section>
 
