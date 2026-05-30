@@ -8,7 +8,7 @@
   --muted-light: #a3a3a3;
   --border: #e5e5e5;
   --accent: #8b4513;
-  --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+  --accent-soft: color-mix(in oklch, var(--accent) 12%, var(--bg));
   --font-display: 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
   --font-body: ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
@@ -29,7 +29,7 @@
     --muted-light: #737373;
     --border: #262626;
     --accent: #c2693a;
-    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --accent-soft: color-mix(in oklch, var(--accent) 12%, var(--bg));
   }
 }
 

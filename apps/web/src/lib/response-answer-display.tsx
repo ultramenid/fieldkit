@@ -48,7 +48,7 @@ export function formatAnswerTableCell(fieldType: string, value: unknown): string
 }
 
 const RESPONSE_RICH_TEXT_CLASS =
-  'text-[14px] text-[var(--foreground)] [&_p]:my-1 [&_p]:min-h-[1.5em] [&_p]:text-[var(--foreground)] [&_li]:text-[var(--foreground)]'
+  '!text-[13px] text-[var(--foreground)] [&_p]:text-[var(--foreground)] [&_li]:text-[var(--foreground)]'
 
 export function formatAnswerDetail(fieldType: string, value: unknown): ReactNode {
   if (value == null || value === '') return EMPTY_ANSWER

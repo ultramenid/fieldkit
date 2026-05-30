@@ -1,16 +1,49 @@
+'use client'
+
+import { useRef } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
+
+gsap.registerPlugin(useGSAP, ScrollTrigger)
+
 export function WorkflowStrip() {
+  const root = useRef<HTMLDivElement>(null)
+
+  useGSAP(
+    () => {
+      const el = root.current
+      if (!el) return
+      const steps = gsap.utils.toArray<HTMLElement>(el.querySelectorAll('[data-step]'))
+      if (!steps.length) return
+
+      const mm = gsap.matchMedia()
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        gsap.from(steps, {
+          opacity: 0,
+          y: 10,
+          duration: 0.4,
+          ease: 'power2.out',
+          stagger: 0.12,
+          scrollTrigger: { trigger: el, start: 'top 80%', once: true },
+        })
+      })
+    },
+    { scope: root },
+  )
+
   return (
-    <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-8 py-8">
+    <div ref={root} className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-8 py-8">
       <div className="flex flex-col items-center gap-2.5">
-        <span className="whitespace-nowrap rounded-full border border-[#16a34a]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#16a34a]">
+        <span data-step className="whitespace-nowrap rounded-full border border-[#16a34a]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#16a34a]">
           Build form online
         </span>
-        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
-        <span className="whitespace-nowrap rounded-full border border-[var(--border)] px-[14px] py-1.5 text-[13px] font-medium text-[var(--foreground)]">
+        <span data-step className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <span data-step className="whitespace-nowrap rounded-full border border-[var(--border)] px-[14px] py-1.5 text-[13px] font-medium text-[var(--foreground)]">
           Export config
         </span>
-        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
-        <div className="w-full max-w-[480px] rounded-[12px] border border-[var(--border)] bg-[var(--background)] p-4">
+        <span data-step className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <div data-step className="w-full max-w-[480px] rounded-[12px] border border-[var(--border)] bg-[var(--background)] p-4">
           <p className="mb-3 text-center font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
             Choose import path
           </p>
@@ -23,12 +56,12 @@ export function WorkflowStrip() {
             </span>
           </div>
         </div>
-        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
-        <span className="whitespace-nowrap rounded-full border border-[#f59e0b]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#b45309]">
+        <span data-step className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <span data-step className="whitespace-nowrap rounded-full border border-[#f59e0b]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#b45309]">
           Collect offline
         </span>
-        <span className="text-[13px] leading-none text-[var(--muted)]">↓</span>
-        <span className="whitespace-nowrap rounded-full border border-[#16a34a]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#16a34a]">
+        <span data-step className="text-[13px] leading-none text-[var(--muted)]">↓</span>
+        <span data-step className="whitespace-nowrap rounded-full border border-[#16a34a]/30 px-[14px] py-1.5 text-[13px] font-medium text-[#16a34a]">
           Sync responses
         </span>
       </div>
